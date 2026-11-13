@@ -48,6 +48,9 @@
     <string name="label_shape_point">Single point</string>
     <string name="label_shape_polygon">Measured boundary</string>
     <string name="msg_delete_undone">Delete undone</string>
+    <!-- Undo snackbar (spec §4.7 — forgiving by design: ~8-second Undo window) -->
+    <string name="land_deleted_snackbar">Parcel deleted</string>
+    <string name="land_undo_delete">Undo</string>
 
     <string name="sort_date_desc">Newest first</string>
     <string name="sort_date_asc">Oldest first</string>

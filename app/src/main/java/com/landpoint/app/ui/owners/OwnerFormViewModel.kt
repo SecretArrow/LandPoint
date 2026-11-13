@@ -44,7 +44,6 @@ data class OwnerFormUiState(
  */
 object OwnerValidation {
 
-    private val NIK_DIGITS = Regex("^\\d{16}$")
     private val PHONE_CHARS = Regex("^[+0-9 ()\\-]{5,20}$")
     private val EMAIL = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
 

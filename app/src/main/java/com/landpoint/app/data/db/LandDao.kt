@@ -155,11 +155,11 @@ suspend fun detachLandsFromOwner(ownerId: String, now: Long)
 @Query("SELECT COUNT(*) FROM lands WHERE owner_id = :ownerId")
 suspend fun countLandsForOwner(ownerId: String): Int
 
-@Query("SELECT owner_id, COUNT(*) AS n FROM lands WHERE owner_id IS NOT NULL GROUP BY owner_id")
+@Query("SELECT owner_id AS ownerId, COUNT(*) AS n FROM lands WHERE owner_id IS NOT NULL GROUP BY owner_id")
 suspend fun countLandsByOwner(): List<OwnerParcelCount>
 
 /** Owner id -> parcel count, for the owner list. */
-data class OwnerParcelCount(val owner_id: String, val n: Int)
+data class OwnerParcelCount(val ownerId: String, val n: Int)
 
 // ------------------------------------------------------------------
 // Audit log

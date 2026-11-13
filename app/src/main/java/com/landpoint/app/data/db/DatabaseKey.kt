@@ -2,6 +2,7 @@ package com.landpoint.app.data.db
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -151,24 +152,18 @@ internal object DatabaseKey {
     }
 
     private fun generate(strongBox: Boolean): SecretKey = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, PROVIDER).apply {
-        init(
-            KeyGenParameterSpec.Builder(
-                ALIAS,
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-            )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(256)
-                // Deliberately not setUserAuthenticationRequired or
-                // setUnlockedDeviceRequired. Either would make the key
-                // unusable while the screen is locked, which is when a
-                // location fix or an export could still be finishing — and
-                // would put a second lock in front of an app that already
-                // offers one it can explain. The threat this addresses is a
-                // phone in somebody else's hands, which the screen lock and
-                // the app lock answer directly.
-                .setIsStrongBoxBacked(strongBox)
-                .build()
+        val builder = KeyGenParameterSpec.Builder(
+            ALIAS,
+            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
         )
+            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            .setKeySize(256)
+        // StrongBox is API 28+; on older devices the call doesn't exist and the
+        // parameter is moot (no separate security chip to back the key anyway).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            builder.setIsStrongBoxBacked(strongBox)
+        }
+        init(builder.build())
     }.generateKey()
 }

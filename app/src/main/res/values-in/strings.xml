@@ -47,6 +47,9 @@
     <string name="label_shape_point">Satu titik</string>
     <string name="label_shape_polygon">Batas terukur</string>
     <string name="msg_delete_undone">Penghapusan diurungkan</string>
+    <!-- Snackbar Undo (spec §4.7 — forgiving by design: jendela Undo ~8 detik) -->
+    <string name="land_deleted_snackbar">Bidang tanah dihapus</string>
+    <string name="land_undo_delete">Urung</string>
 
     <string name="sort_date_desc">Terbaru dulu</string>
     <string name="sort_date_asc">Terlama dulu</string>

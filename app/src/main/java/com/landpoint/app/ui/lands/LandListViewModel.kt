@@ -19,9 +19,12 @@ import com.landpoint.app.ui.container
 import com.landpoint.app.util.AppStrings
 import com.landpoint.app.util.GeoUtils
 import com.landpoint.app.util.NaturalOrder
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -141,6 +144,14 @@ class LandListViewModel(
     private val busy = MutableStateFlow(false)
     private val message = MutableStateFlow<String?>(null)
 
+    // The most recently deleted parcel, held for the snackbar's undo window so
+    // the screen knows a delete is fresh and an Undo offer is still meaningful.
+    // Pure UI state: the real delete deferral lives in `pendingDeletes`, which
+    // is left untouched (its window stays whatever it was).
+    private val _deletedLand = MutableStateFlow<Land?>(null)
+    val deletedLand: StateFlow<Land?> = _deletedLand.asStateFlow()
+    private var pendingDeleteJob: Job? = null
+
     val uiState: StateFlow<LandListUiState> = combine(
         repository.observeLands(),
         combine(query, sortOrder, currentLocation) { q, sort, location ->
@@ -210,8 +221,38 @@ class LandListViewModel(
         viewModelScope.launch {
             pendingDeletes.ids.collect { pending ->
                 if (pending.isNotEmpty()) {
-                    message.value = strings.plural(R.plurals.msg_deleted, pending.size)
+                    // The single-parcel case gets the forgiving "Parcel deleted"
+                    // copy the spec calls for; a bulk delete still needs the
+                    // count, so the plural stays for that.
+                    message.value = if (pending.size == 1) {
+                        strings.get(R.string.land_deleted_snackbar)
+                    } else {
+                        strings.plural(R.plurals.msg_deleted, pending.size)
+                    }
                 }
+            }
+        }
+    }
+
+    /**
+     * Holds [land] as the most recently deleted parcel for [UNDO_WINDOW_MS], so
+     * the snackbar can offer Undo across the spec's ~8-second window (spec §4.7 —
+     * "forgiving by design: Undo snackbar for ~8 seconds").
+     *
+     * This is UI state only — it does NOT defer the repository delete, which is
+     * already deferred by [PendingDeletes]. The two windows are independent:
+     * `pendingDeletes` decides when the row actually leaves the database, this
+     * job decides how long the snackbar keeps the Undo offer alive. Cancelling
+     * the job (via [undoDelete]) clears the offer at once.
+     */
+    private fun trackDeletedLand(land: Land?) {
+        pendingDeleteJob?.cancel()
+        _deletedLand.value = land
+        if (land != null) {
+            pendingDeleteJob = viewModelScope.launch {
+                delay(UNDO_WINDOW_MS)
+                _deletedLand.value = null
+                pendingDeleteJob = null
             }
         }
     }
@@ -244,6 +285,7 @@ class LandListViewModel(
 
     fun delete(land: Land) {
         pendingDeletes.schedule(setOf(land.id))
+        trackDeletedLand(land)
     }
 
     fun toggleSelection(id: String) {
@@ -321,12 +363,20 @@ class LandListViewModel(
         if (ids.isEmpty()) return
         // The message comes from the collector in init, so a delete announces
         // itself the same way wherever it was started from.
+        val first = uiState.value.selectedLands.firstOrNull()
         pendingDeletes.schedule(ids)
         clearSelection()
+        // For a single-parcel delete the snackbar can name what was lost; for a
+        // bulk delete the count is what matters, so the parcel itself is not
+        // surfaced but the Undo offer still is.
+        trackDeletedLand(first)
     }
 
     fun undoDelete() {
         pendingDeletes.undo()
+        pendingDeleteJob?.cancel()
+        pendingDeleteJob = null
+        _deletedLand.value = null
         message.value = strings.get(R.string.msg_delete_undone)
     }
 
@@ -335,6 +385,15 @@ class LandListViewModel(
     }
 
     companion object {
+        /**
+         * How long the Undo snackbar keeps the most recently deleted parcel on
+         * offer. Spec §4.7 calls for "~8 seconds"; Material 3's
+         * `SnackbarDuration` has no exact 8-second entry, so the snackbar itself
+         * is shown for `SnackbarDuration.Long` (~10 s) and this window dismisses
+         * it a beat earlier to keep the offer honest.
+         */
+        private const val UNDO_WINDOW_MS = 8_000L
+
         val Factory = viewModelFactory {
             initializer {
                 val c = container()

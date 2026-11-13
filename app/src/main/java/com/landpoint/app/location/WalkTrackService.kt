@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -158,6 +159,10 @@ class WalkTrackService : Service() {
      * corner is recorded would be its own reason to turn the feature off.
      */
     private fun createChannel() {
+        // NotificationChannel is API 26+; on API 24-25 the channel name is set
+        // directly on the notification builder and createNotificationChannel is
+        // a no-op on NotificationManagerCompat.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(
             CHANNEL_ID,
             strings.get(R.string.notif_walk_channel),

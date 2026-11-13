@@ -111,9 +111,12 @@ class PendingDeletes(
 
     companion object {
         /**
-         * Comfortably longer than a short snackbar (about four seconds), so the
-         * Undo button is never taken away before the delete it undoes happens.
+         * Aligned with the Undo snackbar's visible window (8 seconds). The
+         * snackbar uses SnackbarDuration.Long (~10s) but a LaunchedEffect in
+         * LandListScreen dismisses it at the 8-second mark so the visible offer
+         * matches this deferral window exactly — tapping Undo any time the
+         * snackbar is on screen will actually restore the parcel.
          */
-        const val WINDOW_MS = 5_000L
+        const val WINDOW_MS = 8_000L
     }
 }

@@ -16,9 +16,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 enum class OwnerSort(val key: String) {
-    NAME,
-    PARCELS,
-    NEWEST;
+    NAME("name"),
+    PARCELS("parcels"),
+    NEWEST("newest");
 
     companion object {
         fun fromKey(key: String?): OwnerSort = entries.firstOrNull { it.key == key } ?: NAME

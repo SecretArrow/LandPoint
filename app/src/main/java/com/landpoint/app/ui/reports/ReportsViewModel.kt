@@ -24,6 +24,7 @@ data class ReportsUiState(
     val ownerCount: Int = 0,
     val totalAreaSqm: Double = 0.0,
     val areaUnit: SettingsRepository.AreaUnit = SettingsRepository.AreaUnit.SQM,
+    val usesDms: Boolean = false,
     val disputedCount: Int = 0,
     val soldCount: Int = 0,
     val transferredCount: Int = 0,
@@ -34,6 +35,8 @@ class ReportsViewModel(container: AppContainer) : ViewModel() {
 
     private val repository = container.repository
     private val importExport = container.importExport
+    private val pdfExporter = container.pdfExporter
+    private val settings = container.settings
     private val strings = container.strings
 
     private val busy = MutableStateFlow(false)
@@ -43,14 +46,16 @@ class ReportsViewModel(container: AppContainer) : ViewModel() {
     val uiState: StateFlow<ReportsUiState> = combine(
         repository.observeLands(),
         repository.observeOwners(),
-        container.settings.areaUnit,
+        settings.areaUnit,
+        settings.coordFormat,
         busy
-    ) { lands, owners, unit, isBusy ->
+    ) { lands, owners, unit, format, isBusy ->
         ReportsUiState(
             parcelCount = lands.size,
             ownerCount = owners.size,
             totalAreaSqm = lands.sumOf { it.areaSqm ?: 0.0 },
             areaUnit = unit,
+            usesDms = format == SettingsRepository.CoordFormat.DMS,
             disputedCount = lands.count { it.landStatus == LandStatus.DISPUTED },
             soldCount = lands.count { it.landStatus == LandStatus.SOLD },
             transferredCount = lands.count { it.landStatus == LandStatus.TRANSFERRED },
@@ -77,7 +82,8 @@ class ReportsViewModel(container: AppContainer) : ViewModel() {
     }
 
     fun exportSinglePdf(uri: Uri, land: Land) = runTask {
-        val result = importExport.exportPdfReport(uri, listOf(land))
+        val dms = uiState.value.usesDms
+        val result = pdfExporter.exportReport(uri, listOf(land), dms, uiState.value.areaUnit)
         if (result.isFailure) {
             strings.get(R.string.msg_pdf_failed, result.error ?: "")
         } else {

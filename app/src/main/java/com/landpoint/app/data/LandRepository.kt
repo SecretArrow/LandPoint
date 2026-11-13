@@ -3,6 +3,7 @@ package com.landpoint.app.data
 import com.landpoint.app.data.db.LandDao
 import com.landpoint.app.data.model.AuditActions
 import com.landpoint.app.data.model.AuditEntities
+import com.landpoint.app.data.model.AuditEntity
 import com.landpoint.app.data.model.AuditEntry
 import com.landpoint.app.data.model.Land
 import com.landpoint.app.data.model.LandEntity
@@ -10,6 +11,7 @@ import com.landpoint.app.data.model.Owner
 import com.landpoint.app.data.model.Photo
 import com.landpoint.app.data.model.PhotoEntity
 import com.landpoint.app.data.model.toDomain
+import com.landpoint.app.data.model.toEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map

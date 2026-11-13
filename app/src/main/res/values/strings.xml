@@ -242,6 +242,9 @@
     <string name="corner_mode_hint_move">Drag a corner handle to reposition it</string>
     <string name="corner_mode_hint_insert">Tap a + on an edge to insert a corner there</string>
     <string name="corner_mode_hint_delete">Tap a corner to remove it</string>
+    <!-- Local, mode-driven messages raised by the picker itself. -->
+    <string name="corner_picker_need_three">Need at least 3 corners</string>
+    <string name="corner_picker_insert_coming_soon">Insert mode coming soon</string>
 
     <!-- Boundary preview -->
     <string name="shape_title">Boundary</string>

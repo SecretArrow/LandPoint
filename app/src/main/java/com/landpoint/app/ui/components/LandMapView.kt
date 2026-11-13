@@ -76,13 +76,16 @@ private const val ZOOM_ANIMATION_MS = 250
 private val FIT_PADDING = 48.dp
 
 /**
- * How far from a finger a pin still counts as tapped.
+ * How far from a finger a pin or corner still counts as tapped.
  *
  * Larger than the pins themselves. A corner pin is about ten density-independent
  * pixels across and a fingertip covers several times that, so hit-testing the drawn
- * shape alone would make a correctly aimed tap miss.
+ * shape alone would make a correctly aimed tap miss. Doubled to a 48 dp diameter
+ * hit area — the Material 3 minimum touch target — so a corner in the picker's
+ * MOVE and DELETE modes, where dragging or removing one is the whole gesture, can
+ * be hit as confidently as a button rather than aimed at like a needle.
  */
-private val TAP_RADIUS = 20.dp
+private val TAP_RADIUS = 24.dp
 
 /** Breathing room around the stand-in message where a map cannot be drawn. */
 private val MESSAGE_PADDING = 24.dp

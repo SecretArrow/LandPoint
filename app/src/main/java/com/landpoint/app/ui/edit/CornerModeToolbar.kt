@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.dp
  * switch modes at the bottom of the glass where the thumb already is, rather
  * than at the 40 dp Material 3 default which is a lottery on a moving bus.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CornerModeToolbar(currentMode: CornerPickerMode, onModeChange: (CornerPickerMode) -> Unit, modifier: Modifier = Modifier) {
     val modes = CornerPickerMode.entries

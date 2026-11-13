@@ -30,6 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # paths-filter lists a PR's changed files through the API on pull_request
+      # events; without this the call is refused with "Resource not accessible".
+      pull-requests: read
     outputs:
       src: ${{ steps.filter.outputs.src }}
     steps:

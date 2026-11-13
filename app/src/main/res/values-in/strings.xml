@@ -220,6 +220,16 @@
     <string name="corner_picker_select_hint">Ketuk sebuah sudut untuk memilihnya, lalu pakai tombol hapus. Geser sudut untuk memindahkannya.</string>
     <string name="corner_picker_delete_selected">Hapus sudut %1$d</string>
 
+    <!-- Toolbar mode pemilih sudut (spec §4.5) -->
+    <string name="corner_mode_add">Tambah</string>
+    <string name="corner_mode_move">Pindah</string>
+    <string name="corner_mode_insert">Sisip</string>
+    <string name="corner_mode_delete">Hapus</string>
+    <string name="corner_mode_hint_add">Ketuk peta atau gunakan GPS untuk menambah sudut</string>
+    <string name="corner_mode_hint_move">Seret gagang sudut untuk memindahkannya</string>
+    <string name="corner_mode_hint_insert">Ketuk + pada sisi untuk menyisipkan sudut di situ</string>
+    <string name="corner_mode_hint_delete">Ketuk sudut untuk menghapusnya</string>
+
     <!-- Pratinjau batas bidang -->
     <string name="shape_title">Batas bidang</string>
     <string name="shape_open_preview">Buka batas bidang di peta</string>

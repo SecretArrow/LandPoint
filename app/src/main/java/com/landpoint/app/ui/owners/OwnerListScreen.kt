@@ -39,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -125,10 +127,14 @@ fun OwnerListScreen(onOpenOwner: (String) -> Unit, onNewOwner: () -> Unit) {
             )
         },
         floatingActionButton = {
+            val fabLabel = stringResource(R.string.owners_fab_add)
             ExtendedFloatingActionButton(
                 onClick = onNewOwner,
+                // Like the list FAB: state the label explicitly so the
+                // accessibility tree carries it.
+                modifier = Modifier.semantics { contentDescription = fabLabel },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.owners_fab_add)) }
+                text = { Text(fabLabel) }
             )
         }
     ) { padding ->

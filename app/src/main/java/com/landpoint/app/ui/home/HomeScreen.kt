@@ -34,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,10 +77,14 @@ fun HomeScreen(
         },
         floatingActionButton = {
             if (state.parcelCount > 0) {
+                val fabLabel = stringResource(R.string.list_fab_save_land)
                 ExtendedFloatingActionButton(
                     onClick = onNewLand,
+                    // Same reasoning as the list FAB: the label must reach the
+                    // accessibility tree.
+                    modifier = Modifier.semantics { contentDescription = fabLabel },
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.list_fab_save_land)) }
+                    text = { Text(fabLabel) }
                 )
             }
         }
@@ -172,10 +178,12 @@ private fun EmptyHome(onNewLand: () -> Unit, onOpenOwners: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(4.dp))
+            val emptyCtaLabel = stringResource(R.string.list_fab_save_land)
             ExtendedFloatingActionButton(
                 onClick = onNewLand,
+                modifier = Modifier.semantics { contentDescription = emptyCtaLabel },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.list_fab_save_land)) }
+                text = { Text(emptyCtaLabel) }
             )
             androidx.compose.material3.TextButton(onClick = onOpenOwners) {
                 Text(stringResource(R.string.home_empty_add_owner))

@@ -246,31 +246,17 @@ jobs:
             # own system packages for another minute or so. Installing in that
             # window fails with "Broken pipe (32)" — a transient error that a
             # retry survives. Settle, then install with retry, then warm the app.
+            #
+            # IMPORTANT: reactivecircus/android-emulator-runner runs each LINE
+            # of this script as its own `sh -c "<line>"`, so every loop and
+            # conditional must be written as a SINGLE line. A multi-line
+            # `for ... do` fails with "Syntax error: end of file unexpected".
             echo "Waiting for the package manager to settle after boot"
             adb wait-for-device
-            for i in $(seq 1 30); do
-              if adb shell pm path android 2>/dev/null | grep -q package:; then
-                echo "Package manager ready (after $((i*2))s)"
-                break
-              fi
-              sleep 2
-            done
-            sleep 15
+            i=0; while [ $i -lt 30 ] && ! adb shell pm path android 2>/dev/null | grep -q package:; do sleep 2; i=$((i+1)); done; echo "PM ready after $((i*2))s"; sleep 15
 
             echo "Installing debug APK (x86_64 split) with retry"
-            for i in 1 2 3; do
-              if adb install -r -t app/build/outputs/apk/debug/app-x86_64-debug.apk; then
-                echo "Install succeeded on attempt $i"
-                break
-              fi
-              echo "Install attempt $i failed; retrying in 15s"
-              sleep 15
-              if [ "$i" = "3" ]; then
-                echo "Install failed after 3 attempts"
-                adb shell dumpsys package 2>/dev/null | tail -50 || true
-                exit 1
-              fi
-            done
+            i=0; while [ $i -lt 3 ] && ! adb install -r -t app/build/outputs/apk/debug/app-x86_64-debug.apk; do i=$((i+1)); echo "Attempt $i failed, retry in 15s"; sleep 15; done; if [ $i -ge 3 ]; then echo "Install failed after 3 attempts"; adb shell dumpsys package 2>/dev/null | tail -50; exit 1; fi; echo "Install succeeded on attempt $((i+1))"
 
             echo "Pre-granting runtime permissions so no system dialog interrupts a flow"
             adb shell pm grant com.landpoint.app.debug android.permission.ACCESS_FINE_LOCATION

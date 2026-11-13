@@ -114,65 +114,65 @@ interface LandDao {
 
     @Query("DELETE FROM photos WHERE land_id = :landId")
     suspend fun deletePhotosFor(landId: String)
-}
 
-// ------------------------------------------------------------------
-// Owners
-// ------------------------------------------------------------------
+    // ------------------------------------------------------------------
+    // Owners
+    // ------------------------------------------------------------------
 
-@Query("SELECT * FROM owners ORDER BY full_name COLLATE NOCASE ASC")
-fun observeOwners(): Flow<List<OwnerEntity>>
+    @Query("SELECT * FROM owners ORDER BY full_name COLLATE NOCASE ASC")
+    fun observeOwners(): Flow<List<OwnerEntity>>
 
-@Query("SELECT * FROM owners ORDER BY full_name COLLATE NOCASE ASC")
-suspend fun getAllOwners(): List<OwnerEntity>
+    @Query("SELECT * FROM owners ORDER BY full_name COLLATE NOCASE ASC")
+    suspend fun getAllOwners(): List<OwnerEntity>
 
-@Query("SELECT * FROM owners WHERE id = :id")
-suspend fun getOwnerById(id: String): OwnerEntity?
+    @Query("SELECT * FROM owners WHERE id = :id")
+    suspend fun getOwnerById(id: String): OwnerEntity?
 
-@Query("SELECT * FROM owners WHERE nik = :nik LIMIT 1")
-suspend fun findOwnerByNik(nik: String): OwnerEntity?
+    @Query("SELECT * FROM owners WHERE nik = :nik LIMIT 1")
+    suspend fun findOwnerByNik(nik: String): OwnerEntity?
 
-@Insert(onConflict = OnConflictStrategy.REPLACE)
-suspend fun upsertOwner(owner: OwnerEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertOwner(owner: OwnerEntity)
 
-@Insert(onConflict = OnConflictStrategy.REPLACE)
-suspend fun upsertOwners(owners: List<OwnerEntity>)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertOwners(owners: List<OwnerEntity>)
 
-@Delete
-suspend fun deleteOwner(owner: OwnerEntity)
+    @Delete
+    suspend fun deleteOwner(owner: OwnerEntity)
 
-@Query("SELECT COUNT(*) FROM owners")
-fun observeOwnerCount(): Flow<Int>
+    @Query("SELECT COUNT(*) FROM owners")
+    fun observeOwnerCount(): Flow<Int>
 
 /**
- * Un-assigns every parcel of an owner about to be deleted. There is no
- * database-level foreign key (SQLite cannot add one to an existing table),
- * so this is the whole of the rule: the parcels stay, the link goes.
- */
-@Query("UPDATE lands SET owner_id = NULL, updated_at = :now WHERE owner_id = :ownerId")
-suspend fun detachLandsFromOwner(ownerId: String, now: Long)
+     * Un-assigns every parcel of an owner about to be deleted. There is no
+     * database-level foreign key (SQLite cannot add one to an existing table),
+     * so this is the whole of the rule: the parcels stay, the link goes.
+     */
+    @Query("UPDATE lands SET owner_id = NULL, updated_at = :now WHERE owner_id = :ownerId")
+    suspend fun detachLandsFromOwner(ownerId: String, now: Long)
 
-@Query("SELECT COUNT(*) FROM lands WHERE owner_id = :ownerId")
-suspend fun countLandsForOwner(ownerId: String): Int
+    @Query("SELECT COUNT(*) FROM lands WHERE owner_id = :ownerId")
+    suspend fun countLandsForOwner(ownerId: String): Int
 
-@Query("SELECT owner_id AS ownerId, COUNT(*) AS n FROM lands WHERE owner_id IS NOT NULL GROUP BY owner_id")
-suspend fun countLandsByOwner(): List<OwnerParcelCount>
+    @Query("SELECT owner_id AS ownerId, COUNT(*) AS n FROM lands WHERE owner_id IS NOT NULL GROUP BY owner_id")
+    suspend fun countLandsByOwner(): List<OwnerParcelCount>
 
 /** Owner id -> parcel count, for the owner list. */
-data class OwnerParcelCount(val ownerId: String, val n: Int)
+    data class OwnerParcelCount(val ownerId: String, val n: Int)
 
 // ------------------------------------------------------------------
 // Audit log
 // ------------------------------------------------------------------
 
-@Insert
-suspend fun insertAudit(entry: AuditEntity)
+    @Insert
+    suspend fun insertAudit(entry: AuditEntity)
 
-@Query("SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT :limit")
-fun observeAudit(limit: Int = 200): Flow<List<AuditEntity>>
+    @Query("SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT :limit")
+    fun observeAudit(limit: Int = 200): Flow<List<AuditEntity>>
 
-@Query("SELECT * FROM audit_log WHERE entity_type = :type AND entity_id = :id ORDER BY timestamp DESC LIMIT :limit")
-fun observeAuditFor(type: String, id: String, limit: Int = 100): Flow<List<AuditEntity>>
+    @Query("SELECT * FROM audit_log WHERE entity_type = :type AND entity_id = :id ORDER BY timestamp DESC LIMIT :limit")
+    fun observeAuditFor(type: String, id: String, limit: Int = 100): Flow<List<AuditEntity>>
 
-@Query("DELETE FROM audit_log")
-suspend fun clearAudit()
+    @Query("DELETE FROM audit_log")
+    suspend fun clearAudit()
+}

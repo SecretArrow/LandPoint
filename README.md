@@ -198,7 +198,13 @@ on a developer machine.
 | `ci.yml` | push/PR to `main` & `develop` | ktlint, detekt and Android Lint in parallel, then unit tests with a Kover coverage report, then Maestro end-to-end flows on an API 30 emulator; on pushes to `develop` an auto-fix job reformats and commits |
 | `release.yml` | push of a `v*` tag | unit tests, signed release APKs (per-ABI + universal) and an AAB, a changelog built from conventional commits, SHA-256 checksums, and a GitHub Release |
 | `nightly.yml` | cron 02:00 UTC | full test run plus a debug APK artifact |
-| `codeql.yml` | push/PR touching `app/**`, weekly | CodeQL security scan |
+
+CodeQL is not part of the pipeline: this repository is private, and uploading
+code-scanning results requires GitHub Advanced Security. The security surface
+is covered instead by detekt, Android Lint, Dependabot (actions + Gradle) and
+the secret-handling rules in `SECURITY.md`. Should the repository become public
+or gain Advanced Security, adding `.github/workflows/codeql.yml` back is a
+five-minute change.
 
 Jobs only run when the changed files are relevant (a README edit does not boot
 an emulator), every action is pinned to a full commit SHA, every job holds the

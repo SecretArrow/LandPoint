@@ -102,6 +102,7 @@ fun LandDetailScreen(
     viewModel: LandDetailViewModel = viewModel(factory = LandDetailViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val history by viewModel.history.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHost = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -211,6 +212,7 @@ fun LandDetailScreen(
             else -> DetailContent(
                 land = land,
                 state = state,
+                history = history,
                 onNavigate = { ShareUtils.navigateTo(context, land) },
                 onCompass = { onCompass(land.id) },
                 onShape = { onShape(land.id) },
@@ -247,6 +249,7 @@ fun LandDetailScreen(
 private fun DetailContent(
     land: Land,
     state: LandDetailUiState,
+    history: List<com.landpoint.app.data.model.AuditEntry>,
     onNavigate: () -> Unit,
     onCompass: () -> Unit,
     onShape: () -> Unit,
@@ -429,6 +432,9 @@ private fun DetailContent(
                 dateFormat.format(Date(land.updatedAt))
             )
         }
+
+        RegistryCard(land = land)
+        HistoryCard(history = history, dateFormat = dateFormat)
 
         Text(
             stringResource(R.string.legal_disclaimer),
@@ -684,6 +690,100 @@ private fun DetailPhoto(photo: Photo) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2
             )
+        }
+    }
+}
+
+/**
+ * Registry bookkeeping of the parcel: owner, land right, status and papers.
+ * Shown as a plain list of labelled lines; the interesting states (disputed)
+ * carry a colour so they are found without reading.
+ */
+@Composable
+private fun RegistryCard(land: Land) {
+    val hasAnything = land.ownerName != null ||
+        !land.landRight.isNullOrBlank() ||
+        land.status != com.landpoint.app.data.model.LandStatus.ACTIVE.key ||
+        !land.certificateNumber.isNullOrBlank() ||
+        !land.spptNumber.isNullOrBlank() ||
+        land.acquisitionDate != null
+    if (!hasAnything) return
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                stringResource(R.string.registry_card_title).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            land.ownerName?.let {
+                DetailField(stringResource(R.string.field_owner), it)
+            }
+            land.landRight?.takeIf { it.isNotBlank() }?.let {
+                DetailField(stringResource(R.string.field_land_right), it)
+            }
+            if (land.status != com.landpoint.app.data.model.LandStatus.ACTIVE.key) {
+                val status = com.landpoint.app.data.model.LandStatus.fromKey(land.status)
+                DetailField(
+                    stringResource(R.string.field_status),
+                    stringResource(status.labelRes)
+                )
+            }
+            land.certificateNumber?.takeIf { it.isNotBlank() }?.let {
+                DetailField(stringResource(R.string.field_certificate_number), it)
+            }
+            land.spptNumber?.takeIf { it.isNotBlank() }?.let {
+                DetailField(stringResource(R.string.field_sppt_number), it)
+            }
+            land.acquisitionDate?.let {
+                DetailField(
+                    stringResource(R.string.field_acquisition_date),
+                    SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(it))
+                )
+            }
+        }
+    }
+}
+
+/**
+ * What happened to this record and when. The audit trail is deliberately local
+ * and deliberately terse: no accounts, no "who", just the moments the record
+ * changed, newest first.
+ */
+@Composable
+private fun HistoryCard(history: List<com.landpoint.app.data.model.AuditEntry>, dateFormat: SimpleDateFormat) {
+    if (history.isEmpty()) return
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                stringResource(R.string.history_card_title).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            history.take(10).forEach { entry ->
+                val action = stringResource(
+                    when (entry.action) {
+                        com.landpoint.app.data.model.AuditActions.CREATE ->
+                            R.string.audit_action_created
+                        com.landpoint.app.data.model.AuditActions.UPDATE ->
+                            R.string.audit_action_updated
+                        else -> R.string.audit_action_deleted
+                    },
+                    entry.detail
+                )
+                Text(action, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    dateFormat.format(Date(entry.timestamp)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

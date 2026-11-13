@@ -147,7 +147,13 @@ class ImportExportManager(private val context: Context, private val repository: 
     internal suspend fun applyRecords(
         records: List<ImportRecord>,
         strategy: DuplicateStrategy,
-        photoPaths: Map<String, String> = emptyMap()
+        photoPaths: Map<String, String> = emptyMap(),
+        /**
+         * Owner ids that exist after a restore wrote its owners table. A land
+         * referencing anything else is imported with no owner rather than a
+         * dangling link: the owner column has no database-level foreign key.
+         */
+        knownOwnerIds: Set<String> = emptySet()
     ): ImportResult {
         var imported = 0
         var replaced = 0
@@ -196,7 +202,7 @@ class ImportExportManager(private val context: Context, private val repository: 
             }
 
             if (writtenId != null) {
-                toWrite += record.toEntity(writtenId)
+                toWrite += record.toEntity(writtenId, knownOwnerIds)
                 record.photos.forEach { pendingPhotos += writtenId to it }
             }
         }
@@ -220,7 +226,7 @@ class ImportExportManager(private val context: Context, private val repository: 
         )
     }
 
-    private fun ImportRecord.toEntity(id: String): LandEntity {
+    private fun ImportRecord.toEntity(id: String, knownOwnerIds: Set<String>): LandEntity {
         val now = System.currentTimeMillis()
         return LandEntity(
             id = id,
@@ -236,6 +242,12 @@ class ImportExportManager(private val context: Context, private val repository: 
             areaSqm = areaSqm,
             geometryType = geometryType,
             geometryJson = geometryJson,
+            ownerId = ownerId?.takeIf { it in knownOwnerIds },
+            landRight = landRight,
+            status = status,
+            certificateNumber = certificateNumber,
+            spptNumber = spptNumber,
+            acquisitionDate = acquisitionDate,
             createdAt = createdAt ?: now,
             updatedAt = updatedAt ?: now
         )

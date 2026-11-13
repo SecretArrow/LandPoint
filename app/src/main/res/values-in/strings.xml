@@ -636,4 +636,98 @@
     <string name="discard_body">Sudut dan foto yang belum disimpan akan hilang.</string>
     <string name="discard_keep">Lanjut mengedit</string>
     <string name="discard_throw">Buang</string>
+
+    <!-- ================================================================ -->
+    <!-- Pemilik, pembukuan registri, beranda dan laporan (skema v3)      -->
+    <!-- ================================================================ -->
+
+    <!-- Navigasi -->
+    <string name="nav_home">Beranda</string>
+    <string name="nav_owners">Pemilik</string>
+    <string name="nav_reports">Laporan</string>
+
+    <!-- Status bidang -->
+    <string name="land_status_active">Aktif</string>
+    <string name="land_status_disputed">Sengketa</string>
+    <string name="land_status_sold">Terjual</string>
+    <string name="land_status_transferred">Dialihkan</string>
+
+    <!-- Log audit -->
+    <string name="audit_action_created">Dibuat: \"%1$s\"</string>
+    <string name="audit_action_updated">Diubah: \"%1$s\"</string>
+    <string name="audit_action_deleted">Dihapus: \"%1$s\"</string>
+
+    <!-- Beranda -->
+    <string name="home_recent_lands">Bidang terakhir</string>
+    <string name="home_recent_activity">Aktivitas terakhir</string>
+    <string name="home_empty_title">Belum ada bidang tersimpan</string>
+    <string name="home_empty_body">Catat bidang pertama: berdiri di atasnya, simpan titiknya, lalu jalan keliling atau tandai sudut-sudutnya di peta. Semua data tetap di telepon ini.</string>
+    <string name="home_empty_add_owner">Tambahkan pemilik dulu</string>
+    <string name="home_stat_parcels">Bidang</string>
+    <string name="home_stat_owners">Pemilik</string>
+    <string name="home_stat_total_area">Total luas</string>
+    <string name="home_stat_disputed">Sengketa</string>
+    <string name="home_unassigned">Belum ada pemilik</string>
+
+    <!-- Daftar pemilik -->
+    <string name="owners_search_hint">Cari nama, NIK, alamat</string>
+    <string name="owners_sort_parcels">Paling banyak bidang</string>
+    <string name="owners_fab_add">Tambah pemilik</string>
+    <string name="owners_no_matches">Tidak ada pemilik yang cocok dengan pencarian itu.</string>
+    <string name="owners_empty_title">Belum ada pemilik tersimpan</string>
+    <string name="owners_empty_body">Pemilik menghubungkan bidang dengan orang: catat siapa memegang bidang mana, lengkap dengan foto KTP bila perlu — semuanya tersimpan di telepon ini.</string>
+    <plurals name="owners_parcel_count">
+        <item quantity="other">%1$d bidang</item>
+    </plurals>
+
+    <!-- Formulir pemilik -->
+    <string name="owner_new_title">Tambah pemilik</string>
+    <string name="owner_edit_title">Ubah pemilik</string>
+    <string name="owner_field_name">Nama lengkap *</string>
+    <string name="owner_field_nik">NIK</string>
+    <string name="owner_field_nik_hint">Opsional. 16 digit, hanya tersimpan di telepon ini.</string>
+    <string name="owner_field_address">Alamat</string>
+    <string name="owner_field_phone">Telepon</string>
+    <string name="owner_field_email">Surel</string>
+    <string name="owner_photo_description">Foto KTP</string>
+    <string name="owner_unsaved_title">Buang pemilik ini?</string>
+    <string name="owner_unsaved_body">Data yang sudah diketik belum tersimpan.</string>
+    <string name="owner_keep_editing">Lanjut mengedit</string>
+    <string name="owner_missing">Pemilik ini sudah tidak ada.</string>
+    <string name="owner_nik_shown">NIK %1$s</string>
+    <string name="owner_member_since">Tercatat sejak %1$s</string>
+    <string name="owner_no_lands">Belum ada bidang yang terhubung dengan pemilik ini.</string>
+    <string name="owner_delete_title">Hapus %1$s?</string>
+    <string name="owner_delete_body">Bidang-bidangnya tetap ada dan menjadi tanpa pemilik. Data pemilik dan foto KTP-nya dihapus dari telepon ini.</string>
+    <string name="error_owner_name_required">Nama diperlukan agar pemilik ini dikenali nanti</string>
+    <string name="error_owner_nik_digits">NIK hanya ditulis dengan angka</string>
+    <string name="error_owner_nik_length">NIK terdiri dari tepat 16 angka</string>
+    <string name="error_owner_phone">Tulis nomor telepon seperti cara menyalakannya, misalnya +62 812 345 678</string>
+    <string name="error_owner_email">Alamat surel itu kurang tanda @ atau nama domainnya</string>
+    <string name="warning_owner_nik_duplicate">Sudah ada pemilik lain dengan NIK ini. Periksa salah ketik, atau simpan sekali lagi untuk menyimpan keduanya.</string>
+
+    <!-- Kolom registri (editor bidang dan detail) -->
+    <string name="field_owner">Pemilik</string>
+    <string name="field_owner_none">Belum ada pemilik</string>
+    <string name="field_land_right">Hak atas tanah</string>
+    <string name="field_land_right_hint">mis. Hak Milik</string>
+    <string name="field_status">Status</string>
+    <string name="field_certificate_number">No. sertifikat</string>
+    <string name="field_sppt_number">No. SPPT</string>
+    <string name="field_acquisition_date">Tentukan tanggal perolehan</string>
+    <string name="field_acquisition_date_set">Diperoleh %1$s</string>
+    <string name="field_acquisition_date_clear">Hapus</string>
+    <string name="registry_card_title">Registri</string>
+    <string name="history_card_title">Riwayat</string>
+
+    <!-- Laporan -->
+    <string name="reports_summary_title">Isi telepon ini</string>
+    <string name="reports_section_export">Ekspor</string>
+    <string name="reports_export_pdf_one">Laporan PDF satu bidang</string>
+    <string name="reports_export_pdf_one_hint">Peta, sudut, luas, pemilik dan foto — satu bidang, satu halaman rapi</string>
+    <string name="reports_pick_land">Bidang yang mana?</string>
+    <string name="reports_no_lands">Belum ada yang bisa diekspor.</string>
+    <string name="reports_section_backup">Cadangan dan pemulihan</string>
+    <string name="reports_open_backup">Buka pengaturan cadangan</string>
+    <string name="msg_pdf_done">Laporan PDF \"%1$s\" tersimpan</string>
 </resources>

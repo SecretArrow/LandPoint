@@ -58,6 +58,13 @@ fun Land.toExportJson() = LandExportJson(
     areaSqm = areaSqm,
     geometryType = geometryType,
     geometryJson = geometryJson,
+    ownerId = ownerId,
+    ownerName = ownerName,
+    landRight = landRight,
+    status = status,
+    certificateNumber = certificateNumber,
+    spptNumber = spptNumber,
+    acquisitionDate = acquisitionDate,
     createdAt = createdAt,
     updatedAt = updatedAt
 )
@@ -78,5 +85,11 @@ fun LandExportJson.toRecord() = ImportRecord(
     updatedAt = updatedAt,
     geometryType = geometryType,
     geometryJson = geometryJson,
+    ownerId = ownerId,
+    landRight = landRight,
+    status = status,
+    certificateNumber = certificateNumber,
+    spptNumber = spptNumber,
+    acquisitionDate = acquisitionDate,
     photos = photos
 )

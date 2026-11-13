@@ -657,4 +657,99 @@
     <string name="discard_body">Unsaved corners and photos will be lost.</string>
     <string name="discard_keep">Keep editing</string>
     <string name="discard_throw">Discard</string>
+
+    <!-- ================================================================ -->
+    <!-- Owners, registry bookkeeping, home and reports (schema v3)       -->
+    <!-- ================================================================ -->
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_owners">Owners</string>
+    <string name="nav_reports">Reports</string>
+
+    <!-- Land status -->
+    <string name="land_status_active">Active</string>
+    <string name="land_status_disputed">Disputed</string>
+    <string name="land_status_sold">Sold</string>
+    <string name="land_status_transferred">Transferred</string>
+
+    <!-- Audit log -->
+    <string name="audit_action_created">Created \"%1$s\"</string>
+    <string name="audit_action_updated">Updated \"%1$s\"</string>
+    <string name="audit_action_deleted">Deleted \"%1$s\"</string>
+
+    <!-- Home -->
+    <string name="home_recent_lands">Recent parcels</string>
+    <string name="home_recent_activity">Recent activity</string>
+    <string name="home_empty_title">This phone holds no land yet</string>
+    <string name="home_empty_body">Record the first parcel: stand on it, save the point, then walk or mark its corners on the map. Everything stays on this phone.</string>
+    <string name="home_empty_add_owner">Add an owner first</string>
+    <string name="home_stat_parcels">Parcels</string>
+    <string name="home_stat_owners">Owners</string>
+    <string name="home_stat_total_area">Total area</string>
+    <string name="home_stat_disputed">Disputed</string>
+    <string name="home_unassigned">No owner assigned</string>
+
+    <!-- Owners list -->
+    <string name="owners_search_hint">Search name, NIK, address</string>
+    <string name="owners_sort_parcels">Most parcels first</string>
+    <string name="owners_fab_add">Add owner</string>
+    <string name="owners_no_matches">No owner matches that search.</string>
+    <string name="owners_empty_title">No owner saved yet</string>
+    <string name="owners_empty_body">Owners link parcels to people: record who holds which plot, with an optional identity-card photo, all kept on this phone.</string>
+    <plurals name="owners_parcel_count">
+        <item quantity="one">%1$d parcel</item>
+        <item quantity="other">%1$d parcels</item>
+    </plurals>
+
+    <!-- Owner form -->
+    <string name="owner_new_title">Add owner</string>
+    <string name="owner_edit_title">Edit owner</string>
+    <string name="owner_field_name">Full name *</string>
+    <string name="owner_field_nik">NIK (identity number)</string>
+    <string name="owner_field_nik_hint">Optional. 16 digits, stored only on this phone.</string>
+    <string name="owner_field_address">Address</string>
+    <string name="owner_field_phone">Phone</string>
+    <string name="owner_field_email">Email</string>
+    <string name="owner_photo_description">Identity-card photo</string>
+    <string name="owner_unsaved_title">Discard this owner?</string>
+    <string name="owner_unsaved_body">The details typed here have not been saved.</string>
+    <string name="owner_keep_editing">Keep editing</string>
+    <string name="owner_missing">This owner no longer exists.</string>
+    <string name="owner_nik_shown">NIK %1$s</string>
+    <string name="owner_member_since">Recorded since %1$s</string>
+    <string name="owner_no_lands">No parcel is linked to this owner yet.</string>
+    <string name="owner_delete_title">Delete %1$s?</string>
+    <string name="owner_delete_body">Their parcels stay and simply become unassigned. The owner details and identity-card photo are removed from this phone.</string>
+    <string name="error_owner_name_required">A name is needed to recognise this owner later</string>
+    <string name="error_owner_nik_digits">A NIK is written in digits only</string>
+    <string name="error_owner_nik_length">A NIK has exactly 16 digits</string>
+    <string name="error_owner_phone">Write the phone number as it is dialled, for example +62 812 345 678</string>
+    <string name="error_owner_email">That email address is missing an @ or a domain</string>
+    <string name="warning_owner_nik_duplicate">Another owner already has this NIK. Check for a typo, or save again to keep both.</string>
+
+    <!-- Registry fields (land editor and detail) -->
+    <string name="field_owner">Owner</string>
+    <string name="field_owner_none">No owner assigned</string>
+    <string name="field_land_right">Land right</string>
+    <string name="field_land_right_hint">e.g. Freehold (Hak Milik)</string>
+    <string name="field_status">Status</string>
+    <string name="field_certificate_number">Certificate no.</string>
+    <string name="field_sppt_number">SPPT no.</string>
+    <string name="field_acquisition_date">Set acquisition date</string>
+    <string name="field_acquisition_date_set">Acquired %1$s</string>
+    <string name="field_acquisition_date_clear">Clear</string>
+    <string name="registry_card_title">Registry</string>
+    <string name="history_card_title">History</string>
+
+    <!-- Reports -->
+    <string name="reports_summary_title">What this phone holds</string>
+    <string name="reports_section_export">Export</string>
+    <string name="reports_export_pdf_one">PDF report of one parcel</string>
+    <string name="reports_export_pdf_one_hint">Map, corners, area, owner and photos — one parcel, one tidy page</string>
+    <string name="reports_pick_land">Which parcel?</string>
+    <string name="reports_no_lands">Nothing to export yet.</string>
+    <string name="reports_section_backup">Backup and restore</string>
+    <string name="reports_open_backup">Open backup settings</string>
+    <string name="msg_pdf_done">PDF report of \"%1$s\" saved</string>
 </resources>

@@ -15,12 +15,23 @@ data class Land(
     val areaSqm: Double?,
     val geometryType: String = GeometryType.POINT,
     val geometryJson: String? = null,
+    val ownerId: String? = null,
+    val landRight: String? = null,
+    val status: String = "aktif",
+    val certificateNumber: String? = null,
+    val spptNumber: String? = null,
+    val acquisitionDate: Long? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val photos: List<Photo>,
     /** Filled in by the list layer when a current position is known. */
-    val distanceMeters: Double? = null
+    val distanceMeters: Double? = null,
+    /** Filled in by the list layer from the owners table; null when unassigned. */
+    val ownerName: String? = null
 ) {
+    /** Status as the typed enum, defaulting to ACTIVE for old rows. */
+    val landStatus: LandStatus get() = LandStatus.fromKey(status)
+
     /** Corners of the boundary, or empty when this land is a single point. */
     val boundary: List<com.landpoint.app.util.GeoPoint>
         get() = GeometryCodec.decode(geometryJson)
@@ -51,6 +62,12 @@ fun LandWithPhotos.toDomain(): Land = Land(
     areaSqm = land.areaSqm,
     geometryType = land.geometryType,
     geometryJson = land.geometryJson,
+    ownerId = land.ownerId,
+    landRight = land.landRight,
+    status = land.status,
+    certificateNumber = land.certificateNumber,
+    spptNumber = land.spptNumber,
+    acquisitionDate = land.acquisitionDate,
     createdAt = land.createdAt,
     updatedAt = land.updatedAt,
     photos = photos.map { it.toDomain() }
@@ -79,6 +96,12 @@ fun Land.toEntity(): LandEntity = LandEntity(
     areaSqm = areaSqm,
     geometryType = geometryType,
     geometryJson = geometryJson,
+    ownerId = ownerId,
+    landRight = landRight,
+    status = status,
+    certificateNumber = certificateNumber,
+    spptNumber = spptNumber,
+    acquisitionDate = acquisitionDate,
     createdAt = createdAt,
     updatedAt = updatedAt
 )

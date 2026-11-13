@@ -11,6 +11,8 @@ object CsvSupport {
     val HEADER = listOf(
         "uuid", "name", "description", "notes", "latitude", "longitude",
         "altitude", "accuracy", "address", "parcel_number", "area_sqm",
+        "owner_name", "land_right", "status", "certificate_number",
+        "sppt_number", "acquisition_date",
         "created_at", "updated_at"
     )
 
@@ -29,6 +31,12 @@ object CsvSupport {
                 land.address ?: "",
                 land.parcelNumber ?: "",
                 land.areaSqm?.toString() ?: "",
+                land.ownerName ?: "",
+                land.landRight ?: "",
+                land.status,
+                land.certificateNumber ?: "",
+                land.spptNumber ?: "",
+                land.acquisitionDate?.toString() ?: "",
                 land.createdAt.toString(),
                 land.updatedAt.toString()
             )
@@ -172,6 +180,11 @@ object CsvSupport {
         val iArea = idx("area_sqm", "area")
         val iCreated = idx("created_at", "created")
         val iUpdated = idx("updated_at", "updated")
+        val iRight = idx("land_right", "right")
+        val iStatus = idx("status")
+        val iCert = idx("certificate_number", "certificate")
+        val iSppt = idx("sppt_number", "sppt")
+        val iAcquired = idx("acquisition_date", "acquired")
 
         if (iLat < 0 || iLon < 0) return CsvReadResult(emptyList(), 0)
 
@@ -204,6 +217,11 @@ object CsvSupport {
                 address = row.at(iAddr),
                 parcelNumber = row.at(iParcel),
                 areaSqm = parseDecimal(row.at(iArea)),
+                landRight = row.at(iRight),
+                status = row.at(iStatus) ?: "aktif",
+                certificateNumber = row.at(iCert),
+                spptNumber = row.at(iSppt),
+                acquisitionDate = row.at(iAcquired)?.toLongOrNull(),
                 createdAt = row.at(iCreated)?.toLongOrNull(),
                 updatedAt = row.at(iUpdated)?.toLongOrNull()
             )
@@ -237,5 +255,12 @@ data class ImportRecord(
      */
     val geometryType: String = com.landpoint.app.data.model.GeometryType.POINT,
     val geometryJson: String? = null,
-    val photos: List<PhotoExportJson> = emptyList()
+    val photos: List<PhotoExportJson> = emptyList(),
+    /** Owner link and registry fields; only a backup restore fills the owner id. */
+    val ownerId: String? = null,
+    val landRight: String? = null,
+    val status: String = "aktif",
+    val certificateNumber: String? = null,
+    val spptNumber: String? = null,
+    val acquisitionDate: Long? = null
 )

@@ -56,6 +56,7 @@ class BackupManager(
     suspend fun backup(uri: Uri, passphrase: CharArray? = null): BackupResult = withContext(Dispatchers.IO) {
         runCatching {
             val lands = repository.getAllLands()
+            val owners = repository.getOwners()
             var photosWritten = 0
             var photosMissing = 0
 
@@ -73,11 +74,42 @@ class BackupManager(
                 ZipOutputStream(sink).use { zip ->
                     val entries = lands.map { land -> land.toBackupJson() }
 
+                    // Owner photos are written before the manifest entry opens:
+                    // a zip entry cannot be started inside another one.
+                    val ownerEntries = owners.map { owner ->
+                        val photoFileName = owner.photoPath?.let { path ->
+                            val name = path.substringAfterLast('/')
+                            val source = photoStore.openForBackup(path)
+                            if (source == null) {
+                                photosMissing++
+                                null
+                            } else {
+                                zip.putNextEntry(ZipEntry("$OWNER_DIR$name"))
+                                source.use { it.copyTo(zip) }
+                                zip.closeEntry()
+                                photosWritten++
+                                name
+                            }
+                        }
+                        OwnerExportJson(
+                            uuid = owner.id,
+                            fullName = owner.fullName,
+                            nik = owner.nik,
+                            address = owner.address,
+                            phone = owner.phone,
+                            email = owner.email,
+                            photoFileName = photoFileName,
+                            createdAt = owner.createdAt,
+                            updatedAt = owner.updatedAt
+                        )
+                    }
+
                     zip.putNextEntry(ZipEntry(MANIFEST))
                     val envelope = LandPointBackup(
                         version = CURRENT_BACKUP_VERSION,
                         exportedAt = System.currentTimeMillis(),
-                        lands = entries
+                        lands = entries,
+                        owners = ownerEntries
                     )
                     zip.write(json.encodeToString(envelope).toByteArray(Charsets.UTF_8))
                     zip.closeEntry()
@@ -139,6 +171,7 @@ class BackupManager(
         // that then failed — a wrong password, a damaged file — can be swept
         // up rather than left in storage with nothing pointing at them.
         val photoPaths = mutableMapOf<String, String>()
+        val ownerPhotoPaths = mutableMapOf<String, String>()
 
         runCatching {
             val input = context.contentResolver.openInputStream(uri)
@@ -190,6 +223,12 @@ class BackupManager(
                                     photoPaths[name.substringAfterLast('/')] = stored
                                 }
                             }
+
+                            isOwnerPhotoEntry(entry, name) -> {
+                                photoStore.persistStream(zip)?.let { stored ->
+                                    ownerPhotoPaths[name.substringAfterLast('/')] = stored
+                                }
+                            }
                         }
                         zip.closeEntry()
                         entry = zip.nextEntry
@@ -202,26 +241,50 @@ class BackupManager(
                 // manifest. Those images are already on disk and no record
                 // will ever claim them, so sweep before giving up.
                 discardUnusedPhotos(photoPaths, linked = 0)
+                discardUnusedOwnerPhotos(ownerPhotoPaths)
                 return@withContext RestoreResult(
                     error = "This file is not a LandPoint backup"
                 )
             }
 
+            // Owners first: lands validate their owner link against what a
+            // restore leaves behind, so the owners must exist before the
+            // parcels that reference them are written.
+            repository.upsertOwners(
+                backup.owners.map { owner ->
+                    com.landpoint.app.data.model.OwnerEntity(
+                        id = owner.uuid,
+                        fullName = owner.fullName,
+                        nik = owner.nik,
+                        address = owner.address,
+                        phone = owner.phone,
+                        email = owner.email,
+                        photoPath = owner.photoFileName?.let { ownerPhotoPaths[it] },
+                        createdAt = owner.createdAt,
+                        updatedAt = owner.updatedAt
+                    )
+                }
+            )
+
             // Photos extracted for lands that end up skipped as duplicates
             // would otherwise sit in storage forever with nothing pointing
             // at them, so the applied result decides what stays.
+            val existingOwnerIds = repository.getOwners().map { it.id }.toSet()
             val applied = importExport.applyRecords(
                 records = backup.lands.map { it.toRecord() },
                 strategy = strategy,
-                photoPaths = photoPaths
+                photoPaths = photoPaths,
+                knownOwnerIds = existingOwnerIds
             )
             discardUnusedPhotos(photoPaths, applied.photos)
+            discardUnusedOwnerPhotos(ownerPhotoPaths)
 
             RestoreResult(result = applied)
         }.getOrElse { failure ->
             // Nothing was applied, so every image unpacked above is an orphan
             // unless some earlier restore had already linked it.
             discardUnusedPhotos(photoPaths, linked = 0)
+            discardUnusedOwnerPhotos(ownerPhotoPaths)
             when (failure) {
                 is ArchiveCrypto.WrongPassphraseException ->
                     RestoreResult(needsPassphrase = true, wrongPassphrase = true)
@@ -235,6 +298,21 @@ class BackupManager(
         if (linked >= paths.size) return
         val kept = repository.allPhotoPaths()
         paths.values.filterNot { it in kept }.forEach { photoStore.delete(it) }
+    }
+
+    /** Same sweep for identity-card photos extracted for owners. */
+    private suspend fun discardUnusedOwnerPhotos(paths: Map<String, String>) {
+        if (paths.isEmpty()) return
+        val kept = repository.allOwnerPhotoPaths()
+        paths.values.filterNot { it in kept }.forEach { photoStore.delete(it) }
+    }
+
+    /** Owner photos live in their own folder, under the same rules. */
+    private fun isOwnerPhotoEntry(entry: ZipEntry, name: String): Boolean {
+        if (entry.isDirectory) return false
+        if (!name.startsWith(OWNER_DIR)) return false
+        val leaf = name.removePrefix(OWNER_DIR)
+        return leaf.isNotEmpty() && !leaf.contains('/') && !leaf.contains('\\') && leaf != ".."
     }
 
     /**
@@ -255,6 +333,7 @@ class BackupManager(
     companion object {
         private const val MANIFEST = "landpoint.json"
         private const val PHOTO_DIR = "photos/"
+        private const val OWNER_DIR = "owners/"
 
         /**
          * A password-protected archive is not a zip any more and should not claim

@@ -398,6 +398,16 @@ fun LandEditScreen(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                RegistrySection(
+                    state = state,
+                    onOwnerPicked = viewModel::setOwner,
+                    onLandRightChange = viewModel::setLandRight,
+                    onStatusPicked = viewModel::setStatus,
+                    onCertificateChange = viewModel::setCertificateNumber,
+                    onSpptChange = viewModel::setSpptNumber,
+                    onAcquisitionDate = viewModel::setAcquisitionDate
+                )
             }
 
             // Coordinates stay high in the form on purpose: the capture button is

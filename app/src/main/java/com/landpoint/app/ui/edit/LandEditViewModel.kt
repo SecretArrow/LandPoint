@@ -92,6 +92,15 @@ data class LandEditUiState(
     val description: String = "",
     val notes: String = "",
     val parcelNumber: String = "",
+    /** Registry bookkeeping, all optional. */
+    val ownerId: String? = null,
+    val landRight: String = "",
+    val status: String = com.landpoint.app.data.model.LandStatus.ACTIVE.key,
+    val certificateNumber: String = "",
+    val spptNumber: String = "",
+    val acquisitionDate: Long? = null,
+    /** Every owner, for the picker. */
+    val owners: List<com.landpoint.app.data.model.Owner> = emptyList(),
     val latitude: String = "",
     val longitude: String = "",
     val altitude: Double? = null,
@@ -344,6 +353,11 @@ class LandEditViewModel(
         viewModelScope.launch {
             settings.cornerHintDone.collect { cornerHintDone = it }
         }
+        viewModelScope.launch {
+            repository.observeOwners().collect { owners ->
+                _uiState.update { it.copy(owners = owners) }
+            }
+        }
         if (landId != null) load(landId) else captureLocation()
     }
 
@@ -360,6 +374,12 @@ class LandEditViewModel(
                         description = land.description,
                         notes = land.notes,
                         parcelNumber = land.parcelNumber ?: "",
+                        ownerId = land.ownerId,
+                        landRight = land.landRight ?: "",
+                        status = land.status,
+                        certificateNumber = land.certificateNumber ?: "",
+                        spptNumber = land.spptNumber ?: "",
+                        acquisitionDate = land.acquisitionDate,
                         latitude = land.latitude.toString(),
                         longitude = land.longitude.toString(),
                         altitude = land.altitude,
@@ -1290,6 +1310,18 @@ class LandEditViewModel(
     fun setNotes(value: String) = _uiState.update { it.copy(notes = value) }
     fun setParcelNumber(value: String) = _uiState.update { it.copy(parcelNumber = value) }
 
+    fun setOwner(ownerId: String?) = _uiState.update { it.copy(ownerId = ownerId) }
+
+    fun setLandRight(value: String) = _uiState.update { it.copy(landRight = value) }
+
+    fun setStatus(status: com.landpoint.app.data.model.LandStatus) = _uiState.update { it.copy(status = status.key) }
+
+    fun setCertificateNumber(value: String) = _uiState.update { it.copy(certificateNumber = value) }
+
+    fun setSpptNumber(value: String) = _uiState.update { it.copy(spptNumber = value) }
+
+    fun setAcquisitionDate(millis: Long?) = _uiState.update { it.copy(acquisitionDate = millis) }
+
     fun setLatitude(value: String) = _uiState.update { it.copy(latitude = value, coordinateError = null) }
 
     fun setLongitude(value: String) = _uiState.update { it.copy(longitude = value, coordinateError = null) }
@@ -1478,6 +1510,12 @@ class LandEditViewModel(
                 accuracy = state.accuracy,
                 address = state.address,
                 parcelNumber = state.parcelNumber.trim().ifBlank { null },
+                ownerId = state.ownerId,
+                landRight = state.landRight.trim().ifBlank { null },
+                status = state.status,
+                certificateNumber = state.certificateNumber.trim().ifBlank { null },
+                spptNumber = state.spptNumber.trim().ifBlank { null },
+                acquisitionDate = state.acquisitionDate,
                 geometryType = if (polygon) GeometryType.POLYGON else GeometryType.POINT,
                 geometryJson = if (polygon) GeometryCodec.encodeCorners(corners) else null,
                 areaSqm = if (polygon) PolygonMath.areaSqm(boundary) else null,

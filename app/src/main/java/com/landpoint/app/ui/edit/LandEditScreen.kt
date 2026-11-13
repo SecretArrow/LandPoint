@@ -330,6 +330,7 @@ fun LandEditScreen(
             onMoveCorner = viewModel::moveDraftCorner,
             onSelectCorner = viewModel::selectDraftCorner,
             onDeleteSelected = viewModel::removeSelectedDraftCorner,
+            onDeleteCorner = viewModel::removeDraftCorner,
             onCornerPhoto = { draftId -> pickerPhotoId = draftId },
             onUndo = viewModel::undoDraftCorner,
             onClear = viewModel::clearDraftCorners,

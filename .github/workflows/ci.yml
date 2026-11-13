@@ -227,27 +227,17 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
-      # The AVD itself is cached between runs; only its first creation costs
-      # time. Snapshots are deliberately NOT taken (-no-snapshot): a cold boot
-      # per run is slower but reproducible, and a stale snapshot is the one
-      # flake source that cannot be reproduced on demand.
-      - name: Cache AVD
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-30-x86_64-${{ github.sha }}
-          restore-keys: |
-            avd-30-x86_64-
-
+      # The AVD is deliberately NOT cached between runs. Caching it looked
+      # faster on paper, but a run that ends with the emulator killed hard
+      # saves a half-written AVD into the cache, and the next run then times
+      # out waiting for an emulator that cannot boot — a poisoned-cache flake
+      # that cannot be reproduced on demand. Creating the AVD takes about 90
+      # seconds; booting a known-good one every time is the cheaper trade.
       - name: Run Maestro e2e tests
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 30
           arch: x86_64
-          force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -memory 3072
           disable-animations: true
           script: |

@@ -22,33 +22,33 @@ tags:
     visible: 'Kebun Percobaan'
     timeout: 20000
 
-- tapOn: '^Owners$'
+- tapOn: '^(Owners|Pemilik)$'
 - extendedWaitUntil:
-    visible: '^Add owner$'
+    visible: '^(Add owner|Tambah pemilik)$'
     timeout: 15000
 
 # The empty state is part of the contract: it explains what the tab is for.
 - extendedWaitUntil:
-    visible: 'No owner saved yet'
+    visible: 'No owner saved yet|Belum ada pemilik tersimpan'
     timeout: 10000
 
-- tapOn: '^Add owner$'
+- tapOn: '^(Add owner|Tambah pemilik)$'
 - extendedWaitUntil:
-    visible: '^Full name \*$'
+    visible: '^(Full name \*|Nama lengkap \*)$'
     timeout: 10000
 
 # Save with nothing typed: the form explains itself rather than just failing.
-- tapOn: '^Save$'
+- tapOn: '^(Save|Simpan)$'
 - extendedWaitUntil:
-    visible: 'A name is needed'
+    visible: 'A name is needed|Nama diperlukan agar pemilik ini dikenali nanti'
     timeout: 10000
 
-- tapOn: '^Full name \*$'
+- tapOn: '^(Full name \*|Nama lengkap \*)$'
 - inputText: 'Budi Santoso'
 - tapOn: 'NIK'
 - inputText: '3201234567890001'
 - hideKeyboard
-- tapOn: '^Save$'
+- tapOn: '^(Save|Simpan)$'
 
 - extendedWaitUntil:
     visible: 'Budi Santoso'

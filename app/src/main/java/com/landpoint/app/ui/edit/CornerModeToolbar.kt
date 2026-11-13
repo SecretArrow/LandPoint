@@ -74,7 +74,6 @@ fun CornerModeToolbar(currentMode: CornerPickerMode, onModeChange: (CornerPicker
                         shape = SegmentedButtonDefaults.itemShape(index, modes.size),
                         modifier = Modifier.heightIn(min = 48.dp),
                         icon = { Icon(mode.icon, contentDescription = null) },
-                        selectedIcon = { Icon(mode.icon, contentDescription = null) },
                         label = {
                             Text(
                                 stringResource(mode.labelRes),

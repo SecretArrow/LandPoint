@@ -232,6 +232,9 @@
     <string name="corner_mode_hint_move">Seret gagang sudut untuk memindahkannya</string>
     <string name="corner_mode_hint_insert">Ketuk + pada sisi untuk menyisipkan sudut di situ</string>
     <string name="corner_mode_hint_delete">Ketuk sudut untuk menghapusnya</string>
+    <!-- Pesan lokal, dipicu oleh mode pemilih sudut itu sendiri. -->
+    <string name="corner_picker_need_three">Butuh minimal 3 sudut</string>
+    <string name="corner_picker_insert_coming_soon">Mode Sisip segera hadir</string>
 
     <!-- Pratinjau batas bidang -->
     <string name="shape_title">Batas bidang</string>

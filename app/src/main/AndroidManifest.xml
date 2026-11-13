@@ -3,6 +3,13 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!--
+      For attaching photos to a land record: the app launches an
+      ACTION_IMAGE_CAPTURE intent, and most stock camera apps expect the caller
+      to hold CAMERA at runtime. The camera hardware feature itself is declared
+      as not-required below so devices without a camera still install.
+    -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 

@@ -156,6 +156,14 @@ fun CornerPickerScreen(
 
     var dialog by remember { mutableStateOf<PickerDialog?>(null) }
 
+    // The four ways the next touch can land: add, move, insert or delete a
+    // corner. The toolbar below the scale bar names which one is active and a
+    // one-line hint says how. ADD is the default because the picker opens to
+    // draw a boundary, and every other mode presupposes corners already drawn.
+    // Wiring MOVE, INSERT and DELETE to actually change behaviour is a
+    // follow-up; the state and the toolbar land first so the affordance reads.
+    var currentMode by remember { mutableStateOf(CornerPickerMode.ADD) }
+
     // A finger is a fixed size on the glass and a wildly varying distance on the
     // ground, so how far a mark may reach for a side can only be answered at the
     // zoom it was placed at. Taps get this from the map view; the buttons here
@@ -334,6 +342,15 @@ fun CornerPickerScreen(
                     onLoadNeighbours()
                     dialog = PickerDialog.Neighbours
                 }
+            )
+
+            // Above the controls card, floating on its own surface: the mode
+            // the next touch will land in. Shown in both the idle and the
+            // mark-hanging state, because switching mode is something the user
+            // decides independently of whether a mark is hanging.
+            CornerModeToolbar(
+                currentMode = currentMode,
+                onModeChange = { currentMode = it }
             )
 
             if (mark == null) {

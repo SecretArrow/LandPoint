@@ -44,10 +44,7 @@ data class MapUiState(
     val isLoading: Boolean = true
 )
 
-class MapViewModel(
-    repository: LandRepository,
-    tracker: LocationTracker
-) : ViewModel() {
+class MapViewModel(repository: LandRepository, tracker: LocationTracker) : ViewModel() {
 
     /**
      * Live tracking while the map is on screen, and nothing while it is not.

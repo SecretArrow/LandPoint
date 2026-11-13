@@ -7,16 +7,15 @@ import android.location.LocationManager
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -219,18 +218,12 @@ class LocationProviderTest {
     }
 
     /** Robolectric needs a Location built the way the platform delivers one. */
-    private fun location(
-        provider: String,
-        latitude: Double,
-        longitude: Double,
-        accuracy: Float
-    ): Location =
-        Location(provider).apply {
-            setLatitude(latitude)
-            setLongitude(longitude)
-            setAccuracy(accuracy)
-            setTime(System.currentTimeMillis())
-        }
+    private fun location(provider: String, latitude: Double, longitude: Double, accuracy: Float): Location = Location(provider).apply {
+        setLatitude(latitude)
+        setLongitude(longitude)
+        setAccuracy(accuracy)
+        setTime(System.currentTimeMillis())
+    }
 
     /** Reverse geocoding is optional on many devices and must degrade quietly. */
     @Test

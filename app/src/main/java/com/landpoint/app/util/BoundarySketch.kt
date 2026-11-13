@@ -14,10 +14,7 @@ data class SketchPoint(val x: Float, val y: Float)
  * [metresPerPoint] is the scale that came out of fitting it, which is what lets
  * the drawing carry a scale bar instead of being a picture of no particular size.
  */
-data class Sketch(
-    val outline: List<SketchPoint>,
-    val metresPerPoint: Double
-)
+data class Sketch(val outline: List<SketchPoint>, val metresPerPoint: Double)
 
 /**
  * Fits a boundary into a box on paper.
@@ -43,12 +40,7 @@ object BoundarySketch {
      * out long and thin: a sketch that quietly stretched a parcel to fill its box
      * would be worse than no sketch, because it would look like the parcel.
      */
-    fun of(
-        points: List<GeoPoint>,
-        boxWidthPt: Float,
-        boxHeightPt: Float,
-        paddingPt: Float = 6f
-    ): Sketch? {
+    fun of(points: List<GeoPoint>, boxWidthPt: Float, boxHeightPt: Float, paddingPt: Float = 6f): Sketch? {
         if (points.size < 3) return null
         val usableW = boxWidthPt - paddingPt * 2
         val usableH = boxHeightPt - paddingPt * 2

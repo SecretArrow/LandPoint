@@ -1,0 +1,64 @@
+# Detekt configuration for LandPoint.
+#
+# buildUponDefaultConfig = true (see app/build.gradle.kts), so anything not
+# listed here keeps its default behaviour. Only rules that cannot be satisfied
+# by this codebase are turned off, each with the reason inline. Everything else
+# fires, and pre-existing findings are frozen in baseline.xml so the gate only
+# ever blocks NEW issues.
+
+build:
+  maxIssues: 0
+
+complexity:
+  # Size metrics punish declarative Compose UI code (long composable bodies,
+  # many small composables per file) without catching defects; the code is
+  # reviewed by humans and gated by tests and lint instead.
+  LargeClass:
+    active: false
+  LongMethod:
+    active: false
+  LongParameterList:
+    active: false
+  TooManyFunctions:
+    active: false
+  CyclomaticComplexMethod:
+    active: false
+  # Deep nesting is still worth catching: it hides control flow.
+  NestedBlockDepth:
+    threshold: 6
+
+exceptions:
+  # Catching broadly is the intended pattern around file I/O and platform APIs
+  # where a dozen different exceptions all mean the same "it failed"; each
+  # catch site handles the failure rather than rethrowing.
+  TooGenericExceptionCaught:
+    active: false
+  ThrowingExceptionsWithoutMessageOrCause:
+    active: false
+
+naming:
+  FunctionNaming:
+    # @Composable functions are PascalCase by Jetpack convention.
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    # Compose design-token constants (Color, Typography) are camelCase by
+    # convention.
+    constantPattern: '[A-Za-z][A-Za-z0-9]*'
+
+style:
+  MagicNumber:
+    # Geometry, formatting and layout constants are self-evident in context and
+    # naming every one would obscure the formulas they belong to.
+    active: false
+  MaxLineLength:
+    maxLineLength: 140
+    # Long URLs in comments (license texts, documentation) cannot be wrapped.
+    excludePackageStatements: true
+    excludeImportStatements: true
+  ReturnCount:
+    max: 8
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
+  # Kept strict on purpose: no wildcard imports.
+  WildcardImport:
+    active: true

@@ -20,12 +20,7 @@ private const val METRES_PER_DEGREE = 111_320.0
  * Does not cross the antimeridian. A boundary that did would be a plot spanning half
  * the planet, and the download picker cannot produce one.
  */
-data class GeoBounds(
-    val south: Double,
-    val west: Double,
-    val north: Double,
-    val east: Double
-) {
+data class GeoBounds(val south: Double, val west: Double, val north: Double, val east: Double) {
     init {
         require(south <= north) { "south $south is above north $north" }
         require(west <= east) { "west $west is east of east $east" }

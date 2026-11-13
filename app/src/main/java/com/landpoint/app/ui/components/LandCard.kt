@@ -149,8 +149,11 @@ fun LandCard(
                 }
 
                 Text(
-                    if (dms) GeoUtils.formatDMS(land.latitude, land.longitude)
-                    else GeoUtils.formatDecimal(land.latitude, land.longitude),
+                    if (dms) {
+                        GeoUtils.formatDMS(land.latitude, land.longitude)
+                    } else {
+                        GeoUtils.formatDecimal(land.latitude, land.longitude)
+                    },
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontFamily = FontFamily.Monospace
                     ),
@@ -191,11 +194,7 @@ fun LandCard(
 
 /** One icon-and-value pair in the card's metadata row. */
 @Composable
-private fun MetaItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    text: String,
-    iconDescription: String? = null
-) {
+private fun MetaItem(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, iconDescription: String? = null) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(3.dp)

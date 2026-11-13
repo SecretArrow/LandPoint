@@ -61,19 +61,10 @@ data class SettingsUiState(
 data class RestorePrompt(val uri: Uri, val wrong: Boolean = false)
 
 /** The four in-memory flows, grouped to stay inside combine()'s five-flow limit. */
-private data class TaskState(
-    val busy: Boolean,
-    val message: String?,
-    val strategy: DuplicateStrategy,
-    val restorePrompt: RestorePrompt?
-)
+private data class TaskState(val busy: Boolean, val message: String?, val strategy: DuplicateStrategy, val restorePrompt: RestorePrompt?)
 
 /** Offline map state, read off the filesystem rather than from a Flow. */
-private data class OfflineState(
-    val archives: List<OfflineArchive> = emptyList(),
-    val archiveBytes: Long = 0,
-    val downloadedAreas: Int = 0
-)
+private data class OfflineState(val archives: List<OfflineArchive> = emptyList(), val archiveBytes: Long = 0, val downloadedAreas: Int = 0)
 
 class SettingsViewModel(
     private val settings: SettingsRepository,
@@ -103,7 +94,9 @@ class SettingsViewModel(
 
     val uiState: StateFlow<SettingsUiState> = combine(
         combine(
-            settings.language, settings.darkMode, settings.dynamicColor
+            settings.language,
+            settings.darkMode,
+            settings.dynamicColor
         ) { lang, dark, dynamic -> Triple(lang, dark, dynamic) },
         combine(settings.coordFormat, settings.privacy) { format, privacy -> format to privacy },
         combine(settings.units, settings.areaUnit) { units, area -> units to area },
@@ -201,8 +194,11 @@ class SettingsViewModel(
     fun exportJson(uri: Uri) = runTask {
         val lands = repository.getAllLands()
         val result = importExport.exportJson(uri, lands)
-        if (result.isFailure) strings.get(R.string.msg_backup_failed, result.error ?: "")
-        else strings.plural(R.plurals.msg_backed_up, result.count)
+        if (result.isFailure) {
+            strings.get(R.string.msg_backup_failed, result.error ?: "")
+        } else {
+            strings.plural(R.plurals.msg_backed_up, result.count)
+        }
     }
 
     /**
@@ -255,37 +251,51 @@ class SettingsViewModel(
             summarise(applied.imported, applied.skipped, applied.replaced, applied.invalid) +
                 if (applied.photos > 0) {
                     strings.plural(R.plurals.msg_restore_photos, applied.photos)
-                } else ""
+                } else {
+                    ""
+                }
         }
     }
 
     fun exportCsv(uri: Uri) = runTask {
         val lands = repository.getAllLands()
         val result = importExport.exportCsv(uri, lands)
-        if (result.isFailure) strings.get(R.string.msg_csv_failed, result.error ?: "")
-        else strings.plural(R.plurals.msg_exported, result.count)
+        if (result.isFailure) {
+            strings.get(R.string.msg_csv_failed, result.error ?: "")
+        } else {
+            strings.plural(R.plurals.msg_exported, result.count)
+        }
     }
 
     fun exportGpx(uri: Uri) = runTask {
         val lands = repository.getAllLands()
         val result = importExport.exportGpx(uri, lands)
-        if (result.isFailure) strings.get(R.string.msg_geo_export_failed, result.error ?: "")
-        else strings.plural(R.plurals.msg_exported, result.count)
+        if (result.isFailure) {
+            strings.get(R.string.msg_geo_export_failed, result.error ?: "")
+        } else {
+            strings.plural(R.plurals.msg_exported, result.count)
+        }
     }
 
     fun exportKml(uri: Uri) = runTask {
         val lands = repository.getAllLands()
         val result = importExport.exportKml(uri, lands)
-        if (result.isFailure) strings.get(R.string.msg_geo_export_failed, result.error ?: "")
-        else strings.plural(R.plurals.msg_exported, result.count)
+        if (result.isFailure) {
+            strings.get(R.string.msg_geo_export_failed, result.error ?: "")
+        } else {
+            strings.plural(R.plurals.msg_exported, result.count)
+        }
     }
 
     fun exportPdfReport(uri: Uri) = runTask {
         val lands = repository.getAllLands()
         val dms = uiState.value.coordFormat == SettingsRepository.CoordFormat.DMS
         val result = pdfExporter.exportReport(uri, lands, dms, uiState.value.areaUnit)
-        if (result.isFailure) strings.get(R.string.msg_pdf_failed, result.error ?: "")
-        else strings.plural(R.plurals.msg_report_saved, result.count)
+        if (result.isFailure) {
+            strings.get(R.string.msg_pdf_failed, result.error ?: "")
+        } else {
+            strings.plural(R.plurals.msg_report_saved, result.count)
+        }
     }
 
     fun importJson(uri: Uri) = importFrom(uri)
@@ -355,8 +365,11 @@ class SettingsViewModel(
     fun deleteOfflineMap(name: String) = runTask {
         val deleted = archiveStore.deleteArchive(name)
         refreshOfflineMaps()
-        if (deleted) strings.get(R.string.msg_offline_map_removed, name)
-        else strings.get(R.string.msg_offline_map_failed, name)
+        if (deleted) {
+            strings.get(R.string.msg_offline_map_removed, name)
+        } else {
+            strings.get(R.string.msg_offline_map_failed, name)
+        }
     }
 
     /** Why an archive was refused, in one clause that finishes the sentence. */
@@ -386,13 +399,12 @@ class SettingsViewModel(
         }
     }
 
-    private fun summarise(imported: Int, skipped: Int, replaced: Int, invalid: Int): String =
-        buildString {
-            append(strings.get(R.string.msg_import_imported, imported))
-            if (replaced > 0) append(strings.get(R.string.msg_import_replaced, replaced))
-            if (skipped > 0) append(strings.plural(R.plurals.msg_import_skipped, skipped))
-            if (invalid > 0) append(strings.plural(R.plurals.msg_import_invalid, invalid))
-        }
+    private fun summarise(imported: Int, skipped: Int, replaced: Int, invalid: Int): String = buildString {
+        append(strings.get(R.string.msg_import_imported, imported))
+        if (replaced > 0) append(strings.get(R.string.msg_import_replaced, replaced))
+        if (skipped > 0) append(strings.plural(R.plurals.msg_import_skipped, skipped))
+        if (invalid > 0) append(strings.plural(R.plurals.msg_import_invalid, invalid))
+    }
 
     /** [block] returns the line to show, or null when there is nothing to say. */
     private fun runTask(block: suspend () -> String?) {

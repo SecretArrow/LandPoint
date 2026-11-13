@@ -114,18 +114,10 @@ private const val DEGENERATE_SPAN = 1e-7
  *   enforced by a layer filter, because a filter would stop the shape being *drawn*
  *   as well as tapped.
  */
-data class MapShape(
-    val id: String,
-    val points: List<GeoPoint>,
-    val clickable: Boolean = false
-)
+data class MapShape(val id: String, val points: List<GeoPoint>, val clickable: Boolean = false)
 
 /** A place marker — one recorded land, at its stored position. */
-data class MapPin(
-    val id: String,
-    val latitude: Double,
-    val longitude: Double
-)
+data class MapPin(val id: String, val latitude: Double, val longitude: Double)
 
 /**
  * One numbered vertex of a boundary.
@@ -134,13 +126,7 @@ data class MapPin(
  * the corners *is* the outline: a user working out why an edge crosses itself has to
  * be able to read the sequence straight off the map.
  */
-data class MapCorner(
-    val id: String,
-    val latitude: Double,
-    val longitude: Double,
-    val label: String,
-    val selected: Boolean = false
-)
+data class MapCorner(val id: String, val latitude: Double, val longitude: Double, val label: String, val selected: Boolean = false)
 
 /**
  * Where the device thinks it is, and how sure it is.
@@ -150,11 +136,7 @@ data class MapCorner(
  * which case only the dot is drawn — an invented radius would be a claim about
  * precision the receiver never made.
  */
-data class MapFix(
-    val latitude: Double,
-    val longitude: Double,
-    val accuracyM: Double? = null
-)
+data class MapFix(val latitude: Double, val longitude: Double, val accuracyM: Double? = null)
 
 /**
  * What the user tapped.
@@ -313,11 +295,7 @@ class LandMapController internal constructor(
      * @return false when there is nothing to frame yet, which is how a caller knows
      *   to try again once data arrives.
      */
-    fun frame(
-        points: List<GeoPoint>,
-        singlePointZoom: Double = PARCEL_ZOOM,
-        animated: Boolean = false
-    ): Boolean {
+    fun frame(points: List<GeoPoint>, singlePointZoom: Double = PARCEL_ZOOM, animated: Boolean = false): Boolean {
         val target = targetFor(points, singlePointZoom) ?: return false
         onMap { map -> target.applyTo(map, animated, fitPaddingPx) }
         return true
@@ -403,7 +381,10 @@ class LandMapController internal constructor(
         val left = projection.fromScreenLocation(PointF((width - SCALE_BASELINE_PX) / 2f, y))
         val right = projection.fromScreenLocation(PointF((width + SCALE_BASELINE_PX) / 2f, y))
         val metres = GeoUtils.distance(
-            left.latitude, left.longitude, right.latitude, right.longitude
+            left.latitude,
+            left.longitude,
+            right.latitude,
+            right.longitude
         )
         if (metres > 0.0 && metres.isFinite()) metresPerPixel = metres / SCALE_BASELINE_PX
     }
@@ -684,11 +665,19 @@ fun LandMap(
             map = map,
             slopPx = slopPx,
             hitRadiusPx = tapRadiusPx,
-            onMove = if (!dragsCorners) null else { id, latitude, longitude ->
-                currentMove.value?.invoke(id, latitude, longitude)
+            onMove = if (!dragsCorners) {
+                null
+            } else {
+                { id, latitude, longitude ->
+                    currentMove.value?.invoke(id, latitude, longitude)
+                }
             },
-            onMovePending = if (!dragsPending) null else { latitude, longitude ->
-                currentMovePending.value?.invoke(latitude, longitude)
+            onMovePending = if (!dragsPending) {
+                null
+            } else {
+                { latitude, longitude ->
+                    currentMovePending.value?.invoke(latitude, longitude)
+                }
             },
             onSelect = { id -> currentTap.value?.invoke(MapTap.Corner(id)) }
         )
@@ -738,12 +727,7 @@ private fun MapUnavailable(modifier: Modifier, contentDescription: String?) {
  * corner gets added — and a screen with nothing to do with bare ground simply passes
  * a handler that ignores [MapTap.Ground].
  */
-private fun MapLibreMap.dispatchTap(
-    point: LatLng,
-    radiusPx: Float,
-    toleranceM: Double,
-    onTap: (MapTap) -> Unit
-) {
+private fun MapLibreMap.dispatchTap(point: LatLng, radiusPx: Float, toleranceM: Double, onTap: (MapTap) -> Unit) {
     val screen = projection.toScreenLocation(point)
     val box = hitBox(screen.x, screen.y, radiusPx)
 
@@ -754,16 +738,14 @@ private fun MapLibreMap.dispatchTap(
     onTap(MapTap.Ground(GeoPoint(point.latitude, point.longitude), toleranceM))
 }
 
-private fun hitBox(x: Float, y: Float, radiusPx: Float) =
-    RectF(x - radiusPx, y - radiusPx, x + radiusPx, y + radiusPx)
+private fun hitBox(x: Float, y: Float, radiusPx: Float) = RectF(x - radiusPx, y - radiusPx, x + radiusPx, y + radiusPx)
 
 private fun MapLibreMap.idAt(box: RectF, layers: Array<String>): String? =
     queryRenderedFeatures(box, *layers).firstNotNullOfOrNull { it.overlayId() }
 
-private fun MapLibreMap.clickableShapeAt(box: RectF): String? =
-    queryRenderedFeatures(box, *LandMapOverlay.SHAPE_LAYERS)
-        .firstOrNull { it.stringOrNull(LandMapOverlay.PROP_CLICKABLE) == LandMapOverlay.TRUE }
-        ?.overlayId()
+private fun MapLibreMap.clickableShapeAt(box: RectF): String? = queryRenderedFeatures(box, *LandMapOverlay.SHAPE_LAYERS)
+    .firstOrNull { it.stringOrNull(LandMapOverlay.PROP_CLICKABLE) == LandMapOverlay.TRUE }
+    ?.overlayId()
 
 private fun Feature.overlayId(): String? = stringOrNull(LandMapOverlay.PROP_ID)
 
@@ -774,14 +756,16 @@ private fun Feature.overlayId(): String? = stringOrNull(LandMapOverlay.PROP_ID)
  * layer this app did not add — a label from the basemap caught by a wide hit box —
  * has none of these.
  */
-private fun Feature.stringOrNull(key: String): String? =
-    if (hasNonNullValueForProperty(key)) getStringProperty(key) else null
+private fun Feature.stringOrNull(key: String): String? = if (hasNonNullValueForProperty(key)) getStringProperty(key) else null
 
 private fun MapView.describeForAccessibility(description: String?) {
     contentDescription = description
     importantForAccessibility =
-        if (description == null) View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        else View.IMPORTANT_FOR_ACCESSIBILITY_YES
+        if (description == null) {
+            View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        } else {
+            View.IMPORTANT_FOR_ACCESSIBILITY_YES
+        }
 }
 
 /**

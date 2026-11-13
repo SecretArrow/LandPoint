@@ -81,7 +81,7 @@ class CsvSupportTest {
     @Test
     fun `toRecords tolerates alternative column names`() {
         val csv = "lat,lng,title\n" +
-                "-6.91,107.61,Warung"
+            "-6.91,107.61,Warung"
         val records = CsvSupport.toRecords(CsvSupport.parse(csv))
         assertEquals(1, records.size)
         assertEquals("Warung", records[0].name)
@@ -92,10 +92,10 @@ class CsvSupportTest {
     @Test
     fun `toRecords ignores rows without coordinates`() {
         val csv = "name,latitude,longitude\n" +
-                "Valid,-6.9,107.6\n" +
-                "No coords,,\n" +
-                "Bad lat,abc,107.6\n" +
-                "Out of range,95,107.6"
+            "Valid,-6.9,107.6\n" +
+            "No coords,,\n" +
+            "Bad lat,abc,107.6\n" +
+            "Out of range,95,107.6"
         val records = CsvSupport.toRecords(CsvSupport.parse(csv))
         assertEquals(1, records.size)
         assertEquals("Valid", records[0].name)
@@ -127,7 +127,7 @@ class CsvSupportTest {
     @Test
     fun `a semicolon file with decimal commas imports`() {
         val csv = "name;latitude;longitude;area_sqm\n" +
-                "Kebun;-6,914744;107,609810;2500,5"
+            "Kebun;-6,914744;107,609810;2500,5"
         val record = CsvSupport.toRecords(CsvSupport.parse(csv)).single()
 
         assertEquals("Kebun", record.name)
@@ -183,9 +183,9 @@ class CsvSupportTest {
     @Test
     fun `read counts rows it could not understand`() {
         val csv = "name,latitude,longitude\n" +
-                "Valid,-6.9,107.6\n" +
-                "Bad lat,abc,107.6\n" +
-                "Out of range,95,107.6"
+            "Valid,-6.9,107.6\n" +
+            "Bad lat,abc,107.6\n" +
+            "Out of range,95,107.6"
         val result = CsvSupport.read(CsvSupport.parse(csv))
 
         assertEquals(1, result.records.size)

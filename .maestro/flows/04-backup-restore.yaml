@@ -1,0 +1,105 @@
+# E2E 4 — a password-protected backup survives a wipe and comes back whole.
+#
+# Covers: the Settings backup flow with a passphrase, the system save sheet,
+# deleting every record, and restoring the backup from the saved file.
+name: 04-backup-restore
+tags: [core]
+---
+- stopApp
+- launchApp
+
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 20000
+
+# --- Make an encrypted backup -------------------------------------------
+- tapOn: '^Settings$'
+- extendedWaitUntil:
+    visible: '^Backup and export$'
+    timeout: 15000
+
+- scrollUntilVisible:
+    element:
+      text: '^Full backup \(with photos\)$'
+    direction: DOWN
+    timeout: 20000
+- tapOn: '^Full backup \(with photos\)$'
+
+# Passphrase dialog: type the passphrase twice, then confirm.
+- tapOn: '^Password$'
+- inputText: 'rahasia123'
+- tapOn: '^Repeat password$'
+- inputText: 'rahasia123'
+- hideKeyboard
+- tapOn: '^Use a password$'
+
+# System save sheet with a pre-filled file name.
+- extendedWaitUntil:
+    visible: '^SAVE$'
+    timeout: 15000
+- tapOn: '^SAVE$'
+
+- extendedWaitUntil:
+    visible: 'Backup saved'
+    timeout: 20000
+
+# --- Wipe every record ---------------------------------------------------
+- tapOn: '^Lands$'
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 15000
+
+- longPressOn: 'Kebun Percobaan'
+- extendedWaitUntil:
+    visible: '^Select all shown$'
+    timeout: 10000
+- tapOn: '^Select all shown$'
+- tapOn: '^Delete selected$'
+- extendedWaitUntil:
+    visible: '^Delete$'
+    timeout: 10000
+- tapOn: '^Delete$'
+
+# The list is empty again.
+- extendedWaitUntil:
+    visible: '^No land saved yet$'
+    timeout: 15000
+
+# --- Restore the backup --------------------------------------------------
+- tapOn: '^Settings$'
+- extendedWaitUntil:
+    visible: '^Restore and import$'
+    timeout: 15000
+
+- scrollUntilVisible:
+    element:
+      text: '^Restore full backup$'
+    direction: DOWN
+    timeout: 20000
+- tapOn: '^Restore full backup$'
+
+# The system file picker opens where the last file was saved (Downloads);
+# the backup's name carries a timestamp, so match it as a regex.
+- extendedWaitUntil:
+    visible: '^landpoint-backup-.*\.lpbk$'
+    timeout: 20000
+- tapOn: '^landpoint-backup-.*\.lpbk$'
+
+# The backup is locked: give it the passphrase.
+- extendedWaitUntil:
+    visible: '^This backup is locked$'
+    timeout: 15000
+- tapOn: '^Password$'
+- inputText: 'rahasia123'
+- hideKeyboard
+- tapOn: '^Open$'
+
+# The summary snackbar ("Imported 1") confirms the restore ran.
+- extendedWaitUntil:
+    visible: 'Imported'
+    timeout: 20000
+
+- tapOn: '^Lands$'
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 15000

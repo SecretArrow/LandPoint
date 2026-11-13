@@ -53,8 +53,10 @@ object WalkTrack {
         val candidate = GeoPoint(sample.latitude, sample.longitude)
         if (previous == null) return true
         val moved = GeoUtils.distance(
-            previous.latitude, previous.longitude,
-            candidate.latitude, candidate.longitude
+            previous.latitude,
+            previous.longitude,
+            candidate.latitude,
+            candidate.longitude
         )
         return moved >= maxOf(MIN_STEP_M, accuracy)
     }
@@ -138,11 +140,7 @@ object WalkTrack {
      * curvature error is far below the GPS noise this is meant to filter, and
      * the flat form has no singularity when start and end coincide.
      */
-    internal fun perpendicularDistanceM(
-        point: GeoPoint,
-        start: GeoPoint,
-        end: GeoPoint
-    ): Double {
+    internal fun perpendicularDistanceM(point: GeoPoint, start: GeoPoint, end: GeoPoint): Double {
         val metresPerDegreeLat = 111_320.0
         val metresPerDegreeLon = metresPerDegreeLat *
             kotlin.math.cos(Math.toRadians(start.latitude)).coerceAtLeast(1e-6)
@@ -163,8 +161,4 @@ object WalkTrack {
     }
 }
 
-data class WalkProgress(
-    val points: Int,
-    val walkedM: Double,
-    val areaSqm: Double?
-)
+data class WalkProgress(val points: Int, val walkedM: Double, val areaSqm: Double?)

@@ -4,11 +4,10 @@ import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.lifecycle.viewmodel.CreationExtras
-import androidx.lifecycle.createSavedStateHandle
 import com.landpoint.app.R
 import com.landpoint.app.data.LandRepository
 import com.landpoint.app.data.PhotoStamper
@@ -34,14 +33,14 @@ import com.landpoint.app.util.MarkSource
 import com.landpoint.app.util.PendingMark
 import com.landpoint.app.util.Placement
 import com.landpoint.app.util.PolygonMath
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
-import java.util.UUID
 
 /**
  * A photo in the editor. [persistedId] is null while the land has never been
@@ -71,10 +70,7 @@ data class EditPhoto(
  * marker is matched back to its corner by id and never by position in the list.
  * Session-only — the saved boundary is a plain list of [GeoPoint].
  */
-data class DraftCorner(
-    val id: String,
-    val point: GeoPoint
-)
+data class DraftCorner(val id: String, val point: GeoPoint)
 
 /**
  * Another saved land offered as a source of corners.
@@ -224,9 +220,14 @@ data class LandEditUiState(
 
     /** True when the form holds anything worth confirming before throwing away. */
     val isDirty: Boolean
-        get() = name.isNotBlank() || description.isNotBlank() || notes.isNotBlank() ||
-            parcelNumber.isNotBlank() || boundary.isNotEmpty() || photos.isNotEmpty() ||
-            draftBoundary.isNotEmpty() || pendingMark != null
+        get() = name.isNotBlank() ||
+            description.isNotBlank() ||
+            notes.isNotBlank() ||
+            parcelNumber.isNotBlank() ||
+            boundary.isNotEmpty() ||
+            photos.isNotEmpty() ||
+            draftBoundary.isNotEmpty() ||
+            pendingMark != null
 
     /** Position in the drawn ring of the selected corner, counting from 1. */
     val selectedCornerNumber: Int?
@@ -379,8 +380,7 @@ class LandEditViewModel(
     }
 
     /** Photos proving the given corner, oldest first. */
-    fun photosForCorner(cornerId: String): List<EditPhoto> =
-        _uiState.value.photos.filter { it.cornerId == cornerId }
+    fun photosForCorner(cornerId: String): List<EditPhoto> = _uiState.value.photos.filter { it.cornerId == cornerId }
 
     /** Which corner the next camera/gallery pick will belong to (null = general). */
     fun requestPhotoForCorner(cornerId: String?) {
@@ -485,11 +485,14 @@ class LandEditViewModel(
 
     fun undoBoundaryPoint() {
         _uiState.update {
-            if (it.boundary.isEmpty()) it
-            else it.copy(
-                boundary = it.boundary.dropLast(1),
-                cornerIds = it.cornerIds.dropLast(1)
-            )
+            if (it.boundary.isEmpty()) {
+                it
+            } else {
+                it.copy(
+                    boundary = it.boundary.dropLast(1),
+                    cornerIds = it.cornerIds.dropLast(1)
+                )
+            }
         }
     }
 
@@ -679,8 +682,12 @@ class LandEditViewModel(
                 cornerIds = it.cornerIds.toMutableList().also { ids ->
                     if (index in ids.indices) ids.removeAt(index)
                 },
-                photos = if (doomed == null) it.photos else it.photos.map { photo ->
-                    if (photo.cornerId == doomed) photo.copy(cornerId = null) else photo
+                photos = if (doomed == null) {
+                    it.photos
+                } else {
+                    it.photos.map { photo ->
+                        if (photo.cornerId == doomed) photo.copy(cornerId = null) else photo
+                    }
                 }
             )
         }
@@ -763,8 +770,7 @@ class LandEditViewModel(
             ?: BoundaryEdits.parseLatLon(state.latitude, state.longitude)
     }
 
-    private fun boundaryEditsBlocked(): Boolean =
-        _uiState.value.let { it.isWalking || it.isCapturingCorner }
+    private fun boundaryEditsBlocked(): Boolean = _uiState.value.let { it.isWalking || it.isCapturingCorner }
 
     // ---- Map corner picker ------------------------------------------------
     //
@@ -1179,13 +1185,19 @@ class LandEditViewModel(
      */
     fun moveDraftCorner(id: String, latitude: Double, longitude: Double) {
         _uiState.update { state ->
-            if (state.draftBoundary.none { it.id == id }) state
-            else state.copy(
-                draftBoundary = state.draftBoundary.map { corner ->
-                    if (corner.id == id) corner.copy(point = GeoPoint(latitude, longitude))
-                    else corner
-                }
-            )
+            if (state.draftBoundary.none { it.id == id }) {
+                state
+            } else {
+                state.copy(
+                    draftBoundary = state.draftBoundary.map { corner ->
+                        if (corner.id == id) {
+                            corner.copy(point = GeoPoint(latitude, longitude))
+                        } else {
+                            corner
+                        }
+                    }
+                )
+            }
         }
     }
 
@@ -1202,11 +1214,14 @@ class LandEditViewModel(
 
     fun removeDraftCorner(id: String) {
         _uiState.update { state ->
-            if (state.draftBoundary.none { it.id == id }) state
-            else state.copy(
-                draftBoundary = state.draftBoundary.filterNot { it.id == id },
-                selectedCornerId = state.selectedCornerId?.takeIf { it != id }
-            )
+            if (state.draftBoundary.none { it.id == id }) {
+                state
+            } else {
+                state.copy(
+                    draftBoundary = state.draftBoundary.filterNot { it.id == id },
+                    selectedCornerId = state.selectedCornerId?.takeIf { it != id }
+                )
+            }
         }
     }
 
@@ -1217,8 +1232,9 @@ class LandEditViewModel(
 
     fun undoDraftCorner() {
         _uiState.update {
-            if (it.draftBoundary.isEmpty()) it
-            else {
+            if (it.draftBoundary.isEmpty()) {
+                it
+            } else {
                 val dropped = it.draftBoundary.last().id
                 it.copy(
                     draftBoundary = it.draftBoundary.dropLast(1),
@@ -1247,8 +1263,7 @@ class LandEditViewModel(
      * land in CSV and JSON exports. An Indonesian locale would write "-6,914744"
      * and the value would fail to parse on save.
      */
-    private fun formatCoordinate(value: Double): String =
-        "%.6f".format(java.util.Locale.US, value)
+    private fun formatCoordinate(value: Double): String = "%.6f".format(java.util.Locale.US, value)
 
     fun lookupAddress() {
         val lat = _uiState.value.latitude.toDoubleOrNull() ?: return
@@ -1262,7 +1277,9 @@ class LandEditViewModel(
                     isLoadingAddress = false,
                     message = if (address == null) {
                         strings.get(R.string.msg_no_address)
-                    } else it.message
+                    } else {
+                        it.message
+                    }
                 )
             }
         }
@@ -1273,11 +1290,9 @@ class LandEditViewModel(
     fun setNotes(value: String) = _uiState.update { it.copy(notes = value) }
     fun setParcelNumber(value: String) = _uiState.update { it.copy(parcelNumber = value) }
 
-    fun setLatitude(value: String) =
-        _uiState.update { it.copy(latitude = value, coordinateError = null) }
+    fun setLatitude(value: String) = _uiState.update { it.copy(latitude = value, coordinateError = null) }
 
-    fun setLongitude(value: String) =
-        _uiState.update { it.copy(longitude = value, coordinateError = null) }
+    fun setLongitude(value: String) = _uiState.update { it.copy(longitude = value, coordinateError = null) }
 
     fun consumeMessage() = _uiState.update { it.copy(message = null) }
 

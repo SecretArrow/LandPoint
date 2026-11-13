@@ -53,11 +53,7 @@ data class PhotoExportJson(
 )
 
 @Serializable
-data class LandPointBackup(
-    val version: Int = CURRENT_BACKUP_VERSION,
-    val exportedAt: Long,
-    val lands: List<LandExportJson>
-)
+data class LandPointBackup(val version: Int = CURRENT_BACKUP_VERSION, val exportedAt: Long, val lands: List<LandExportJson>)
 
 /** 1 = lands only. 2 = adds boundary geometry and photos. */
 const val CURRENT_BACKUP_VERSION = 2

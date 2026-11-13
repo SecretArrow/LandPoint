@@ -103,13 +103,7 @@ object OfflineBudget {
      * would be quoted at a thousand times its real cost, and refused for being over a
      * limit it was never going to reach.
      */
-    fun plan(
-        bounds: GeoBounds,
-        minZoom: Int,
-        maxZoom: Int,
-        tileMaxZoom: Int,
-        vector: Boolean
-    ): OfflinePlan {
+    fun plan(bounds: GeoBounds, minZoom: Int, maxZoom: Int, tileMaxZoom: Int, vector: Boolean): OfflinePlan {
         val effectiveMax = minOf(maxZoom, tileMaxZoom)
         val tiles = tileCount(bounds, minZoom, effectiveMax)
         return OfflinePlan(
@@ -129,11 +123,7 @@ object OfflineBudget {
      * @param freeBytes space left on the volume the offline database lives on.
      * @param existingRegions regions already saved.
      */
-    fun verdict(
-        plan: OfflinePlan,
-        freeBytes: Long,
-        existingRegions: Int
-    ): BudgetVerdict = when {
+    fun verdict(plan: OfflinePlan, freeBytes: Long, existingRegions: Int): BudgetVerdict = when {
         plan.bounds.isDegenerate -> BudgetVerdict.NothingSelected
         plan.tiles <= 0L -> BudgetVerdict.NothingSelected
         plan.areaSquareKm > MAX_AREA_SQUARE_KM ->
@@ -145,8 +135,7 @@ object OfflineBudget {
         else -> BudgetVerdict.Allowed
     }
 
-    private fun tileX(longitude: Double, scale: Int): Int =
-        clamp(floor((longitude + 180.0) / 360.0 * scale).toInt(), scale)
+    private fun tileX(longitude: Double, scale: Int): Int = clamp(floor((longitude + 180.0) / 360.0 * scale).toInt(), scale)
 
     private fun tileY(latitude: Double, scale: Int): Int {
         // Web Mercator, clamped to the poles the projection actually reaches. Past

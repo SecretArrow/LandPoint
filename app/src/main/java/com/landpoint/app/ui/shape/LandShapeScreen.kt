@@ -91,8 +91,11 @@ fun LandShapeScreen(
         val coordinates = stringResource(
             R.string.boundary_corner_number,
             index + 1,
-            if (state.dms) GeoUtils.formatDMS(point.latitude, point.longitude)
-            else GeoUtils.formatDecimal(point.latitude, point.longitude)
+            if (state.dms) {
+                GeoUtils.formatDMS(point.latitude, point.longitude)
+            } else {
+                GeoUtils.formatDecimal(point.latitude, point.longitude)
+            }
         )
         // Tapping a corner here is someone asking what this corner is; how well
         // it was known is part of the answer.
@@ -117,8 +120,11 @@ fun LandShapeScreen(
             val area = state.areaSqm?.let {
                 stringResource(state.areaUnit.valueRes, AreaFormat.value(it, state.areaUnit))
             }
-            if (area == null) stringResource(R.string.shape_a11y_map_no_area, corners)
-            else stringResource(R.string.shape_a11y_map, corners, area)
+            if (area == null) {
+                stringResource(R.string.shape_a11y_map_no_area, corners)
+            } else {
+                stringResource(R.string.shape_a11y_map, corners, area)
+            }
         }
     }
 
@@ -284,11 +290,7 @@ fun LandShapeScreen(
  * differently-shaped chips saying different sorts of thing would read as chrome.
  */
 @Composable
-private fun MapNotice(
-    text: String,
-    modifier: Modifier = Modifier,
-    monospace: Boolean = false
-) {
+private fun MapNotice(text: String, modifier: Modifier = Modifier, monospace: Boolean = false) {
     Surface(
         color = MaterialTheme.colorScheme.surface.copy(alpha = MAP_NOTICE_ALPHA),
         shape = MaterialTheme.shapes.small,

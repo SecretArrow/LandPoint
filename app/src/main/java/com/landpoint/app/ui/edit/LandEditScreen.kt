@@ -14,17 +14,18 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
@@ -37,8 +38,8 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Map
-import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -75,11 +76,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.landpoint.app.R
@@ -151,15 +151,21 @@ fun LandEditScreen(
     ) { success ->
         val file = pendingCapture
         pendingCapture = null
-        if (success && file != null) viewModel.onPhotoCaptured(file)
-        else viewModel.requestPhotoForCorner(null)
+        if (success && file != null) {
+            viewModel.onPhotoCaptured(file)
+        } else {
+            viewModel.requestPhotoForCorner(null)
+        }
     }
 
     val pickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
-        if (uri != null) viewModel.onPhotoPicked(uri)
-        else viewModel.requestPhotoForCorner(null)
+        if (uri != null) {
+            viewModel.onPhotoPicked(uri)
+        } else {
+            viewModel.requestPhotoForCorner(null)
+        }
     }
 
     // Any back/exit while the form holds corners, photos or text asks first.
@@ -177,7 +183,10 @@ fun LandEditScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscard = false; onCancel() }) {
+                TextButton(onClick = {
+                    showDiscard = false
+                    onCancel()
+                }) {
                     Text(stringResource(R.string.discard_throw))
                 }
             }
@@ -509,10 +518,7 @@ fun LandEditScreen(
  * [title] is null for sections that already draw their own heading.
  */
 @Composable
-private fun FormSection(
-    title: String? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
+private fun FormSection(title: String? = null, content: @Composable ColumnScope.() -> Unit) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
@@ -581,8 +587,11 @@ private fun CoordinateSection(
                 }
                 Text(
                     "  " + stringResource(
-                        if (state.isCapturing) R.string.edit_getting_fix
-                        else R.string.edit_use_my_location
+                        if (state.isCapturing) {
+                            R.string.edit_getting_fix
+                        } else {
+                            R.string.edit_use_my_location
+                        }
                     ),
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -592,8 +601,11 @@ private fun CoordinateSection(
                 OutlinedButton(onClick = onLookupAddress, enabled = !state.isLoadingAddress) {
                     Text(
                         stringResource(
-                            if (state.isLoadingAddress) R.string.edit_looking_up
-                            else R.string.edit_find_address
+                            if (state.isLoadingAddress) {
+                                R.string.edit_looking_up
+                            } else {
+                                R.string.edit_find_address
+                            }
                         )
                     )
                 }
@@ -739,8 +751,11 @@ private fun BoundarySection(
                 }
                 Text(
                     "  " + stringResource(
-                        if (state.isCapturingCorner) R.string.boundary_capturing
-                        else R.string.boundary_add
+                        if (state.isCapturingCorner) {
+                            R.string.boundary_capturing
+                        } else {
+                            R.string.boundary_add
+                        }
                     ),
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -909,8 +924,7 @@ private fun BoundarySection(
  * side: the figure it is being checked against was printed to the centimetre, and
  * a flat "20 m" says nothing about whether the 20.35 went in correctly.
  */
-private fun formatSideLength(metres: Double): String =
-    "%.1f".format(java.util.Locale.getDefault(), metres)
+private fun formatSideLength(metres: Double): String = "%.1f".format(java.util.Locale.getDefault(), metres)
 
 /**
  * Three digits, the way a bearing is written on a survey letter, so 45° reads as
@@ -919,8 +933,7 @@ private fun formatSideLength(metres: Double): String =
  * Taken modulo 360 after rounding, because 359.7 rounds to a 360 that no compass
  * shows.
  */
-private fun formatBearing(degrees: Double): String =
-    "%03d".format(degrees.roundToInt() % 360)
+private fun formatBearing(degrees: Double): String = "%03d".format(degrees.roundToInt() % 360)
 
 /**
  * The corners in the order they are joined up, each one editable.
@@ -1022,8 +1035,11 @@ private fun CornerList(
                     }
                 }
                 val cornerId = cornerIds.getOrNull(index)
-                val photoCount = if (cornerId == null) 0
-                    else photos.count { it.cornerId == cornerId }
+                val photoCount = if (cornerId == null) {
+                    0
+                } else {
+                    photos.count { it.cornerId == cornerId }
+                }
                 CornerAction(
                     icon = Icons.Outlined.PhotoCamera,
                     description = stringResource(R.string.corner_photo) + " ${index + 1}" +
@@ -1050,8 +1066,11 @@ private fun CornerList(
         if (boundary.size > collapsedCount) {
             TextButton(onClick = { expanded = !expanded }) {
                 Text(
-                    if (expanded) stringResource(R.string.boundary_corners_collapse)
-                    else stringResource(R.string.boundary_corners_show_all, boundary.size)
+                    if (expanded) {
+                        stringResource(R.string.boundary_corners_collapse)
+                    } else {
+                        stringResource(R.string.boundary_corners_show_all, boundary.size)
+                    }
                 )
             }
         }
@@ -1115,13 +1134,7 @@ private fun CornerAction(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CornerPhotoSheet(
-    number: Int,
-    photoCount: Int,
-    onDismiss: () -> Unit,
-    onTake: () -> Unit,
-    onPick: () -> Unit
-) {
+private fun CornerPhotoSheet(number: Int, photoCount: Int, onDismiss: () -> Unit, onTake: () -> Unit, onPick: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -1131,9 +1144,15 @@ private fun CornerPhotoSheet(
         ) {
             Text(
                 stringResource(R.string.corner_sheet_title, number) +
-                    if (photoCount > 0) " · " + pluralStringResource(
-                        R.plurals.corner_photo_count, photoCount, photoCount
-                    ) else "",
+                    if (photoCount > 0) {
+                        " · " + pluralStringResource(
+                            R.plurals.corner_photo_count,
+                            photoCount,
+                            photoCount
+                        )
+                    } else {
+                        ""
+                    },
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
             )
@@ -1154,13 +1173,7 @@ private fun CornerPhotoSheet(
 /** What tapping a corner offers: the actions that do not belong on a 48dp row. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CornerActionsSheet(
-    number: Int,
-    onDismiss: () -> Unit,
-    onEdit: () -> Unit,
-    onPhoto: () -> Unit,
-    onRemove: () -> Unit
-) {
+private fun CornerActionsSheet(number: Int, onDismiss: () -> Unit, onEdit: () -> Unit, onPhoto: () -> Unit, onRemove: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -1201,8 +1214,11 @@ private fun SheetAction(
     destructive: Boolean = false
 ) {
     val colour =
-        if (destructive) MaterialTheme.colorScheme.error
-        else MaterialTheme.colorScheme.onSurface
+        if (destructive) {
+            MaterialTheme.colorScheme.error
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1233,11 +1249,7 @@ private fun SheetAction(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun NeighbourSheet(
-    state: LandEditUiState,
-    onDismiss: () -> Unit,
-    onTake: (String, Set<Int>) -> Unit
-) {
+internal fun NeighbourSheet(state: LandEditUiState, onDismiss: () -> Unit, onTake: (String, Set<Int>) -> Unit) {
     var chosenId by remember { mutableStateOf<String?>(null) }
     var ticked by remember { mutableStateOf(emptySet<Int>()) }
     val chosen = state.neighbours.find { it.id == chosenId }
@@ -1252,8 +1264,11 @@ internal fun NeighbourSheet(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                if (chosen == null) stringResource(R.string.neighbour_title)
-                else stringResource(R.string.neighbour_pick_corners, chosen.name),
+                if (chosen == null) {
+                    stringResource(R.string.neighbour_title)
+                } else {
+                    stringResource(R.string.neighbour_pick_corners, chosen.name)
+                },
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
             )
@@ -1367,11 +1382,7 @@ internal fun NeighbourSheet(
 
 /** One candidate land: what it is called, how far off it is, how big its ring. */
 @Composable
-private fun NeighbourRow(
-    neighbour: NeighbourLand,
-    imperial: Boolean,
-    onClick: () -> Unit
-) {
+private fun NeighbourRow(neighbour: NeighbourLand, imperial: Boolean, onClick: () -> Unit) {
     val corners = pluralStringResource(
         R.plurals.boundary_corners,
         neighbour.corners.size,
@@ -1407,13 +1418,7 @@ private fun NeighbourRow(
 
 /** One of that land's corners, ticked or not. */
 @Composable
-private fun NeighbourCornerRow(
-    number: Int,
-    point: GeoPoint,
-    dms: Boolean,
-    checked: Boolean,
-    onToggle: () -> Unit
-) {
+private fun NeighbourCornerRow(number: Int, point: GeoPoint, dms: Boolean, checked: Boolean, onToggle: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1430,8 +1435,11 @@ private fun NeighbourCornerRow(
         val coordinates = stringResource(
             R.string.boundary_corner_number,
             number,
-            if (dms) GeoUtils.formatDMS(point.latitude, point.longitude)
-            else GeoUtils.formatDecimal(point.latitude, point.longitude)
+            if (dms) {
+                GeoUtils.formatDMS(point.latitude, point.longitude)
+            } else {
+                GeoUtils.formatDecimal(point.latitude, point.longitude)
+            }
         )
         val accuracy = point.accuracyM?.let {
             stringResource(R.string.boundary_corner_accuracy, GeoUtils.formatAccuracy(it))
@@ -1482,7 +1490,10 @@ internal fun CornerCoordinateDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = latitude,
-                    onValueChange = { latitude = it; error = null },
+                    onValueChange = {
+                        latitude = it
+                        error = null
+                    },
                     label = { Text(stringResource(R.string.corner_dialog_lat)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -1490,7 +1501,10 @@ internal fun CornerCoordinateDialog(
                 )
                 OutlinedTextField(
                     value = longitude,
-                    onValueChange = { longitude = it; error = null },
+                    onValueChange = {
+                        longitude = it
+                        error = null
+                    },
                     label = { Text(stringResource(R.string.corner_dialog_lon)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -1561,7 +1575,10 @@ internal fun CornerBearingDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = bearing,
-                    onValueChange = { bearing = it; error = null },
+                    onValueChange = {
+                        bearing = it
+                        error = null
+                    },
                     label = { Text(stringResource(R.string.corner_dialog_bearing)) },
                     singleLine = true,
                     // Text rather than Decimal: the degree, minute and second
@@ -1575,7 +1592,10 @@ internal fun CornerBearingDialog(
                 )
                 OutlinedTextField(
                     value = distance,
-                    onValueChange = { distance = it; error = null },
+                    onValueChange = {
+                        distance = it
+                        error = null
+                    },
                     label = { Text(stringResource(R.string.corner_dialog_distance)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -1627,11 +1647,7 @@ internal fun CornerBearingDialog(
  * reach the corners should not be nudged away from doing so.
  */
 @Composable
-private fun WalkControls(
-    state: LandEditUiState,
-    onStartWalk: () -> Unit,
-    onStopWalk: () -> Unit
-) {
+private fun WalkControls(state: LandEditUiState, onStartWalk: () -> Unit, onStopWalk: () -> Unit) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1762,11 +1778,7 @@ private fun PhotoSection(
 
 /** Asks for the one sentence that makes a photo mean something later. */
 @Composable
-private fun CaptionDialog(
-    initial: String,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
+private fun CaptionDialog(initial: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var text by remember { mutableStateOf(initial) }
 
     AlertDialog(

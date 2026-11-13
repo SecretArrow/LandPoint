@@ -61,6 +61,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -72,7 +73,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.landpoint.app.R
 import com.landpoint.app.data.model.Land
 import com.landpoint.app.data.model.Photo
-import androidx.compose.ui.res.pluralStringResource
 import com.landpoint.app.ui.components.LandMap
 import com.landpoint.app.ui.components.LandShapeThumb
 import com.landpoint.app.ui.components.MapAttribution
@@ -87,10 +87,10 @@ import com.landpoint.app.util.GeoPoint
 import com.landpoint.app.util.GeoUtils
 import com.landpoint.app.util.PolygonMath
 import com.landpoint.app.util.ShareUtils
-import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -255,7 +255,6 @@ private fun DetailContent(
     val dateFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -277,8 +276,11 @@ private fun DetailContent(
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             stringResource(
-                                if (land.isPolygon) R.string.label_shape_polygon
-                                else R.string.label_shape_point
+                                if (land.isPolygon) {
+                                    R.string.label_shape_polygon
+                                } else {
+                                    R.string.label_shape_point
+                                }
                             ).uppercase(),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -307,8 +309,11 @@ private fun DetailContent(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    if (state.dms) GeoUtils.formatDMS(land.latitude, land.longitude)
-                    else GeoUtils.formatDecimal(land.latitude, land.longitude),
+                    if (state.dms) {
+                        GeoUtils.formatDMS(land.latitude, land.longitude)
+                    } else {
+                        GeoUtils.formatDecimal(land.latitude, land.longitude)
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = FontFamily.Monospace,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -442,11 +447,7 @@ private fun DetailContent(
  * with one gesture — a tap that opens the real map, where panning belongs.
  */
 @Composable
-private fun BoundaryMapCard(
-    land: Land,
-    boundary: List<GeoPoint>,
-    onOpen: () -> Unit
-) {
+private fun BoundaryMapCard(land: Land, boundary: List<GeoPoint>, onOpen: () -> Unit) {
     val boundaryColour = MaterialTheme.colorScheme.primary.toArgb()
     val openLabel = stringResource(R.string.shape_open_preview)
     // Said by the transparent button in front of the map, not by the map: one
@@ -560,8 +561,11 @@ private fun CornerCoordinates(
             val coordinates = stringResource(
                 R.string.boundary_corner_number,
                 index + 1,
-                if (dms) GeoUtils.formatDMS(point.latitude, point.longitude)
-                else GeoUtils.formatDecimal(point.latitude, point.longitude)
+                if (dms) {
+                    GeoUtils.formatDMS(point.latitude, point.longitude)
+                } else {
+                    GeoUtils.formatDecimal(point.latitude, point.longitude)
+                }
             )
             // How well the corner was known when it was taken. On a record being
             // read back — or shown to someone else — that is part of what the
@@ -571,8 +575,11 @@ private fun CornerCoordinates(
             }
             // Proof, where there is any: how many photos this corner holds.
             val cornerId = corners.getOrNull(index)?.id
-            val photoCount = if (cornerId == null) 0
-                else photos.count { it.cornerId == cornerId }
+            val photoCount = if (cornerId == null) {
+                0
+            } else {
+                photos.count { it.cornerId == cornerId }
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -588,7 +595,9 @@ private fun CornerCoordinates(
                     Icon(
                         Icons.Outlined.PhotoCamera,
                         contentDescription = pluralStringResource(
-                            R.plurals.corner_photo_count, photoCount, photoCount
+                            R.plurals.corner_photo_count,
+                            photoCount,
+                            photoCount
                         ),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
@@ -599,8 +608,11 @@ private fun CornerCoordinates(
         if (boundary.size > collapsedCount) {
             TextButton(onClick = { expanded = !expanded }) {
                 Text(
-                    if (expanded) stringResource(R.string.boundary_corners_collapse)
-                    else stringResource(R.string.boundary_corners_show_all, boundary.size)
+                    if (expanded) {
+                        stringResource(R.string.boundary_corners_collapse)
+                    } else {
+                        stringResource(R.string.boundary_corners_show_all, boundary.size)
+                    }
                 )
             }
         }

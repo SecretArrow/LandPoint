@@ -124,7 +124,7 @@ class GeoUtilsTest {
             val text = GeoUtils.formatDMS(degrees, degrees)
             assertTrue("60 seconds is not a reading: $text", !text.contains("60.0\""))
             assertTrue("60 minutes is not a reading: $text", !text.contains("°60'"))
-            degrees += 0.000137   // ~0.5 arc-seconds, deliberately not a round step
+            degrees += 0.000137 // ~0.5 arc-seconds, deliberately not a round step
         }
     }
 

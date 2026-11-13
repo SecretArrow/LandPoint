@@ -71,10 +71,14 @@ class LandDetailViewModel(
         val (areaUnit, msg) = areaAndMessage
         val distance = if (land != null && location != null) {
             GeoUtils.distance(location.first, location.second, land.latitude, land.longitude)
-        } else null
+        } else {
+            null
+        }
         val bearing = if (land != null && location != null) {
             GeoUtils.bearing(location.first, location.second, land.latitude, land.longitude)
-        } else null
+        } else {
+            null
+        }
 
         LandDetailUiState(
             land = land,

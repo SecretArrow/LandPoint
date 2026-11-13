@@ -18,14 +18,14 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -52,11 +52,7 @@ private const val PREVIEW_SAVE_KEY = "preview_save"
  * editor, the compass, the corner picker — is work with an end, so it takes the
  * whole screen and the bar steps out of the way.
  */
-private enum class Tab(
-    val route: String,
-    val icon: ImageVector,
-    @StringRes val labelRes: Int
-) {
+private enum class Tab(val route: String, val icon: ImageVector, @StringRes val labelRes: Int) {
     LANDS(Routes.LIST, Icons.Outlined.Landscape, R.string.nav_lands),
     MAP(Routes.MAP, Icons.Default.Map, R.string.nav_map),
     SETTINGS(Routes.SETTINGS, Icons.Default.Settings, R.string.nav_settings)
@@ -135,6 +131,7 @@ fun LandPointNavHost() {
         }
     }
 }
+
 /**
  * Tab switching, the standard way.
  *
@@ -151,11 +148,7 @@ private fun NavHostController.switchTab(route: String) {
 }
 
 @Composable
-private fun LandPointGraph(
-    navController: NavHostController,
-    listBesideDetail: Boolean,
-    modifier: Modifier = Modifier
-) {
+private fun LandPointGraph(navController: NavHostController, listBesideDetail: Boolean, modifier: Modifier = Modifier) {
     val landIdArg = listOf(navArgument(Routes.ARG_LAND_ID) { type = NavType.StringType })
 
     NavHost(
@@ -163,7 +156,6 @@ private fun LandPointGraph(
         startDestination = Routes.LIST,
         modifier = modifier
     ) {
-
         composable(Routes.LIST) {
             // Same list either way; on a wide window it keeps the chosen record
             // beside it instead of handing the screen over to it. A record opened

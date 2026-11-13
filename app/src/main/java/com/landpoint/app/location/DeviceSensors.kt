@@ -128,8 +128,7 @@ class DeviceSensors(private val context: Context) {
         awaitClose { manager.unregisterListener(listener) }
     }
 
-    private fun sensorOrNull(type: Int): Sensor? =
-        runCatching { sensorManager?.getDefaultSensor(type) }.getOrNull()
+    private fun sensorOrNull(type: Int): Sensor? = runCatching { sensorManager?.getDefaultSensor(type) }.getOrNull()
 
     /**
      * How far the screen is turned from its natural orientation.
@@ -149,8 +148,7 @@ class DeviceSensors(private val context: Context) {
 
     /** The pre-API-30 route, and still the only one an application context has. */
     @Suppress("DEPRECATION")
-    private fun defaultDisplayRotation(): Int? =
-        context.getSystemService(WindowManager::class.java)?.defaultDisplay?.rotation
+    private fun defaultDisplayRotation(): Int? = context.getSystemService(WindowManager::class.java)?.defaultDisplay?.rotation
 
     private companion object {
         const val MATRIX_SIZE = 9

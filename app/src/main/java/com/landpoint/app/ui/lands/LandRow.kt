@@ -32,12 +32,7 @@ internal sealed interface LandRow {
  * numbers that are bare digits — so the list stays as it was rather than carrying
  * a made-up label.
  */
-internal fun groupedRows(
-    lands: List<Land>,
-    order: SortOrder,
-    locale: Locale,
-    noParcelLabel: String
-): List<LandRow> {
+internal fun groupedRows(lands: List<Land>, order: SortOrder, locale: Locale, noParcelLabel: String): List<LandRow> {
     if (!order.hasGroups) return lands.map { LandRow.Item(it) }
     // Built once: a formatter per row would be rebuilt on every re-sort.
     val months = SimpleDateFormat("MMMM yyyy", locale)
@@ -45,8 +40,11 @@ internal fun groupedRows(
     for (land in lands) {
         val label = order.groupLabel(land, months, locale, noParcelLabel)
         val open = runs.lastOrNull()
-        if (open != null && open.first == label) open.second.add(land)
-        else runs.add(label to mutableListOf(land))
+        if (open != null && open.first == label) {
+            open.second.add(land)
+        } else {
+            runs.add(label to mutableListOf(land))
+        }
     }
     return runs.flatMap { (label, group) ->
         val items = group.map { LandRow.Item(it) }
@@ -65,12 +63,7 @@ private val SortOrder.hasGroups: Boolean
         SortOrder.DISTANCE, SortOrder.AREA_DESC, SortOrder.AREA_ASC -> false
     }
 
-private fun SortOrder.groupLabel(
-    land: Land,
-    months: DateFormat,
-    locale: Locale,
-    noParcelLabel: String
-): String? = when (this) {
+private fun SortOrder.groupLabel(land: Land, months: DateFormat, locale: Locale, noParcelLabel: String): String? = when (this) {
     SortOrder.DATE_DESC, SortOrder.DATE_ASC -> months.format(Date(land.createdAt))
     SortOrder.NAME_ASC, SortOrder.NAME_DESC -> land.name.initialGroup(locale)
     SortOrder.PARCEL_ASC -> {

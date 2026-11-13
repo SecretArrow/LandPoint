@@ -25,11 +25,7 @@ class WalkTrackTest {
     /** Metres to degrees of latitude, near enough at this scale. */
     private fun northOf(metres: Double) = lat + metres / 111_320.0
 
-    private fun sample(
-        latitude: Double = lat,
-        longitude: Double = lon,
-        accuracy: Float? = 5f
-    ) = GeoSample(
+    private fun sample(latitude: Double = lat, longitude: Double = lon, accuracy: Float? = 5f) = GeoSample(
         latitude = latitude,
         longitude = longitude,
         accuracy = accuracy,
@@ -212,13 +208,25 @@ class WalkTrackTest {
         }
 
         var d = 0.0
-        while (d <= side) { offer(0.0, d); d += stride }
+        while (d <= side) {
+            offer(0.0, d)
+            d += stride
+        }
         d = 0.0
-        while (d <= side) { offer(d, side); d += stride }
+        while (d <= side) {
+            offer(d, side)
+            d += stride
+        }
         d = side
-        while (d >= 0.0) { offer(side, d); d -= stride }
+        while (d >= 0.0) {
+            offer(side, d)
+            d -= stride
+        }
         d = side
-        while (d >= 0.0) { offer(d, 0.0); d -= stride }
+        while (d >= 0.0) {
+            offer(d, 0.0)
+            d -= stride
+        }
 
         val closed = WalkTrack.close(track)
         // Not an absolute count: the spacing gate drops fixes whose step the

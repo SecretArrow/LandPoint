@@ -15,6 +15,7 @@ import com.landpoint.app.data.export.PdfExporter
 import com.landpoint.app.data.model.toEntity
 import com.landpoint.app.location.LocationProvider
 import com.landpoint.app.util.AppStrings
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
@@ -37,7 +38,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.File
 
 /**
  * Bulk selection is the one place where a stale id turns into the wrong file on
@@ -96,28 +96,25 @@ class LandListViewModelTest {
      * virtual-time advance, which would return before the database had said
      * anything at all and make the assertion below vacuous.
      */
-    private suspend fun awaitState(
-        reason: String,
-        predicate: (LandListUiState) -> Boolean
-    ): LandListUiState = withContext(Dispatchers.Default) {
-        try {
-            withTimeout(10_000) { viewModel.uiState.first(predicate) }
-        } catch (e: TimeoutCancellationException) {
-            throw AssertionError("timed out waiting for $reason; last state was ${describe()}")
+    private suspend fun awaitState(reason: String, predicate: (LandListUiState) -> Boolean): LandListUiState =
+        withContext(Dispatchers.Default) {
+            try {
+                withTimeout(10_000) { viewModel.uiState.first(predicate) }
+            } catch (e: TimeoutCancellationException) {
+                throw AssertionError("timed out waiting for $reason; last state was ${describe()}")
+            }
         }
-    }
 
     private fun describe(): String = viewModel.uiState.value.let {
         "lands=${it.lands.map(com.landpoint.app.data.model.Land::name)} " +
-                "selected=${it.selectedIds.size} busy=${it.isBusy} message=${it.message}"
+            "selected=${it.selectedIds.size} busy=${it.isBusy} message=${it.message}"
     }
 
-    private suspend fun seed(vararg names: String): List<String> =
-        names.map { name ->
-            val land = LandTestFactory.land(name = name)
-            repository.save(land.toEntity())
-            land.id
-        }
+    private suspend fun seed(vararg names: String): List<String> = names.map { name ->
+        val land = LandTestFactory.land(name = name)
+        repository.save(land.toEntity())
+        land.id
+    }
 
     @Test
     fun `tapping a land twice ticks then unticks it`() = runTest {

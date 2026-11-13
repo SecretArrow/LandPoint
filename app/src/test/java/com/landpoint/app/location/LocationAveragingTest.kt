@@ -18,18 +18,14 @@ class LocationAveragingTest {
     /** Metres to degrees of latitude, near enough at this scale. */
     private fun northOf(metres: Double) = lat + metres / 111_320.0
 
-    private fun sample(
-        latitude: Double = lat,
-        longitude: Double = lon,
-        accuracy: Float? = 5f,
-        source: FixSource = FixSource.GPS
-    ) = GeoSample(
-        latitude = latitude,
-        longitude = longitude,
-        accuracy = accuracy,
-        source = source,
-        timestamp = 0L
-    )
+    private fun sample(latitude: Double = lat, longitude: Double = lon, accuracy: Float? = 5f, source: FixSource = FixSource.GPS) =
+        GeoSample(
+            latitude = latitude,
+            longitude = longitude,
+            accuracy = accuracy,
+            source = source,
+            timestamp = 0L
+        )
 
     @Test
     fun `no samples gives no fix`() {

@@ -29,10 +29,7 @@ data class ImportResult(
     val isFailure: Boolean get() = error != null
 }
 
-data class ExportResult(
-    val count: Int = 0,
-    val error: String? = null
-) {
+data class ExportResult(val count: Int = 0, val error: String? = null) {
     val isFailure: Boolean get() = error != null
 }
 

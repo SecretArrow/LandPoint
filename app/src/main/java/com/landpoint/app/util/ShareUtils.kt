@@ -18,8 +18,11 @@ object ShareUtils {
             if (land.description.isNotBlank()) appendLine(land.description)
             appendLine()
             appendLine(
-                if (dms) GeoUtils.formatDMS(land.latitude, land.longitude)
-                else GeoUtils.formatDecimal(land.latitude, land.longitude)
+                if (dms) {
+                    GeoUtils.formatDMS(land.latitude, land.longitude)
+                } else {
+                    GeoUtils.formatDecimal(land.latitude, land.longitude)
+                }
             )
             land.parcelNumber?.takeIf { it.isNotBlank() }?.let {
                 appendLine(res.getString(R.string.share_parcel, it))

@@ -492,8 +492,11 @@ private fun markSources(
     return listOf(
         MarkSourceAction(
             icon = Icons.Outlined.GpsFixed,
-            label = if (state.averagingFix) R.string.corner_picker_averaging
-            else R.string.corner_picker_from_fix,
+            label = if (state.averagingFix) {
+                R.string.corner_picker_averaging
+            } else {
+                R.string.corner_picker_from_fix
+            },
             enabled = !state.averagingFix,
             busy = state.averagingFix,
             onClick = onFromFix
@@ -527,11 +530,7 @@ private fun markSources(
 
 /** [actions] laid out [columns] to a row, each icon carrying its own label. */
 @Composable
-private fun MarkSourceButtons(
-    actions: List<MarkSourceAction>,
-    columns: Int,
-    modifier: Modifier = Modifier
-) {
+private fun MarkSourceButtons(actions: List<MarkSourceAction>, columns: Int, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         actions.chunked(columns).forEach { row ->
             Row {
@@ -669,8 +668,11 @@ private fun MarkControls(
 ) {
     val placement = state.markPlacement
     val coordinates =
-        if (state.dms) GeoUtils.formatDMS(mark.point.latitude, mark.point.longitude)
-        else GeoUtils.formatDecimal(mark.point.latitude, mark.point.longitude)
+        if (state.dms) {
+            GeoUtils.formatDMS(mark.point.latitude, mark.point.longitude)
+        } else {
+            GeoUtils.formatDecimal(mark.point.latitude, mark.point.longitude)
+        }
     val spoken = stringResource(R.string.corner_picker_mark_a11y, coordinates)
 
     PickerCard {
@@ -762,8 +764,11 @@ private fun PlacementLine(placement: Placement?) {
     Text(
         text,
         style = MaterialTheme.typography.labelMedium,
-        color = if (refused) MaterialTheme.colorScheme.error
-        else MaterialTheme.colorScheme.onSurfaceVariant
+        color = if (refused) {
+            MaterialTheme.colorScheme.error
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
     )
 }
 

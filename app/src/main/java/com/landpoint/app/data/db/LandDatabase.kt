@@ -35,10 +35,9 @@ abstract class LandDatabase : RoomDatabase() {
         @Volatile
         private var instance: LandDatabase? = null
 
-        fun get(context: Context): LandDatabase =
-            instance ?: synchronized(this) {
-                instance ?: build(context).also { instance = it }
-            }
+        fun get(context: Context): LandDatabase = instance ?: synchronized(this) {
+            instance ?: build(context).also { instance = it }
+        }
 
         private fun build(context: Context): LandDatabase {
             val app = context.applicationContext

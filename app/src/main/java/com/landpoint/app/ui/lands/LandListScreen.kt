@@ -357,11 +357,7 @@ fun LandListScreen(
  * totalled everything would be a number for a set the user cannot see.
  */
 @Composable
-private fun SummaryRow(
-    count: Int,
-    totalAreaSqm: Double,
-    areaUnit: SettingsRepository.AreaUnit
-) {
+private fun SummaryRow(count: Int, totalAreaSqm: Double, areaUnit: SettingsRepository.AreaUnit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -424,12 +420,7 @@ private fun GroupHeader(header: LandRow.Header) {
 
 /** The search box, shown under the app bar while searching. */
 @Composable
-private fun SearchField(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClear: () -> Unit,
-    focusRequester: FocusRequester
-) {
+private fun SearchField(query: String, onQueryChange: (String) -> Unit, onClear: () -> Unit, focusRequester: FocusRequester) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,

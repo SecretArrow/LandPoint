@@ -1,0 +1,27 @@
+# EditorConfig keeps every editor, ktlint CLI and the ktlint Gradle plugin (CI)
+# agreed on one code style: the Android Studio flavour, which is what this
+# codebase was written in. https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+indent_size = 4
+ktlint_code_style = android_studio
+ij_kotlin_allow_wildcard_imports = false
+max_line_length = 140
+# Compose UIs name their @Composable functions in PascalCase by Jetpack
+# convention, which this rule rejects with no usable override in ktlint 1.x.
+# Function naming is still gated by detekt (naming/FunctionNaming with
+# ignoreAnnotated: Composable) in config/detekt/detekt.yml.
+ktlint_standard_function-naming = disabled
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

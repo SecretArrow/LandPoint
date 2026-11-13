@@ -12,6 +12,9 @@ import com.landpoint.app.data.model.GeometryType
 import com.landpoint.app.data.model.toCorners
 import com.landpoint.app.data.model.toEntity
 import com.landpoint.app.util.GeoPoint
+import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
@@ -24,9 +27,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.File
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 /**
  * The backup archive is the answer to a lost or reset phone, so what these tests

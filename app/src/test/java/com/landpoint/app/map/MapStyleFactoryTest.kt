@@ -3,6 +3,7 @@ package com.landpoint.app.map
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.landpoint.app.data.BasemapMode
+import java.io.File
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -19,7 +20,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.File
 
 /**
  * The style documents MapLibre is actually handed.
@@ -45,8 +45,7 @@ class MapStyleFactoryTest {
         factory = MapStyleFactory(context.assets)
     }
 
-    private fun provider(mode: BasemapMode): MapProvider =
-        requireNotNull(MapProviders.of(mode, null)) { "$mode needs no archive" }
+    private fun provider(mode: BasemapMode): MapProvider = requireNotNull(MapProviders.of(mode, null)) { "$mode needs no archive" }
 
     private fun document(mode: BasemapMode, dark: Boolean = false): JsonObject =
         json.parseToJsonElement(factory.styleJson(provider(mode), dark)).jsonObject

@@ -36,13 +36,9 @@ object Localization {
      * Machine-read output (CSV, GPX, KML) never comes through here — it writes
      * raw `Double.toString`, which is always dot-separated.
      */
-    fun numberLocale(): java.util.Locale =
-        active.locale ?: java.util.Locale.getDefault()
+    fun numberLocale(): java.util.Locale = active.locale ?: java.util.Locale.getDefault()
 
-    fun wrap(
-        context: Context,
-        language: SettingsRepository.Language = active
-    ): Context {
+    fun wrap(context: Context, language: SettingsRepository.Language = active): Context {
         val locale = language.locale ?: return context
         val config = Configuration(context.resources.configuration).apply {
             setLocales(LocaleList(locale))
@@ -51,10 +47,7 @@ object Localization {
     }
 }
 
-private class LocalizedContext(
-    base: Context,
-    private val localized: Resources
-) : ContextWrapper(base) {
+private class LocalizedContext(base: Context, private val localized: Resources) : ContextWrapper(base) {
     override fun getResources(): Resources = localized
     override fun getAssets(): AssetManager = localized.assets
 }

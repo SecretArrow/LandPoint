@@ -9,16 +9,11 @@ import com.landpoint.app.data.model.toDomain
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class LandRepository(
-    private val dao: LandDao,
-    private val photoStore: PhotoStore
-) {
+class LandRepository(private val dao: LandDao, private val photoStore: PhotoStore) {
 
-    fun observeLands(): Flow<List<Land>> =
-        dao.observeAll().map { list -> list.map { it.toDomain() } }
+    fun observeLands(): Flow<List<Land>> = dao.observeAll().map { list -> list.map { it.toDomain() } }
 
-    fun observeLand(id: String): Flow<Land?> =
-        dao.observeById(id).map { it?.toDomain() }
+    fun observeLand(id: String): Flow<Land?> = dao.observeById(id).map { it?.toDomain() }
 
     fun observeCount(): Flow<Int> = dao.observeCount()
 
@@ -46,12 +41,7 @@ class LandRepository(
         dao.deleteAll()
     }
 
-    suspend fun addPhoto(
-        landId: String,
-        filePath: String,
-        caption: String = "",
-        cornerId: String? = null
-    ) {
+    suspend fun addPhoto(landId: String, filePath: String, caption: String = "", cornerId: String? = null) {
         dao.insertPhoto(
             PhotoEntity(landId = landId, filePath = filePath, caption = caption, cornerId = cornerId)
         )
@@ -85,8 +75,7 @@ class LandRepository(
         dao.deletePhotoById(photoId)
     }
 
-    suspend fun findExistingIds(ids: List<String>): Set<String> =
-        if (ids.isEmpty()) emptySet() else dao.findExistingIds(ids).toSet()
+    suspend fun findExistingIds(ids: List<String>): Set<String> = if (ids.isEmpty()) emptySet() else dao.findExistingIds(ids).toSet()
 
     suspend fun findDuplicateByCoordinates(name: String, lat: Double, lon: Double): LandEntity? =
         dao.findByNameAndCoordinates(name, lat, lon)

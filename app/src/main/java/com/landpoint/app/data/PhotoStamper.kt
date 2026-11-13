@@ -11,13 +11,13 @@ import androidx.exifinterface.media.ExifInterface
 import com.landpoint.app.R
 import com.landpoint.app.util.AppStrings
 import com.landpoint.app.util.GeoUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * What gets burned onto a capture. Everything is optional except the position —
@@ -43,10 +43,7 @@ data class StampData(
  * taken somewhere else at some other time, so stamping it with the current fix
  * would put a confident-looking lie on the image.
  */
-class PhotoStamper(
-    private val context: Context,
-    private val strings: AppStrings
-) {
+class PhotoStamper(private val context: Context, private val strings: AppStrings) {
 
     suspend fun stamp(file: File, data: StampData): Boolean = withContext(Dispatchers.IO) {
         runCatching {
@@ -69,8 +66,11 @@ class PhotoStamper(
 
     private fun buildLines(data: StampData): List<String> = buildList {
         add(
-            if (data.dms) GeoUtils.formatDMS(data.latitude, data.longitude)
-            else GeoUtils.formatDecimal(data.latitude, data.longitude)
+            if (data.dms) {
+                GeoUtils.formatDMS(data.latitude, data.longitude)
+            } else {
+                GeoUtils.formatDecimal(data.latitude, data.longitude)
+            }
         )
 
         val stampedAt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date(data.takenAt))

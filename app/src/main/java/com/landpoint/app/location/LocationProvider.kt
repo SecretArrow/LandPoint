@@ -11,6 +11,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import kotlin.coroutines.resume
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
@@ -19,14 +20,9 @@ import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
 
 /** Live state of an averaged capture, emitted as samples arrive. */
-data class CaptureProgress(
-    val fix: AveragedFix?,
-    val samples: Int,
-    val done: Boolean
-)
+data class CaptureProgress(val fix: AveragedFix?, val samples: Int, val done: Boolean)
 
 /**
  * True when the user has granted either location permission.
@@ -35,11 +31,10 @@ data class CaptureProgress(
  * the one that must not be called without it — a screen forgetting to check is
  * a cosmetic bug, whereas the provider forgetting is a crash.
  */
-fun Context.hasLocationPermission(): Boolean =
-    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
+fun Context.hasLocationPermission(): Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+    PackageManager.PERMISSION_GRANTED ||
+    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+    PackageManager.PERMISSION_GRANTED
 
 /**
  * Whether one provider's fix outranks another's, when both are subscribed and
@@ -91,7 +86,7 @@ class LocationProvider(private val context: Context) {
 
     fun isLocationEnabled(): Boolean = runCatching {
         locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
     }.getOrDefault(false)
 
     /**
@@ -124,20 +119,19 @@ class LocationProvider(private val context: Context) {
     }
 
     /** The provider names worth asking this Android version for, best first. */
-    private fun preferredProviders(): List<String> =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            listOf(
-                LocationManager.FUSED_PROVIDER,
-                LocationManager.GPS_PROVIDER,
-                LocationManager.NETWORK_PROVIDER
-            )
-        } else {
-            listOf(
-                LocationManager.GPS_PROVIDER,
-                LocationManager.NETWORK_PROVIDER,
-                LocationManager.PASSIVE_PROVIDER
-            )
-        }
+    private fun preferredProviders(): List<String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        listOf(
+            LocationManager.FUSED_PROVIDER,
+            LocationManager.GPS_PROVIDER,
+            LocationManager.NETWORK_PROVIDER
+        )
+    } else {
+        listOf(
+            LocationManager.GPS_PROVIDER,
+            LocationManager.NETWORK_PROVIDER,
+            LocationManager.PASSIVE_PROVIDER
+        )
+    }
 
     /**
      * Last fix the system kept for [provider], or null.
@@ -147,8 +141,7 @@ class LocationProvider(private val context: Context) {
      * is caught rather than trusted.
      */
     @SuppressLint("MissingPermission")
-    private fun lastKnown(provider: String): Location? =
-        runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull()
+    private fun lastKnown(provider: String): Location? = runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull()
 
     /**
      * One-shot location request using best available provider.
@@ -233,66 +226,66 @@ class LocationProvider(private val context: Context) {
      *   waiting for the accuracy to improve needs.
      */
     @SuppressLint("MissingPermission")
-    fun observeLocation(
-        intervalMs: Long = DEFAULT_INTERVAL_MS,
-        minDistanceM: Float = DEFAULT_MIN_DISTANCE_M
-    ): Flow<LocationData> = callbackFlow {
-        // The listener is shared by every provider below, so this has to be
-        // outside it: one field, read and written on the main looper only.
-        var lastAcceptedSource: FixSource? = null
+    fun observeLocation(intervalMs: Long = DEFAULT_INTERVAL_MS, minDistanceM: Float = DEFAULT_MIN_DISTANCE_M): Flow<LocationData> =
+        callbackFlow {
+            // The listener is shared by every provider below, so this has to be
+            // outside it: one field, read and written on the main looper only.
+            var lastAcceptedSource: FixSource? = null
 
-        val listener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                // The referee: with GPS and NETWORK subscribed at once, the
-                // tower fix that arrives after a satellite fix must not drag
-                // the marker away from it. GPS-fused fixes still pass through
-                // and displace a tower fix immediately, so the marker jumps
-                // once — towards better — and then holds.
-                if (!ProviderArbiter.accepts(
-                        FixSource.of(location.provider),
-                        lastAcceptedSource
+            val listener = object : LocationListener {
+                override fun onLocationChanged(location: Location) {
+                    // The referee: with GPS and NETWORK subscribed at once, the
+                    // tower fix that arrives after a satellite fix must not drag
+                    // the marker away from it. GPS-fused fixes still pass through
+                    // and displace a tower fix immediately, so the marker jumps
+                    // once — towards better — and then holds.
+                    if (!ProviderArbiter.accepts(
+                            FixSource.of(location.provider),
+                            lastAcceptedSource
+                        )
+                    ) {
+                        return
+                    }
+                    lastAcceptedSource = FixSource.of(location.provider)
+                    trySend(location.toLocationData())
+                }
+
+                @Deprecated("Deprecated in API 29", ReplaceWith(""))
+                override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) {}
+            }
+
+            val providers = usableProviders()
+
+            // Covers "permission not granted" as well as "every provider off": in
+            // both cases there is nothing to subscribe to, and requesting anyway
+            // would throw on a collector that has no way to catch it.
+            if (providers.isEmpty()) {
+                close()
+                return@callbackFlow
+            }
+
+            try {
+                providers.forEach { provider ->
+                    locationManager.requestLocationUpdates(
+                        provider,
+                        intervalMs,
+                        minDistanceM,
+                        listener,
+                        android.os.Looper.getMainLooper()
                     )
-                ) return
-                lastAcceptedSource = FixSource.of(location.provider)
-                trySend(location.toLocationData())
+                }
+            } catch (e: SecurityException) {
+                // Permission revoked mid-flight. Ending the stream quietly is the
+                // honest signal: the collector cannot act on the exception, and
+                // rethrowing it into a viewModelScope would kill the process.
+                close()
+                return@callbackFlow
             }
 
-            @Deprecated("Deprecated in API 29", ReplaceWith(""))
-            override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) {}
-        }
-
-        val providers = usableProviders()
-
-        // Covers "permission not granted" as well as "every provider off": in
-        // both cases there is nothing to subscribe to, and requesting anyway
-        // would throw on a collector that has no way to catch it.
-        if (providers.isEmpty()) {
-            close()
-            return@callbackFlow
-        }
-
-        try {
-            providers.forEach { provider ->
-                locationManager.requestLocationUpdates(
-                    provider,
-                    intervalMs,
-                    minDistanceM,
-                    listener,
-                    android.os.Looper.getMainLooper()
-                )
+            awaitClose {
+                locationManager.removeUpdates(listener)
             }
-        } catch (e: SecurityException) {
-            // Permission revoked mid-flight. Ending the stream quietly is the
-            // honest signal: the collector cannot act on the exception, and
-            // rethrowing it into a viewModelScope would kill the process.
-            close()
-            return@callbackFlow
         }
-
-        awaitClose {
-            locationManager.removeUpdates(listener)
-        }
-    }
 
     /**
      * Reads every enabled provider at once and emits a running best estimate.
@@ -415,10 +408,9 @@ class LocationProvider(private val context: Context) {
      * `Location` object's numbers, bit for bit, while two genuinely separate
      * readings a metre apart differ far below this in the last decimal places.
      */
-    private fun GeoSample.isSameFixAs(other: GeoSample): Boolean =
-        timestamp == other.timestamp &&
-            latitude == other.latitude &&
-            longitude == other.longitude
+    private fun GeoSample.isSameFixAs(other: GeoSample): Boolean = timestamp == other.timestamp &&
+        latitude == other.latitude &&
+        longitude == other.longitude
 
     private fun Location.toGeoSample(provider: String?) = GeoSample(
         latitude = latitude,

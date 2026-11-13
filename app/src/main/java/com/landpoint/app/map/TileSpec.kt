@@ -35,12 +35,8 @@ sealed interface TileSpec {
      *   tiles a download really costs: quoting a village saved "to zoom 19" against
      *   the view limit would overstate it by orders of magnitude.
      */
-    data class VectorStyle(
-        val lightAsset: String,
-        val darkAsset: String,
-        val vectorSourceId: String,
-        val sourceMaxZoom: Double
-    ) : TileSpec {
+    data class VectorStyle(val lightAsset: String, val darkAsset: String, val vectorSourceId: String, val sourceMaxZoom: Double) :
+        TileSpec {
 
         /** The style file for the theme in force. */
         fun assetFor(night: Boolean): String = if (night) darkAsset else lightAsset
@@ -90,11 +86,7 @@ sealed interface TileSpec {
          * below this one, which is why [MapProviders] puts `blankTile=false` on every
          * template it hands over.
          */
-        data class Detail(
-            val templates: List<String>,
-            val minZoom: Double,
-            val maxZoom: Double
-        )
+        data class Detail(val templates: List<String>, val minZoom: Double, val maxZoom: Double)
     }
 
     /**
@@ -107,8 +99,5 @@ sealed interface TileSpec {
      *   file name, because the two need completely different styles and a wrong
      *   guess draws a blank map with no error.
      */
-    data class LocalArchive(
-        val path: String,
-        val vector: Boolean
-    ) : TileSpec
+    data class LocalArchive(val path: String, val vector: Boolean) : TileSpec
 }

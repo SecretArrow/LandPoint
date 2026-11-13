@@ -22,8 +22,7 @@ class SortOrderAreaTest {
         LandTestFactory.land(name = "small", areaSqm = 40.0)
     )
 
-    private fun sortedNames(order: SortOrder) =
-        lands().sortedWith(order.comparator()).map { it.name }
+    private fun sortedNames(order: SortOrder) = lands().sortedWith(order.comparator()).map { it.name }
 
     @Test
     fun `descending puts the largest first and the unmeasured last`() {
@@ -67,7 +66,10 @@ class SortOrderAreaTest {
 
     @Test
     fun `sorting an empty list is not an error`() {
-        assertEquals(emptyList<String>(), emptyList<com.landpoint.app.data.model.Land>()
-            .sortedWith(SortOrder.AREA_DESC.comparator()).map { it.name })
+        assertEquals(
+            emptyList<String>(),
+            emptyList<com.landpoint.app.data.model.Land>()
+                .sortedWith(SortOrder.AREA_DESC.comparator()).map { it.name }
+        )
     }
 }

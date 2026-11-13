@@ -1,0 +1,38 @@
+# E2E 3 — export a selection as CSV through the system save picker.
+#
+# Covers: multi-select, "select all shown", the export-format dialog, and the
+# SAF save sheet (its SAVE button is part of the system UI, in caps on API 30).
+name: 03-export-csv
+tags: [core]
+---
+- stopApp
+- launchApp
+
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 20000
+
+# Long-press a card to enter selection mode.
+- longPressOn: 'Kebun Percobaan'
+- extendedWaitUntil:
+    visible: '^Select all shown$'
+    timeout: 10000
+- tapOn: '^Select all shown$'
+
+- tapOn: '^Export selected$'
+- extendedWaitUntil:
+    visible: '^Export selected as$'
+    timeout: 10000
+
+- tapOn: '^Export CSV$'
+
+# The system save sheet: the file name is pre-filled, SAVE confirms.
+- extendedWaitUntil:
+    visible: '^SAVE$'
+    timeout: 15000
+- tapOn: '^SAVE$'
+
+# Back in the app, the confirmation message appears.
+- extendedWaitUntil:
+    visible: 'Exported'
+    timeout: 15000

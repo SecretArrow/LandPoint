@@ -120,9 +120,12 @@ data class PmtilesHeader(
             val minLatitude = e7(buffer.getInt(106))
             val maxLongitude = e7(buffer.getInt(110))
             val maxLatitude = e7(buffer.getInt(114))
-            if (minLatitude > maxLatitude || minLongitude > maxLongitude ||
-                minLatitude < -90.0 || maxLatitude > 90.0 ||
-                minLongitude < -180.0 || maxLongitude > 180.0
+            if (minLatitude > maxLatitude ||
+                minLongitude > maxLongitude ||
+                minLatitude < -90.0 ||
+                maxLatitude > 90.0 ||
+                minLongitude < -180.0 ||
+                maxLongitude > 180.0
             ) {
                 return PmtilesResult.NotPmtiles
             }

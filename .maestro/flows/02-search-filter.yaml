@@ -1,0 +1,33 @@
+# E2E 2 — search narrows the list, and an impossible term empties it.
+name: 02-search-filter
+tags: [core]
+---
+# A stop/launch pair gives a cold start, which lands on the list tab no
+# matter which screen the previous flow ended on.
+- stopApp
+- launchApp
+
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 20000
+
+# Open the search field (the top-bar icon carries the content description).
+- tapOn: '^Search$'
+- inputText: 'Percobaan'
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 10000
+
+# An impossible term must produce the no-matches state, not a stale list.
+- tapOn: '^Clear search$'
+- inputText: 'zzzz-no-such-land'
+- extendedWaitUntil:
+    visible: '^No matches$'
+    timeout: 10000
+
+# Leave the list clean for the flows that follow.
+- tapOn: '^Clear search$'
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 10000
+- hideKeyboard

@@ -22,21 +22,21 @@ tags:
     timeout: 20000
 
 # Open the search field (the top-bar icon carries the content description).
-- tapOn: '^Search$'
+- tapOn: '^(Search|Cari)$'
 - inputText: 'Percobaan'
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'
     timeout: 10000
 
 # An impossible term must produce the no-matches state, not a stale list.
-- tapOn: '^Clear search$'
+- tapOn: '^(Clear search|Bersihkan pencarian)$'
 - inputText: 'zzzz-no-such-land'
 - extendedWaitUntil:
-    visible: '^No matches$'
+    visible: '^(No matches|Tidak ditemukan)$'
     timeout: 10000
 
 # Leave the list clean for the flows that follow.
-- tapOn: '^Clear search$'
+- tapOn: '^(Clear search|Bersihkan pencarian)$'
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'
     timeout: 10000

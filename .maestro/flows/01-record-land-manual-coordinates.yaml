@@ -25,90 +25,90 @@ tags:
       - tapOn: '^Wait$'
 
 - extendedWaitUntil:
-    visible: '^Skip$'
+    visible: '^(Skip|Lewati)$'
     timeout: 30000
-- tapOn: '^Skip$'
+- tapOn: '^(Skip|Lewati)$'
 
 # The list screen's big FAB.
 - extendedWaitUntil:
-    visible: '^Save land$'
+    visible: '^(Save land|Simpan tanah)$'
     timeout: 15000
-- tapOn: '^Save land$'
+- tapOn: '^(Save land|Simpan tanah)$'
 
 - extendedWaitUntil:
-    visible: '^Land details$'
+    visible: '^(Land details|Rincian tanah)$'
     timeout: 20000
 
 # The name field (label "Name *"; "*" must be regex-escaped).
-- tapOn: '^Name \*$'
+- tapOn: '^(Name|Nama) \*$'
 - inputText: 'Kebun Percobaan'
 - hideKeyboard
 
 # Open the corner picker (scrolls down through the form if needed).
 - scrollUntilVisible:
     element:
-      text: '^Mark on the map$'
+      text: '^(Mark on the map|Tandai di peta)$'
     direction: DOWN
     timeout: 20000
-- tapOn: '^Mark on the map$'
+- tapOn: '^(Mark on the map|Tandai di peta)$'
 - extendedWaitUntil:
-    visible: '^Enter coordinates$'
+    visible: '^(Enter coordinates|Ketik koordinat)$'
     timeout: 20000
 
 # Corner 1
-- tapOn: '^Enter coordinates$'
+- tapOn: '^(Enter coordinates|Ketik koordinat)$'
 - extendedWaitUntil:
-    visible: '^Add a corner$'
+    visible: '^(Add a corner|Tambah sudut)$'
     timeout: 10000
-- tapOn: '^Latitude$'
+- tapOn: '^(Latitude|Lintang)$'
 - inputText: '-6.175000'
-- tapOn: '^Longitude$'
+- tapOn: '^(Longitude|Bujur)$'
 - inputText: '106.827000'
-- tapOn: '^Save$'
+- tapOn: '^(Save|Simpan)$'
 - extendedWaitUntil:
-    visible: '^Use this mark$'
+    visible: '^(Use this mark|Pakai tanda ini)$'
     timeout: 10000
-- tapOn: '^Use this mark$'
+- tapOn: '^(Use this mark|Pakai tanda ini)$'
 
 # Corner 2
 - extendedWaitUntil:
-    visible: '^Enter coordinates$'
+    visible: '^(Enter coordinates|Ketik koordinat)$'
     timeout: 10000
-- tapOn: '^Enter coordinates$'
-- tapOn: '^Latitude$'
+- tapOn: '^(Enter coordinates|Ketik koordinat)$'
+- tapOn: '^(Latitude|Lintang)$'
 - inputText: '-6.174900'
-- tapOn: '^Longitude$'
+- tapOn: '^(Longitude|Bujur)$'
 - inputText: '106.827200'
-- tapOn: '^Save$'
+- tapOn: '^(Save|Simpan)$'
 - extendedWaitUntil:
-    visible: '^Use this mark$'
+    visible: '^(Use this mark|Pakai tanda ini)$'
     timeout: 10000
-- tapOn: '^Use this mark$'
+- tapOn: '^(Use this mark|Pakai tanda ini)$'
 
 # Corner 3
 - extendedWaitUntil:
-    visible: '^Enter coordinates$'
+    visible: '^(Enter coordinates|Ketik koordinat)$'
     timeout: 10000
-- tapOn: '^Enter coordinates$'
-- tapOn: '^Latitude$'
+- tapOn: '^(Enter coordinates|Ketik koordinat)$'
+- tapOn: '^(Latitude|Lintang)$'
 - inputText: '-6.174800'
-- tapOn: '^Longitude$'
+- tapOn: '^(Longitude|Bujur)$'
 - inputText: '106.827100'
-- tapOn: '^Save$'
+- tapOn: '^(Save|Simpan)$'
 - extendedWaitUntil:
-    visible: '^Use this mark$'
+    visible: '^(Use this mark|Pakai tanda ini)$'
     timeout: 10000
-- tapOn: '^Use this mark$'
+- tapOn: '^(Use this mark|Pakai tanda ini)$'
 
 # Accept the boundary and save the record.
 - extendedWaitUntil:
-    visible: '^Use this boundary$'
+    visible: '^(Use this boundary|Pakai batas ini)$'
     timeout: 10000
-- tapOn: '^Use this boundary$'
+- tapOn: '^(Use this boundary|Pakai batas ini)$'
 - extendedWaitUntil:
-    visible: '^Save$'
+    visible: '^(Save|Simpan)$'
     timeout: 15000
-- tapOn: '^Save$'
+- tapOn: '^(Save|Simpan)$'
 
 # The saved record shows its name, wherever the editor returns to.
 - extendedWaitUntil:

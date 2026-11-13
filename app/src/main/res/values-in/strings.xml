@@ -47,6 +47,9 @@
     <string name="label_shape_point">Satu titik</string>
     <string name="label_shape_polygon">Batas terukur</string>
     <string name="msg_delete_undone">Penghapusan diurungkan</string>
+    <!-- Snackbar Undo (spec §4.7 — forgiving by design: jendela Undo ~8 detik) -->
+    <string name="land_deleted_snackbar">Bidang tanah dihapus</string>
+    <string name="land_undo_delete">Urung</string>
 
     <string name="sort_date_desc">Terbaru dulu</string>
     <string name="sort_date_asc">Terlama dulu</string>
@@ -219,6 +222,16 @@
     </plurals>
     <string name="corner_picker_select_hint">Ketuk sebuah sudut untuk memilihnya, lalu pakai tombol hapus. Geser sudut untuk memindahkannya.</string>
     <string name="corner_picker_delete_selected">Hapus sudut %1$d</string>
+
+    <!-- Toolbar mode pemilih sudut (spec §4.5) -->
+    <string name="corner_mode_add">Tambah</string>
+    <string name="corner_mode_move">Pindah</string>
+    <string name="corner_mode_insert">Sisip</string>
+    <string name="corner_mode_delete">Hapus</string>
+    <string name="corner_mode_hint_add">Ketuk peta atau gunakan GPS untuk menambah sudut</string>
+    <string name="corner_mode_hint_move">Seret gagang sudut untuk memindahkannya</string>
+    <string name="corner_mode_hint_insert">Ketuk + pada sisi untuk menyisipkan sudut di situ</string>
+    <string name="corner_mode_hint_delete">Ketuk sudut untuk menghapusnya</string>
 
     <!-- Pratinjau batas bidang -->
     <string name="shape_title">Batas bidang</string>

@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -82,6 +83,7 @@ fun LandListScreen(
     viewModel: LandListViewModel = viewModel(factory = LandListViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val deletedLand by viewModel.deletedLand.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val permission = rememberLocationPermission(onGranted = { viewModel.refreshLocation() })
 
@@ -115,7 +117,28 @@ fun LandListScreen(
         if (showSearch) searchFocus.requestFocus()
     }
 
-    val undoLabel = stringResource(R.string.action_undo)
+    val undoLabel = stringResource(R.string.land_undo_delete)
+
+    // Declared BEFORE the message-driven snackbar below on purpose. When Undo is
+    // tapped, `undoDelete()` clears `deletedLand` AND sets `state.message` to
+    // "Delete undone" in the same recomposition. Both effects fire. If this one
+    // ran second it would dismiss the "Delete undone" snackbar the other one
+    // just launched — the user would never see the confirmation. Running first,
+    // `currentSnackbarData` is still null (the previous snackbar already
+    // returned `ActionPerformed`), so the dismiss is a no-op and the
+    // confirmation snackbar is free to show.
+    //
+    // The ViewModel clears `deletedLand` at the spec's ~8-second mark (or the
+    // moment Undo is tapped); dismissing here keeps the visible offer honest —
+    // once `deletedLand` is null, there is nothing left to undo, so the snackbar
+    // should not still be offering it. Material 3's `SnackbarDuration.Long` is
+    // ~10 s, so this is what brings it down to the §4.7 ~8-second window.
+    LaunchedEffect(deletedLand) {
+        if (deletedLand == null) {
+            snackbarHost.currentSnackbarData?.dismiss()
+        }
+    }
+
     LaunchedEffect(state.message) {
         val text = state.message ?: return@LaunchedEffect
         // Read once, now: by the time the snackbar is dismissed the window may
@@ -124,7 +147,10 @@ fun LandListScreen(
         viewModel.consumeMessage()
         val result = snackbarHost.showSnackbar(
             message = text,
-            actionLabel = if (undoable) undoLabel else null
+            actionLabel = if (undoable) undoLabel else null,
+            // Long is ~10 s; the LaunchedEffect above on `deletedLand` dismisses
+            // it at the 8-second spec mark so the offer lines up with §4.7.
+            duration = SnackbarDuration.Long
         )
         if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete()
     }

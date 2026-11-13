@@ -13,7 +13,11 @@ import kotlin.math.min
  * deciding whether to wait another minute before marking a corner. Four steps
  * answer that question; a number does not.
  */
-enum class SignalStrength { NONE, WEAK, FAIR, STRONG;
+enum class SignalStrength {
+    NONE,
+    WEAK,
+    FAIR,
+    STRONG;
 
     companion object {
         /**
@@ -60,12 +64,7 @@ enum class SignalStrength { NONE, WEAK, FAIR, STRONG;
  * position holds still, and a fix can be minutes old while the sky is being
  * reported live.
  */
-data class GnssSnapshot(
-    val visible: Int = 0,
-    val used: Int = 0,
-    val meanCn0DbHz: Double? = null,
-    val timestamp: Long = 0L
-) {
+data class GnssSnapshot(val visible: Int = 0, val used: Int = 0, val meanCn0DbHz: Double? = null, val timestamp: Long = 0L) {
     val strength: SignalStrength get() = SignalStrength.of(used, meanCn0DbHz)
 
     /** True once anything at all has been heard from the sky. */

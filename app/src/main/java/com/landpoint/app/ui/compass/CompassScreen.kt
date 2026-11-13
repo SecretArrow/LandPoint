@@ -23,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -44,10 +43,7 @@ import kotlin.math.min
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CompassScreen(
-    onBack: () -> Unit,
-    viewModel: CompassViewModel = viewModel(factory = CompassViewModel.Factory)
-) {
+fun CompassScreen(onBack: () -> Unit, viewModel: CompassViewModel = viewModel(factory = CompassViewModel.Factory)) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val heading = rememberDeviceHeading()
 
@@ -135,7 +131,7 @@ fun CompassScreen(
                     state.accuracy?.let {
                         Text(
                             stringResource(R.string.label_gps_accuracy) + " " +
-                                    stringResource(R.string.value_accuracy, it.toInt()),
+                                stringResource(R.string.value_accuracy, it.toInt()),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

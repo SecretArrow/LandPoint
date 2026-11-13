@@ -7,6 +7,7 @@ import android.graphics.Color
 import androidx.exifinterface.media.ExifInterface
 import androidx.test.core.app.ApplicationProvider
 import com.landpoint.app.util.AppStrings
+import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -16,7 +17,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
-import java.io.File
 
 /**
  * Native graphics is required, not a preference: under Robolectric's legacy
@@ -56,8 +56,7 @@ class PhotoStamperTest {
         return file
     }
 
-    private fun brightness(color: Int): Int =
-        (Color.red(color) + Color.green(color) + Color.blue(color)) / 3
+    private fun brightness(color: Int): Int = (Color.red(color) + Color.green(color) + Color.blue(color)) / 3
 
     @Test
     fun `stamp darkens a bar along the bottom and leaves the top alone`() = runTest {

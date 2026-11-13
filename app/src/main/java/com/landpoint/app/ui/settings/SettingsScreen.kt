@@ -252,8 +252,11 @@ fun SettingsScreen(
                 SwitchRow(
                     label = stringResource(R.string.settings_app_lock),
                     hint = stringResource(
-                        if (canLock) R.string.settings_app_lock_hint
-                        else R.string.settings_app_lock_unavailable
+                        if (canLock) {
+                            R.string.settings_app_lock_hint
+                        } else {
+                            R.string.settings_app_lock_unavailable
+                        }
                     ),
                     // A lock left on from a phone that has since had its screen
                     // lock removed reads as off, because that is what it now is.
@@ -536,11 +539,7 @@ fun SettingsScreen(
  * there is no going back to it afterwards.
  */
 @Composable
-private fun BackupPassphraseDialog(
-    onDismiss: () -> Unit,
-    onWithout: () -> Unit,
-    onWith: (String) -> Unit
-) {
+private fun BackupPassphraseDialog(onDismiss: () -> Unit, onWithout: () -> Unit, onWith: (String) -> Unit) {
     var passphrase by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
     var revealed by remember { mutableStateOf(false) }
@@ -584,8 +583,11 @@ private fun BackupPassphraseDialog(
                 if (tooShort || mismatch) {
                     Text(
                         stringResource(
-                            if (mismatch) R.string.backup_password_mismatch
-                            else R.string.backup_password_too_short
+                            if (mismatch) {
+                                R.string.backup_password_mismatch
+                            } else {
+                                R.string.backup_password_too_short
+                            }
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
@@ -608,11 +610,7 @@ private fun BackupPassphraseDialog(
 
 /** Asked when the chosen file is locked. Cancelling leaves the database untouched. */
 @Composable
-private fun RestorePassphraseDialog(
-    wrong: Boolean,
-    onDismiss: () -> Unit,
-    onSubmit: (String) -> Unit
-) {
+private fun RestorePassphraseDialog(wrong: Boolean, onDismiss: () -> Unit, onSubmit: (String) -> Unit) {
     var passphrase by remember { mutableStateOf("") }
     var revealed by remember { mutableStateOf(false) }
 
@@ -623,12 +621,18 @@ private fun RestorePassphraseDialog(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     stringResource(
-                        if (wrong) R.string.restore_password_wrong
-                        else R.string.restore_password_body
+                        if (wrong) {
+                            R.string.restore_password_wrong
+                        } else {
+                            R.string.restore_password_body
+                        }
                     ),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (wrong) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (wrong) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
                 PassphraseField(
                     value = passphrase,
@@ -677,7 +681,7 @@ private fun PassphraseField(
         singleLine = true,
         isError = isError,
         visualTransformation =
-            if (revealed) VisualTransformation.None else PasswordVisualTransformation(),
+        if (revealed) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         trailingIcon = {
             IconButton(onClick = onToggleReveal) {
@@ -697,10 +701,7 @@ private fun PassphraseField(
 private const val MIN_PASSPHRASE = 6
 
 @Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable () -> Unit
-) {
+private fun SettingsSection(title: String, content: @Composable () -> Unit) {
     Card(colors = CardDefaults.cardColors()) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -717,12 +718,7 @@ private fun SettingsSection(
 }
 
 @Composable
-private fun <T> OptionGroup(
-    options: List<T>,
-    selected: T,
-    label: @Composable (T) -> String,
-    onSelect: (T) -> Unit
-) {
+private fun <T> OptionGroup(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) {
     Column(modifier = Modifier.selectableGroup()) {
         options.forEach { option ->
             Row(
@@ -748,13 +744,7 @@ private fun <T> OptionGroup(
  * do the same thing.
  */
 @Composable
-private fun SwitchRow(
-    label: String,
-    hint: String,
-    checked: Boolean,
-    enabled: Boolean = true,
-    onCheckedChange: (Boolean) -> Unit
-) {
+private fun SwitchRow(label: String, hint: String, checked: Boolean, enabled: Boolean = true, onCheckedChange: (Boolean) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -814,25 +804,34 @@ private fun StorageStatus(storage: DatabaseStorage) {
         ) {
             Icon(
                 imageVector =
-                    if (storage.encrypted) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
+                if (storage.encrypted) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
                 tint =
-                    if (storage.encrypted) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.error
+                if (storage.encrypted) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                }
             )
             Text(
                 stringResource(
-                    if (storage.encrypted) R.string.settings_db_encrypted
-                    else R.string.settings_db_not_encrypted
+                    if (storage.encrypted) {
+                        R.string.settings_db_encrypted
+                    } else {
+                        R.string.settings_db_not_encrypted
+                    }
                 ),
                 style = MaterialTheme.typography.bodyMedium
             )
         }
         Text(
             stringResource(
-                if (storage.encrypted) R.string.settings_db_encrypted_hint
-                else R.string.settings_db_not_encrypted_hint
+                if (storage.encrypted) {
+                    R.string.settings_db_encrypted_hint
+                } else {
+                    R.string.settings_db_not_encrypted_hint
+                }
             ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant

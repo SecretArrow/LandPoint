@@ -5,20 +5,17 @@ import android.net.Uri
 import com.landpoint.app.data.LandRepository
 import com.landpoint.app.data.model.Land
 import com.landpoint.app.data.model.LandEntity
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.UUID
 
 /**
  * JSON and CSV import/export. Files are read and written through SAF uris, so
  * the app needs no storage permission at all.
  */
-class ImportExportManager(
-    private val context: Context,
-    private val repository: LandRepository
-) {
+class ImportExportManager(private val context: Context, private val repository: LandRepository) {
 
     private val json = Json {
         prettyPrint = true
@@ -47,29 +44,26 @@ class ImportExportManager(
         }.getOrElse { ExportResult(error = it.message ?: "Export failed") }
     }
 
-    suspend fun exportGpx(uri: Uri, lands: List<Land>): ExportResult =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                writeText(uri, GeoExporter.toGpx(lands, disclaimer()))
-                ExportResult(count = lands.size)
-            }.getOrElse { ExportResult(error = it.message ?: "Export failed") }
-        }
+    suspend fun exportGpx(uri: Uri, lands: List<Land>): ExportResult = withContext(Dispatchers.IO) {
+        runCatching {
+            writeText(uri, GeoExporter.toGpx(lands, disclaimer()))
+            ExportResult(count = lands.size)
+        }.getOrElse { ExportResult(error = it.message ?: "Export failed") }
+    }
 
-    suspend fun exportKml(uri: Uri, lands: List<Land>): ExportResult =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                writeText(uri, GeoExporter.toKml(lands, disclaimer()))
-                ExportResult(count = lands.size)
-            }.getOrElse { ExportResult(error = it.message ?: "Export failed") }
-        }
+    suspend fun exportKml(uri: Uri, lands: List<Land>): ExportResult = withContext(Dispatchers.IO) {
+        runCatching {
+            writeText(uri, GeoExporter.toKml(lands, disclaimer()))
+            ExportResult(count = lands.size)
+        }.getOrElse { ExportResult(error = it.message ?: "Export failed") }
+    }
 
     /**
      * Carried into every exported file. A GPX or KML opened months later in some
      * other program has none of the app's on-screen context, so the note that
      * these coordinates are not a legal survey has to travel with the data.
      */
-    private fun disclaimer(): String =
-        context.getString(com.landpoint.app.R.string.legal_disclaimer)
+    private fun disclaimer(): String = context.getString(com.landpoint.app.R.string.legal_disclaimer)
 
     private fun writeText(uri: Uri, text: String) {
         // "wt" truncates — without it, overwriting a longer file leaves a tail of
@@ -82,31 +76,29 @@ class ImportExportManager(
 
     // ---------------- import ----------------
 
-    suspend fun import(uri: Uri, strategy: DuplicateStrategy): ImportResult =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val text = readText(uri)
-                val read = readRecords(text)
-                    ?: return@withContext ImportResult(error = "Unrecognised file format")
-                if (read.records.isEmpty()) {
-                    // Distinguish "nothing in the file" from "nothing we could
-                    // read": the second one means the user's data is still
-                    // there, just in a shape this importer rejected.
-                    val error = if (read.unreadableRows > 0) {
-                        "No valid locations found — ${read.unreadableRows} row(s) could not be read"
-                    } else {
-                        "No valid locations found in file"
-                    }
-                    return@withContext ImportResult(error = error)
+    suspend fun import(uri: Uri, strategy: DuplicateStrategy): ImportResult = withContext(Dispatchers.IO) {
+        runCatching {
+            val text = readText(uri)
+            val read = readRecords(text)
+                ?: return@withContext ImportResult(error = "Unrecognised file format")
+            if (read.records.isEmpty()) {
+                // Distinguish "nothing in the file" from "nothing we could
+                // read": the second one means the user's data is still
+                // there, just in a shape this importer rejected.
+                val error = if (read.unreadableRows > 0) {
+                    "No valid locations found — ${read.unreadableRows} row(s) could not be read"
+                } else {
+                    "No valid locations found in file"
                 }
-                applyRecords(read.records, strategy)
-                    .let { it.copy(invalid = it.invalid + read.unreadableRows) }
-            }.getOrElse { ImportResult(error = it.message ?: "Import failed") }
-        }
+                return@withContext ImportResult(error = error)
+            }
+            applyRecords(read.records, strategy)
+                .let { it.copy(invalid = it.invalid + read.unreadableRows) }
+        }.getOrElse { ImportResult(error = it.message ?: "Import failed") }
+    }
 
-    private fun readText(uri: Uri): String =
-        context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
-            ?: error("Cannot open file for reading")
+    private fun readText(uri: Uri): String = context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+        ?: error("Cannot open file for reading")
 
     /**
      * Sniffs the content rather than trusting the file extension, so a .txt
@@ -155,7 +147,13 @@ class ImportExportManager(
     internal suspend fun applyRecords(
         records: List<ImportRecord>,
         strategy: DuplicateStrategy,
-        photoPaths: Map<String, String> = emptyMap()
+        photoPaths: Map<String, String> = emptyMap(),
+        /**
+         * Owner ids that exist after a restore wrote its owners table. A land
+         * referencing anything else is imported with no owner rather than a
+         * dangling link: the owner column has no database-level foreign key.
+         */
+        knownOwnerIds: Set<String> = emptySet()
     ): ImportResult {
         var imported = 0
         var replaced = 0
@@ -180,13 +178,18 @@ class ImportExportManager(
             val duplicateById = record.uuid != null && record.uuid in existingIds
             val duplicateByCoords = if (!duplicateById) {
                 repository.findDuplicateByCoordinates(record.name, record.latitude, record.longitude)
-            } else null
+            } else {
+                null
+            }
 
             val isDuplicate = duplicateById || duplicateByCoords != null
 
             val writtenId: String? = when {
                 !isDuplicate -> (record.uuid ?: UUID.randomUUID().toString()).also { imported++ }
-                strategy == DuplicateStrategy.SKIP -> { skipped++; null }
+                strategy == DuplicateStrategy.SKIP -> {
+                    skipped++
+                    null
+                }
                 strategy == DuplicateStrategy.REPLACE -> {
                     replaced++
                     record.uuid?.takeIf { duplicateById }
@@ -199,7 +202,7 @@ class ImportExportManager(
             }
 
             if (writtenId != null) {
-                toWrite += record.toEntity(writtenId)
+                toWrite += record.toEntity(writtenId, knownOwnerIds)
                 record.photos.forEach { pendingPhotos += writtenId to it }
             }
         }
@@ -223,7 +226,7 @@ class ImportExportManager(
         )
     }
 
-    private fun ImportRecord.toEntity(id: String): LandEntity {
+    private fun ImportRecord.toEntity(id: String, knownOwnerIds: Set<String>): LandEntity {
         val now = System.currentTimeMillis()
         return LandEntity(
             id = id,
@@ -239,6 +242,12 @@ class ImportExportManager(
             areaSqm = areaSqm,
             geometryType = geometryType,
             geometryJson = geometryJson,
+            ownerId = ownerId?.takeIf { it in knownOwnerIds },
+            landRight = landRight,
+            status = status,
+            certificateNumber = certificateNumber,
+            spptNumber = spptNumber,
+            acquisitionDate = acquisitionDate,
             createdAt = createdAt ?: now,
             updatedAt = updatedAt ?: now
         )

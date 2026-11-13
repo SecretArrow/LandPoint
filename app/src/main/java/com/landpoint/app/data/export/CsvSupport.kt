@@ -11,6 +11,8 @@ object CsvSupport {
     val HEADER = listOf(
         "uuid", "name", "description", "notes", "latitude", "longitude",
         "altitude", "accuracy", "address", "parcel_number", "area_sqm",
+        "owner_name", "land_right", "status", "certificate_number",
+        "sppt_number", "acquisition_date",
         "created_at", "updated_at"
     )
 
@@ -29,6 +31,12 @@ object CsvSupport {
                 land.address ?: "",
                 land.parcelNumber ?: "",
                 land.areaSqm?.toString() ?: "",
+                land.ownerName ?: "",
+                land.landRight ?: "",
+                land.status,
+                land.certificateNumber ?: "",
+                land.spptNumber ?: "",
+                land.acquisitionDate?.toString() ?: "",
                 land.createdAt.toString(),
                 land.updatedAt.toString()
             )
@@ -61,8 +69,11 @@ object CsvSupport {
         return when {
             // Both present: the later one is the decimal mark, the other groups.
             lastDot >= 0 && lastComma >= 0 ->
-                if (lastComma > lastDot) value.replace(".", "").replace(',', '.').toDoubleOrNull()
-                else value.replace(",", "").toDoubleOrNull()
+                if (lastComma > lastDot) {
+                    value.replace(".", "").replace(',', '.').toDoubleOrNull()
+                } else {
+                    value.replace(",", "").toDoubleOrNull()
+                }
             // Comma only. For a coordinate a grouping comma makes no sense, and
             // an out-of-range result is rejected by the caller either way.
             lastComma >= 0 -> value.replace(',', '.').toDoubleOrNull()
@@ -117,7 +128,8 @@ object CsvSupport {
             when {
                 inQuotes -> when {
                     c == '"' && i + 1 < text.length && text[i + 1] == '"' -> {
-                        field.append('"'); i++
+                        field.append('"')
+                        i++
                     }
                     c == '"' -> inQuotes = false
                     else -> field.append(c)
@@ -153,8 +165,7 @@ object CsvSupport {
         if (rows.isEmpty()) return CsvReadResult(emptyList(), 0)
         val header = rows.first().map { it.trim().lowercase().replace(" ", "_") }
 
-        fun idx(vararg names: String): Int =
-            names.firstNotNullOfOrNull { n -> header.indexOf(n).takeIf { it >= 0 } } ?: -1
+        fun idx(vararg names: String): Int = names.firstNotNullOfOrNull { n -> header.indexOf(n).takeIf { it >= 0 } } ?: -1
 
         val iUuid = idx("uuid", "id")
         val iName = idx("name", "title", "label")
@@ -169,11 +180,15 @@ object CsvSupport {
         val iArea = idx("area_sqm", "area")
         val iCreated = idx("created_at", "created")
         val iUpdated = idx("updated_at", "updated")
+        val iRight = idx("land_right", "right")
+        val iStatus = idx("status")
+        val iCert = idx("certificate_number", "certificate")
+        val iSppt = idx("sppt_number", "sppt")
+        val iAcquired = idx("acquisition_date", "acquired")
 
         if (iLat < 0 || iLon < 0) return CsvReadResult(emptyList(), 0)
 
-        fun List<String>.at(index: Int): String? =
-            if (index >= 0 && index < size) this[index].trim().takeIf { it.isNotEmpty() } else null
+        fun List<String>.at(index: Int): String? = if (index >= 0 && index < size) this[index].trim().takeIf { it.isNotEmpty() } else null
 
         var skipped = 0
         val records = rows.drop(1).mapNotNull { row ->
@@ -182,8 +197,10 @@ object CsvSupport {
 
             val lat = parseDecimal(row.at(iLat))
             val lon = parseDecimal(row.at(iLon))
-            if (lat == null || lon == null ||
-                lat !in -90.0..90.0 || lon !in -180.0..180.0
+            if (lat == null ||
+                lon == null ||
+                lat !in -90.0..90.0 ||
+                lon !in -180.0..180.0
             ) {
                 skipped++
                 return@mapNotNull null
@@ -200,6 +217,11 @@ object CsvSupport {
                 address = row.at(iAddr),
                 parcelNumber = row.at(iParcel),
                 areaSqm = parseDecimal(row.at(iArea)),
+                landRight = row.at(iRight),
+                status = row.at(iStatus) ?: "aktif",
+                certificateNumber = row.at(iCert),
+                spptNumber = row.at(iSppt),
+                acquisitionDate = row.at(iAcquired)?.toLongOrNull(),
                 createdAt = row.at(iCreated)?.toLongOrNull(),
                 updatedAt = row.at(iUpdated)?.toLongOrNull()
             )
@@ -209,10 +231,7 @@ object CsvSupport {
 }
 
 /** Records read from a CSV, plus the data rows that could not be understood. */
-data class CsvReadResult(
-    val records: List<ImportRecord>,
-    val unreadableRows: Int
-)
+data class CsvReadResult(val records: List<ImportRecord>, val unreadableRows: Int)
 
 /** Provider-neutral record produced by both the JSON and CSV readers. */
 data class ImportRecord(
@@ -236,5 +255,12 @@ data class ImportRecord(
      */
     val geometryType: String = com.landpoint.app.data.model.GeometryType.POINT,
     val geometryJson: String? = null,
-    val photos: List<PhotoExportJson> = emptyList()
+    val photos: List<PhotoExportJson> = emptyList(),
+    /** Owner link and registry fields; only a backup restore fills the owner id. */
+    val ownerId: String? = null,
+    val landRight: String? = null,
+    val status: String = "aktif",
+    val certificateNumber: String? = null,
+    val spptNumber: String? = null,
+    val acquisitionDate: Long? = null
 )

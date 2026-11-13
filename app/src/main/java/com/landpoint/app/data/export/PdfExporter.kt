@@ -7,7 +7,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import com.landpoint.app.R
@@ -19,22 +18,19 @@ import com.landpoint.app.util.BoundarySketch
 import com.landpoint.app.util.GeoPoint
 import com.landpoint.app.util.GeoUtils
 import com.landpoint.app.util.PolygonMath
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * PDF report writer built on android.graphics.pdf — keeps the app dependency-free
  * and works offline. A4 at 72dpi is 595x842pt.
  */
-class PdfExporter(
-    private val context: Context,
-    private val strings: AppStrings
-) {
+class PdfExporter(private val context: Context, private val strings: AppStrings) {
 
     private companion object {
         const val PAGE_WIDTH = 595
@@ -42,12 +38,15 @@ class PdfExporter(
         const val MARGIN = 48f
         const val LINE = 18f
         const val ACCENT = 0xFF1F6F4A.toInt()
+
         // Matched to the photo block below it, so a record with both reads as
         // two panels of one report rather than two unrelated pictures.
         const val SKETCH_WIDTH = 220f
         const val SKETCH_HEIGHT = 150f
+
         /** Reserved along the bottom of the box for the scale bar. */
         const val SKETCH_BAR_STRIP = 14f
+
         /**
          * Above this many corners the numbers are drawn no longer: a walked
          * track of hundreds of points would be a ring of unreadable digits, and
@@ -89,6 +88,7 @@ class PdfExporter(
         textSize = 9f
         isAntiAlias = true
     }
+
     // Alpha is set after the colour, not folded into it: the setter replaces the
     // alpha channel of whatever colour is already there, so the order matters.
     private val sketchFillPaint = Paint().apply {
@@ -124,16 +124,14 @@ class PdfExporter(
         land: Land,
         dms: Boolean,
         areaUnit: SettingsRepository.AreaUnit = SettingsRepository.AreaUnit.SQM
-    ): ExportResult =
-        export(uri, listOf(land), dms, areaUnit, strings.get(R.string.pdf_title_single))
+    ): ExportResult = export(uri, listOf(land), dms, areaUnit, strings.get(R.string.pdf_title_single))
 
     suspend fun exportReport(
         uri: Uri,
         lands: List<Land>,
         dms: Boolean,
         areaUnit: SettingsRepository.AreaUnit = SettingsRepository.AreaUnit.SQM
-    ): ExportResult =
-        export(uri, lands, dms, areaUnit, strings.get(R.string.pdf_title_report))
+    ): ExportResult = export(uri, lands, dms, areaUnit, strings.get(R.string.pdf_title_report))
 
     private suspend fun export(
         uri: Uri,
@@ -164,10 +162,7 @@ class PdfExporter(
         }.getOrElse { ExportResult(error = it.message ?: strings.get(R.string.msg_pdf_generic)) }
     }
 
-    private inner class RenderState(
-        val document: PdfDocument,
-        val docTitle: String
-    ) {
+    private inner class RenderState(val document: PdfDocument, val docTitle: String) {
         var page: PdfDocument.Page? = null
         var canvas: Canvas? = null
         var y = MARGIN
@@ -229,20 +224,18 @@ class PdfExporter(
             y += LINE
         }
 
-        fun drawLand(
-            land: Land,
-            index: Int,
-            dms: Boolean,
-            areaUnit: SettingsRepository.AreaUnit
-        ) {
+        fun drawLand(land: Land, index: Int, dms: Boolean, areaUnit: SettingsRepository.AreaUnit) {
             ensureSpace(160f)
             val c = canvas ?: return
 
             c.drawText("$index. ${land.name}", MARGIN, y, headingPaint)
             y += LINE
 
-            val coords = if (dms) GeoUtils.formatDMS(land.latitude, land.longitude)
-            else GeoUtils.formatDecimal(land.latitude, land.longitude)
+            val coords = if (dms) {
+                GeoUtils.formatDMS(land.latitude, land.longitude)
+            } else {
+                GeoUtils.formatDecimal(land.latitude, land.longitude)
+            }
 
             field(strings.get(R.string.label_coordinates), coords)
             land.parcelNumber?.takeIf { it.isNotBlank() }?.let {
@@ -394,8 +387,11 @@ class PdfExporter(
             c.drawLine(x + length, baseline - 3f, x + length, baseline + 3f, sketchLinePaint)
             val label = strings.get(
                 R.string.pdf_sketch_scale,
-                if (metres >= 1.0) metres.roundToInt().toString()
-                else "%.1f".format(Locale.getDefault(), metres)
+                if (metres >= 1.0) {
+                    metres.roundToInt().toString()
+                } else {
+                    "%.1f".format(Locale.getDefault(), metres)
+                }
             )
             c.drawText(label, x, baseline - 5f, sketchLabelPaint)
         }
@@ -423,7 +419,9 @@ class PdfExporter(
             var sample = 1
             while (bounds.outWidth / (sample * 2) >= maxWidth &&
                 bounds.outHeight / (sample * 2) >= maxHeight
-            ) sample *= 2
+            ) {
+                sample *= 2
+            }
 
             val decoded = BitmapFactory.decodeFile(
                 path,
@@ -435,13 +433,16 @@ class PdfExporter(
                 maxHeight.toFloat() / decoded.height,
                 1f
             )
-            if (ratio >= 1f) decoded
-            else Bitmap.createScaledBitmap(
-                decoded,
-                (decoded.width * ratio).toInt().coerceAtLeast(1),
-                (decoded.height * ratio).toInt().coerceAtLeast(1),
-                true
-            ).also { if (it !== decoded) decoded.recycle() }
+            if (ratio >= 1f) {
+                decoded
+            } else {
+                Bitmap.createScaledBitmap(
+                    decoded,
+                    (decoded.width * ratio).toInt().coerceAtLeast(1),
+                    (decoded.height * ratio).toInt().coerceAtLeast(1),
+                    true
+                ).also { if (it !== decoded) decoded.recycle() }
+            }
         }.getOrNull()
     }
 

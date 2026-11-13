@@ -4,10 +4,10 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.landpoint.app.map.ImportedArchiveSpec
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.MessageDigest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** The one archive format MapLibre can read from a local file. */
 private const val ARCHIVE_EXTENSION = "pmtiles"
@@ -198,11 +198,10 @@ class ArchiveStore(private val context: Context) {
         archiveFiles().sumOf { it.length() }
     }
 
-    private fun archiveFiles(): List<File> =
-        archiveDir.listFiles()
-            ?.filter { it.isFile && it.extension.lowercase() == ARCHIVE_EXTENSION }
-            ?.sortedByDescending { it.lastModified() }
-            .orEmpty()
+    private fun archiveFiles(): List<File> = archiveDir.listFiles()
+        ?.filter { it.isFile && it.extension.lowercase() == ARCHIVE_EXTENSION }
+        ?.sortedByDescending { it.lastModified() }
+        .orEmpty()
 
     /** Leftovers from an import that never finished. Not an error, just rubbish. */
     private fun clearPartials() {
@@ -222,13 +221,11 @@ class ArchiveStore(private val context: Context) {
         }
     }.getOrNull() ?: uri.lastPathSegment?.substringAfterLast('/')
 
-    private fun sanitise(name: String): String =
-        name.substringAfterLast('/').replace(Regex("[^A-Za-z0-9._-]"), "_")
+    private fun sanitise(name: String): String = name.substringAfterLast('/').replace(Regex("[^A-Za-z0-9._-]"), "_")
 
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
-    private fun PmtilesHeader.kindOf(): MapKind =
-        if (isVector) MapKind.VECTOR else MapKind.RASTER_ARCHIVE
+    private fun PmtilesHeader.kindOf(): MapKind = if (isVector) MapKind.VECTOR else MapKind.RASTER_ARCHIVE
 }
 
 /**

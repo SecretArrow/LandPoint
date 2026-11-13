@@ -1,0 +1,58 @@
+# E2E 5 — an owner can be recorded and appears in the list.
+#
+# Covers: the Owners tab, the add-owner form, inline validation happening on
+# save (not before), and the saved owner showing up with the NIK summary.
+appId: com.landpoint.app.debug
+name: 05-owner-add
+tags:
+- core
+---
+- stopApp
+- launchApp
+
+# A slow CI emulator sometimes raises a system "isn't responding" dialog over
+# whatever is on screen; dismiss it when present so the flow can proceed.
+- runFlow:
+    when:
+      visible: '^Wait$'
+    commands:
+      - tapOn: '^Wait$'
+
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 20000
+
+- tapOn: '^Owners$'
+- extendedWaitUntil:
+    visible: '^Add owner$'
+    timeout: 15000
+
+# The empty state is part of the contract: it explains what the tab is for.
+- extendedWaitUntil:
+    visible: 'No owner saved yet'
+    timeout: 10000
+
+- tapOn: '^Add owner$'
+- extendedWaitUntil:
+    visible: '^Full name \*$'
+    timeout: 10000
+
+# Save with nothing typed: the form explains itself rather than just failing.
+- tapOn: '^Save$'
+- extendedWaitUntil:
+    visible: 'A name is needed'
+    timeout: 10000
+
+- tapOn: '^Full name \*$'
+- inputText: 'Budi Santoso'
+- tapOn: 'NIK'
+- inputText: '3201234567890001'
+- hideKeyboard
+- tapOn: '^Save$'
+
+- extendedWaitUntil:
+    visible: 'Budi Santoso'
+    timeout: 15000
+- extendedWaitUntil:
+    visible: '3201234567890001'
+    timeout: 10000

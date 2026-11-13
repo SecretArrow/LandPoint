@@ -11,15 +11,11 @@ import androidx.annotation.StringRes
  */
 class AppStrings(private val context: Context) {
 
-    fun get(@StringRes id: Int): String =
-        Localization.wrap(context).resources.getString(id)
+    fun get(@StringRes id: Int): String = Localization.wrap(context).resources.getString(id)
 
-    fun get(@StringRes id: Int, vararg args: Any): String =
-        Localization.wrap(context).resources.getString(id, *args)
+    fun get(@StringRes id: Int, vararg args: Any): String = Localization.wrap(context).resources.getString(id, *args)
 
-    fun plural(@PluralsRes id: Int, count: Int): String =
-        Localization.wrap(context).resources.getQuantityString(id, count, count)
+    fun plural(@PluralsRes id: Int, count: Int): String = Localization.wrap(context).resources.getQuantityString(id, count, count)
 
-    fun array(@androidx.annotation.ArrayRes id: Int): Array<String> =
-        Localization.wrap(context).resources.getStringArray(id)
+    fun array(@androidx.annotation.ArrayRes id: Int): Array<String> = Localization.wrap(context).resources.getStringArray(id)
 }

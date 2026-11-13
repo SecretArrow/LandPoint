@@ -4,15 +4,15 @@ import android.content.Context
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import net.zetetic.database.DatabaseUtils
-import net.zetetic.database.sqlcipher.SQLiteDatabase
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import java.io.File
+import java.io.FileInputStream
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import java.io.File
-import java.io.FileInputStream
+import net.zetetic.database.DatabaseUtils
+import net.zetetic.database.sqlcipher.SQLiteDatabase
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 /**
  * How the land database is stored on this phone, as far as the app can tell.
@@ -24,10 +24,7 @@ import java.io.FileInputStream
  *   moved out of the way. Non-null means somebody has lost data and needs to be
  *   told where it went and what to do about it.
  */
-data class DatabaseStorage(
-    val encrypted: Boolean = false,
-    val parked: String? = null
-)
+data class DatabaseStorage(val encrypted: Boolean = false, val parked: String? = null)
 
 /**
  * Encrypts the land database at rest, and gets an existing plaintext one across
@@ -273,10 +270,9 @@ internal object DatabaseCipher {
     }
 
     /** Proof the copy holds what the original held, before the original is let go. */
-    private fun rowCounts(db: SQLiteDatabase): List<Long> =
-        listOf("lands", "photos").map { table ->
-            DatabaseUtils.longForQuery(db, "SELECT count(*) FROM $table", null)
-        }
+    private fun rowCounts(db: SQLiteDatabase): List<Long> = listOf("lands", "photos").map { table ->
+        DatabaseUtils.longForQuery(db, "SELECT count(*) FROM $table", null)
+    }
 
     /**
      * Puts the encrypted copy where Room expects it.
@@ -321,9 +317,8 @@ private class DeferredFactory(
     private val prepare: () -> Boolean
 ) : SupportSQLiteOpenHelper.Factory {
 
-    override fun create(
-        configuration: SupportSQLiteOpenHelper.Configuration
-    ): SupportSQLiteOpenHelper = DeferredOpenHelper(configuration, encrypted, plain, prepare)
+    override fun create(configuration: SupportSQLiteOpenHelper.Configuration): SupportSQLiteOpenHelper =
+        DeferredOpenHelper(configuration, encrypted, plain, prepare)
 }
 
 private class DeferredOpenHelper(

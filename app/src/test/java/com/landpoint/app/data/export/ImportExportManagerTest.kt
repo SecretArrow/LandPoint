@@ -8,6 +8,7 @@ import com.landpoint.app.data.LandRepository
 import com.landpoint.app.data.PhotoStore
 import com.landpoint.app.data.db.LandDatabase
 import com.landpoint.app.data.model.LandEntity
+import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -17,7 +18,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 class ImportExportManagerTest {
@@ -217,13 +217,7 @@ class ImportExportManagerTest {
 
     // ---------------- helpers ----------------
 
-    private suspend fun seed(
-        id: String,
-        name: String,
-        lat: Double,
-        lon: Double,
-        notes: String = ""
-    ) {
+    private suspend fun seed(id: String, name: String, lat: Double, lon: Double, notes: String = "") {
         repository.save(
             LandEntity(
                 id = id,
@@ -235,8 +229,7 @@ class ImportExportManagerTest {
         )
     }
 
-    private suspend fun importCsv(csv: String, strategy: DuplicateStrategy): ImportResult =
-        manager.import(fileUri(csv), strategy)
+    private suspend fun importCsv(csv: String, strategy: DuplicateStrategy): ImportResult = manager.import(fileUri(csv), strategy)
 
     private fun fileUri(content: String): Uri {
         val file = File.createTempFile("import", ".csv")

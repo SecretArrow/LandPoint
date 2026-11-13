@@ -1,12 +1,12 @@
 package com.landpoint.app.util
 
 import com.landpoint.app.data.SettingsRepository
+import java.util.Locale
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Locale
 
 /**
  * Area is a display string, so it follows the language the user picked in the
@@ -25,7 +25,7 @@ class AreaFormatTest {
 
     @Test
     fun `english uses a dot separator regardless of the device locale`() {
-        Locale.setDefault(Locale.GERMANY)   // a comma-decimal device
+        Locale.setDefault(Locale.GERMANY) // a comma-decimal device
         Localization.setActive(SettingsRepository.Language.ENGLISH)
 
         // Hectares carry 3 decimals, so the separator is visible.
@@ -34,7 +34,7 @@ class AreaFormatTest {
 
     @Test
     fun `indonesian uses a comma separator regardless of the device locale`() {
-        Locale.setDefault(Locale.US)        // a dot-decimal device
+        Locale.setDefault(Locale.US) // a dot-decimal device
         Localization.setActive(SettingsRepository.Language.INDONESIAN)
 
         assertEquals("0,250", AreaFormat.value(2500.0, SettingsRepository.AreaUnit.HECTARE))

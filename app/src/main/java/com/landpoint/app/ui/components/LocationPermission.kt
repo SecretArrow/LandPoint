@@ -89,7 +89,9 @@ fun rememberLocationPermission(onGranted: () -> Unit = {}): LocationPermissionSt
 
     // False both before the first ask and after a permanent refusal, which is why
     // it is only trusted once we know an ask has happened.
-    val blocked = !granted && asked && activity != null &&
+    val blocked = !granted &&
+        asked &&
+        activity != null &&
         !activity.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
 
     return remember(granted, blocked) {
@@ -141,11 +143,7 @@ fun openAppSettings(context: Context) {
  * else.
  */
 @Composable
-fun LocationPermissionCard(
-    onRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    blocked: Boolean = false
-) {
+fun LocationPermissionCard(onRequest: () -> Unit, modifier: Modifier = Modifier, blocked: Boolean = false) {
     val context = LocalContext.current
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -181,8 +179,11 @@ fun LocationPermissionCard(
             Button(onClick = { if (blocked) openAppSettings(context) else onRequest() }) {
                 Text(
                     stringResource(
-                        if (blocked) R.string.permission_open_settings
-                        else R.string.permission_grant
+                        if (blocked) {
+                            R.string.permission_open_settings
+                        } else {
+                            R.string.permission_grant
+                        }
                     )
                 )
             }

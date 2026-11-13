@@ -165,13 +165,7 @@ class OfflineMapsViewModel(
         }
     }
 
-    fun start(
-        provider: MapProvider,
-        name: String,
-        bounds: GeoBounds,
-        minZoom: Int,
-        maxZoom: Int
-    ) = act {
+    fun start(provider: MapProvider, name: String, bounds: GeoBounds, minZoom: Int, maxZoom: Int) = act {
         when (val result = downloads.start(provider, name, bounds, minZoom, maxZoom)) {
             is StartResult.Started -> strings.get(R.string.msg_offline_area_started, name)
             is StartResult.Refused -> explain(result.reason)

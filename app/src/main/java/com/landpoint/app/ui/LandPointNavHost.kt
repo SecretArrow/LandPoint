@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Assessment
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Landscape
+import androidx.compose.material.icons.outlined.People
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -18,14 +20,14 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -35,12 +37,17 @@ import com.landpoint.app.R
 import com.landpoint.app.ui.compass.CompassScreen
 import com.landpoint.app.ui.detail.LandDetailScreen
 import com.landpoint.app.ui.edit.LandEditScreen
+import com.landpoint.app.ui.home.HomeScreen
 import com.landpoint.app.ui.lands.LandListDetailPane
 import com.landpoint.app.ui.lands.LandListScreen
 import com.landpoint.app.ui.map.MapScreen
 import com.landpoint.app.ui.navigation.Routes
 import com.landpoint.app.ui.offline.OfflineMapsScreen
+import com.landpoint.app.ui.owners.OwnerDetailScreen
+import com.landpoint.app.ui.owners.OwnerFormScreen
+import com.landpoint.app.ui.owners.OwnerListScreen
 import com.landpoint.app.ui.preview.LandPreviewScreen
+import com.landpoint.app.ui.reports.ReportsScreen
 import com.landpoint.app.ui.settings.SettingsScreen
 import com.landpoint.app.ui.shape.LandShapeScreen
 
@@ -48,18 +55,16 @@ import com.landpoint.app.ui.shape.LandShapeScreen
 private const val PREVIEW_SAVE_KEY = "preview_save"
 
 /**
- * The three places a user comes back to. Everything else — a land's detail, the
+ * The five places a user comes back to. Everything else — a land's detail, the
  * editor, the compass, the corner picker — is work with an end, so it takes the
  * whole screen and the bar steps out of the way.
  */
-private enum class Tab(
-    val route: String,
-    val icon: ImageVector,
-    @StringRes val labelRes: Int
-) {
-    LANDS(Routes.LIST, Icons.Outlined.Landscape, R.string.nav_lands),
+private enum class Tab(val route: String, val icon: ImageVector, @StringRes val labelRes: Int) {
+    HOME(Routes.HOME, Icons.Outlined.Home, R.string.nav_home),
     MAP(Routes.MAP, Icons.Default.Map, R.string.nav_map),
-    SETTINGS(Routes.SETTINGS, Icons.Default.Settings, R.string.nav_settings)
+    LANDS(Routes.LIST, Icons.Outlined.Landscape, R.string.nav_lands),
+    OWNERS(Routes.OWNERS, Icons.Outlined.People, R.string.nav_owners),
+    REPORTS(Routes.REPORTS, Icons.Outlined.Assessment, R.string.nav_reports)
 }
 
 @Composable
@@ -78,9 +83,6 @@ fun LandPointNavHost() {
     val barAtBottom = onTab && !rail
 
     Scaffold(
-        // Zero here on purpose: the bar brings its own navigation-bar inset, and
-        // every screen inside already handles its own status bar. Without this,
-        // the system insets would be applied twice.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (barAtBottom) {
@@ -90,8 +92,8 @@ fun LandPointNavHost() {
                             selected = tab.route == currentRoute,
                             onClick = { navController.switchTab(tab.route) },
                             icon = { Icon(tab.icon, contentDescription = null) },
-                            // Labelled, not icon-only: three tabs have room for
-                            // words, and words do not have to be guessed at.
+                            // Labelled, not icon-only: words do not have to be
+                            // guessed at, and five labels still fit the bar.
                             label = { Text(stringResource(tab.labelRes)) }
                         )
                     }
@@ -108,13 +110,13 @@ fun LandPointNavHost() {
                 .padding(bottom = if (barAtBottom) padding.calculateBottomPadding() else 0.dp)
         ) {
             // Sideways there is room to spare and downwards there is not, which
-            // is what a phone on its side is. The three destinations move into
+            // is what a phone on its side is. The five destinations move into
             // the margin and give the screen its height back. The rail carries
             // its own inset on the side it sits, the same way the bar did.
             if (rail) {
                 // Told to fill the height rather than trusting it to: this Row
                 // aligns its children to the top, and a rail the height of its
-                // three items would leave the rest of that column bare.
+                // five items would leave the rest of that column bare.
                 NavigationRail(modifier = Modifier.fillMaxHeight()) {
                     Tab.entries.forEach { tab ->
                         NavigationRailItem(
@@ -135,12 +137,13 @@ fun LandPointNavHost() {
         }
     }
 }
+
 /**
  * Tab switching, the standard way.
  *
  * `saveState`/`restoreState` are what keep the land list's scroll position when
- * a user glances at the map and comes back, and `launchSingleTop` stops the
- * back stack growing by one entry every time a tab is tapped.
+ * a user glances at the map and comes back, and `launchSingleTop` stops the back
+ * stack growing by one entry every time a tab is tapped.
  */
 private fun NavHostController.switchTab(route: String) {
     navigate(route) {
@@ -151,18 +154,24 @@ private fun NavHostController.switchTab(route: String) {
 }
 
 @Composable
-private fun LandPointGraph(
-    navController: NavHostController,
-    listBesideDetail: Boolean,
-    modifier: Modifier = Modifier
-) {
+private fun LandPointGraph(navController: NavHostController, listBesideDetail: Boolean, modifier: Modifier = Modifier) {
     val landIdArg = listOf(navArgument(Routes.ARG_LAND_ID) { type = NavType.StringType })
+    val ownerIdArg = listOf(navArgument(Routes.ARG_OWNER_ID) { type = NavType.StringType })
 
     NavHost(
         navController = navController,
-        startDestination = Routes.LIST,
+        startDestination = Routes.HOME,
         modifier = modifier
     ) {
+        composable(Routes.HOME) {
+            HomeScreen(
+                onOpenLand = { id -> navController.navigate(Routes.detail(id)) },
+                onNewLand = { navController.navigate(Routes.NEW) },
+                onOpenOwners = { navController.switchTab(Routes.OWNERS) },
+                onOpenReports = { navController.switchTab(Routes.REPORTS) },
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) }
+            )
+        }
 
         composable(Routes.LIST) {
             // Same list either way; on a wide window it keeps the chosen record
@@ -184,11 +193,23 @@ private fun LandPointGraph(
             }
         }
 
-        // Map and Settings are tabs now, so neither gets a back arrow.
         composable(Routes.MAP) {
             MapScreen(
                 onOpenLand = { id -> navController.navigate(Routes.detail(id)) },
                 onOpenOfflineMaps = { navController.navigate(Routes.OFFLINE) }
+            )
+        }
+
+        composable(Routes.OWNERS) {
+            OwnerListScreen(
+                onOpenOwner = { id -> navController.navigate(Routes.ownerDetail(id)) },
+                onNewOwner = { navController.navigate(Routes.OWNER_NEW) }
+            )
+        }
+
+        composable(Routes.REPORTS) {
+            ReportsScreen(
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) }
             )
         }
 
@@ -200,6 +221,30 @@ private fun LandPointGraph(
 
         composable(Routes.OFFLINE) {
             OfflineMapsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.OWNER_DETAIL, arguments = ownerIdArg) {
+            OwnerDetailScreen(
+                onBack = { navController.popBackStack() },
+                onEdit = { id -> navController.navigate(Routes.ownerEdit(id)) },
+                onOpenLand = { id -> navController.navigate(Routes.detail(id)) }
+            )
+        }
+
+        composable(Routes.OWNER_NEW) {
+            OwnerFormScreen(
+                ownerId = null,
+                onDone = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.OWNER_EDIT, arguments = ownerIdArg) {
+            OwnerFormScreen(
+                ownerId = it.arguments?.getString(Routes.ARG_OWNER_ID),
+                onDone = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() }
+            )
         }
 
         composable(Routes.NEW) { entry ->

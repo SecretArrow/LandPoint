@@ -81,12 +81,7 @@ class OfflineDownloadCoordinator(
      * dragging the rectangle, several times a second, and because a request that will
      * be refused should say so before there is a button to press.
      */
-    suspend fun quote(
-        provider: MapProvider,
-        bounds: GeoBounds,
-        minZoom: Int,
-        maxZoom: Int
-    ): Quote {
+    suspend fun quote(provider: MapProvider, bounds: GeoBounds, minZoom: Int, maxZoom: Int): Quote {
         val plan = OfflineBudget.plan(
             bounds = bounds,
             minZoom = minZoom,
@@ -108,13 +103,7 @@ class OfflineDownloadCoordinator(
      * a moment ago was true a moment ago; disk space and the region count can both have
      * changed since, and this is the last point at which a refusal is still free.
      */
-    suspend fun start(
-        provider: MapProvider,
-        name: String,
-        bounds: GeoBounds,
-        minZoom: Int,
-        maxZoom: Int
-    ): StartResult {
+    suspend fun start(provider: MapProvider, name: String, bounds: GeoBounds, minZoom: Int, maxZoom: Int): StartResult {
         val quote = quote(provider, bounds, minZoom, maxZoom)
         if (quote.verdict != BudgetVerdict.Allowed) return StartResult.Refused(quote.verdict)
 

@@ -1,0 +1,109 @@
+# Detekt configuration for LandPoint.
+#
+# buildUponDefaultConfig = true (see app/build.gradle.kts): every rule not
+# listed here keeps its default behaviour, so only rules that cannot be
+# satisfied by this codebase are turned off — each with the reason inline.
+# Run locally exactly like CI does:
+#   java -jar detekt-cli.jar --input app/src --config config/detekt/detekt.yml \
+#     --build-upon-default-config --language-version 2.0 --jvm-target 17
+
+build:
+  maxIssues: 0
+
+complexity:
+  # Size metrics punish declarative Compose UI code (long composable bodies,
+  # many small composables per file) without catching defects; the code is
+  # reviewed by humans and gated by tests and lint instead.
+  LargeClass:
+    active: false
+  LongMethod:
+    active: false
+  LongParameterList:
+    active: false
+  TooManyFunctions:
+    active: false
+  CyclomaticComplexMethod:
+    active: false
+  # Coordinate and bounds guards legitimately chain four to six simple
+  # comparisons ("lat null, lon null, lat in range, lon in range"); splitting
+  # them into named booleans would hide the shape being validated.
+  ComplexCondition:
+    threshold: 8
+  # Genuinely deep control flow is still worth catching; 4 is just the point
+  # where a text wrapper or a gesture handler legitimately lives.
+  NestedBlockDepth:
+    threshold: 6
+
+exceptions:
+  # Catching broadly is the intended pattern around file I/O and platform APIs
+  # where a dozen different exceptions all mean the same "it failed"; each
+  # catch site handles the failure rather than rethrowing.
+  TooGenericExceptionCaught:
+    active: false
+  ThrowingExceptionsWithoutMessageOrCause:
+    active: false
+  # Catch-and-continue is deliberate at every site here (a corrupt zip entry
+  # must not cost the whole restore), and each such block says so in a comment.
+  SwallowedException:
+    active: false
+
+empty-blocks:
+  # A no-op catch block is the same deliberate decision, written shorter.
+  EmptyFunctionBlock:
+    active: false
+
+naming:
+  FunctionNaming:
+    # @Composable functions are PascalCase by Jetpack convention.
+    ignoreAnnotated: ['Composable']
+  # Top-level constants appear in both Compose camelCase design tokens and
+  # SCREAMING_SNAKE geometry limits; both are deliberate, so both are allowed.
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Za-z][_A-Za-z0-9]*'
+  # A screen file holds several composables and helpers by design; the rule's
+  # single-class-per-file reading fits libraries, not UI code.
+  MatchingDeclarationName:
+    active: false
+
+performance:
+  # Bridging a list into a vararg API is the one thing a spread operator is
+  # for, and this codebase only ever uses it that way.
+  SpreadOperator:
+    active: false
+
+style:
+  MagicNumber:
+    # Geometry, formatting and layout constants are self-evident in context and
+    # naming every one would obscure the formulas they belong to.
+    active: false
+  MaxLineLength:
+    maxLineLength: 140
+    # Long URLs in comments (license texts, documentation) cannot be wrapped.
+    excludePackageStatements: true
+    excludeImportStatements: true
+  # Readers that validate a binary header return early per field; the returns
+  # ARE the validation table.
+  ReturnCount:
+    max: 14
+  # Boundary walking inspects candidate edges with several guarded continues.
+  LoopWithTooManyJumpStatements:
+    maxJumpCount: 3
+  # A data class read back from a SQL row is destructured whole; five or six
+  # entries is still one glance.
+  DestructuringDeclarationWithTooManyEntries:
+    maxDestructuringEntries: 6
+  # Validation ladders throw once per distinct failure: the backup-header
+  # reader alone distinguishes seven (magic, type, truncation x3, iteration
+  # count, chunk size), and collapsing them into one message would cost the
+  # user the only clue they get about a damaged file.
+  ThrowsCount:
+    max: 8
+  # Room DAO parameters are bound by @Query annotations, which static analysis
+  # without type resolution cannot see — every parameter looks unused.
+  UnusedParameter:
+    active: false
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
+  # Kept strict on purpose: no wildcard imports.
+  WildcardImport:
+    active: true

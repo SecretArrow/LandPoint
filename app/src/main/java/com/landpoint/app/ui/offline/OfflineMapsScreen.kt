@@ -110,10 +110,7 @@ private const val FINE_AREA_LIMIT = 10.0
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OfflineMapsScreen(
-    onBack: () -> Unit,
-    viewModel: OfflineMapsViewModel = viewModel(factory = OfflineMapsViewModel.Factory)
-) {
+fun OfflineMapsScreen(onBack: () -> Unit, viewModel: OfflineMapsViewModel = viewModel(factory = OfflineMapsViewModel.Factory)) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val anchor by viewModel.anchor.collectAsStateWithLifecycle()
     val prefs = rememberMapPrefs()
@@ -601,13 +598,7 @@ private fun SavedAreaRow(
 
 /** One text field in a dialog, used for both naming and renaming an area. */
 @Composable
-private fun NameDialog(
-    title: String,
-    initial: String,
-    confirm: String,
-    onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
+private fun NameDialog(title: String, initial: String, confirm: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
     var text by rememberSaveable(initial) { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,

@@ -4,11 +4,11 @@ import com.landpoint.app.data.model.GeometryCodec
 import com.landpoint.app.data.model.GeometryType
 import com.landpoint.app.data.model.Land
 import com.landpoint.app.util.GeoPoint
+import java.util.Locale
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Locale
 
 class GeoExporterTest {
 
@@ -20,10 +20,7 @@ class GeoExporterTest {
         GeoPoint(-6.915744, 107.610810)
     )
 
-    private fun land(
-        name: String = "Kebun Utara",
-        polygon: Boolean = false
-    ) = Land(
+    private fun land(name: String = "Kebun Utara", polygon: Boolean = false) = Land(
         id = "id-1",
         name = name,
         description = "Sawah",

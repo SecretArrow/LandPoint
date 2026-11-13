@@ -43,11 +43,7 @@ import kotlinx.coroutines.launch
  *   `stateIn(WhileSubscribed)` in a ViewModel, or `collectAsStateWithLifecycle` on a
  *   screen — rather than from a copy of the lifecycle kept here.
  */
-class LocationTracker(
-    private val provider: LocationProvider,
-    private val gnss: GnssSignal,
-    private val sensors: DeviceSensors
-) {
+class LocationTracker(private val provider: LocationProvider, private val gnss: GnssSignal, private val sensors: DeviceSensors) {
 
     /**
      * Tracking state, for as long as it is collected.
@@ -183,10 +179,7 @@ class LocationTracker(
         ).declination.toDouble()
     }.getOrDefault(0.0)
 
-    private fun LocationData.toTelemetry(
-        latitude: Double = this.latitude,
-        longitude: Double = this.longitude
-    ) = LocationTelemetry(
+    private fun LocationData.toTelemetry(latitude: Double = this.latitude, longitude: Double = this.longitude) = LocationTelemetry(
         latitude = latitude,
         longitude = longitude,
         accuracyM = accuracy?.toDouble(),

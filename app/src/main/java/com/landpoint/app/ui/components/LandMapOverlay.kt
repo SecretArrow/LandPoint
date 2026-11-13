@@ -259,19 +259,27 @@ internal class LandMapOverlay {
 
     /** Selected corners are bigger, ringed thicker and painted apart. */
     private fun cornerColour(): Expression = Expression.switchCase(
-        isSelected, Expression.literal(colourString(selected)), Expression.literal(colourString(accent))
+        isSelected,
+        Expression.literal(colourString(selected)),
+        Expression.literal(colourString(accent))
     )
 
     private fun cornerRadius(): Expression = Expression.switchCase(
-        isSelected, Expression.literal(CORNER_RADIUS_ON), Expression.literal(CORNER_RADIUS)
+        isSelected,
+        Expression.literal(CORNER_RADIUS_ON),
+        Expression.literal(CORNER_RADIUS)
     )
 
     private fun cornerStroke(): Expression = Expression.switchCase(
-        isSelected, Expression.literal(CORNER_STROKE_ON), Expression.literal(CORNER_STROKE)
+        isSelected,
+        Expression.literal(CORNER_STROKE_ON),
+        Expression.literal(CORNER_STROKE)
     )
 
     private fun cornerTextSize(): Expression = Expression.switchCase(
-        isSelected, Expression.literal(CORNER_TEXT_ON), Expression.literal(CORNER_TEXT)
+        isSelected,
+        Expression.literal(CORNER_TEXT_ON),
+        Expression.literal(CORNER_TEXT)
     )
 
     private val isSelected: Expression
@@ -390,8 +398,7 @@ internal class LandMapOverlay {
          * that reaches here is opaque, and opacity is set as its own property so it
          * can be reasoned about on screen.
          */
-        private fun colourString(colour: Int): String =
-            String.format(Locale.US, "#%06X", 0xFFFFFF and colour)
+        private fun colourString(colour: Int): String = String.format(Locale.US, "#%06X", 0xFFFFFF and colour)
 
         /**
          * Geometry for one shape, or null when there is not enough of it to draw.
@@ -415,17 +422,15 @@ internal class LandMapOverlay {
             }
         }
 
-        private fun MapPin.toFeature(): Feature =
-            Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
-                addStringProperty(PROP_ID, id)
-            }
+        private fun MapPin.toFeature(): Feature = Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
+            addStringProperty(PROP_ID, id)
+        }
 
-        private fun MapCorner.toFeature(): Feature =
-            Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
-                addStringProperty(PROP_ID, id)
-                addStringProperty(PROP_LABEL, label)
-                addStringProperty(PROP_SELECTED, if (selected) TRUE else FALSE)
-            }
+        private fun MapCorner.toFeature(): Feature = Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
+            addStringProperty(PROP_ID, id)
+            addStringProperty(PROP_LABEL, label)
+            addStringProperty(PROP_SELECTED, if (selected) TRUE else FALSE)
+        }
 
         /**
          * The accuracy radius as a real circle on the ground.
@@ -446,8 +451,7 @@ internal class LandMapOverlay {
             return Feature.fromGeometry(Polygon.fromLngLats(listOf(ring)))
         }
 
-        private fun MapFix.toDotFeature(): Feature =
-            Feature.fromGeometry(Point.fromLngLat(longitude, latitude))
+        private fun MapFix.toDotFeature(): Feature = Feature.fromGeometry(Point.fromLngLat(longitude, latitude))
 
         /**
          * The provisional mark, carrying an id so a touch can be matched to it.
@@ -455,13 +459,11 @@ internal class LandMapOverlay {
          * Unlike a corner it has no label and no selected flag: it is not part of the
          * ring yet, so it has no number to draw and nothing to be selected against.
          */
-        private fun GeoPoint.toPendingFeature(): Feature =
-            Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
-                addStringProperty(PROP_ID, PENDING_ID)
-            }
+        private fun GeoPoint.toPendingFeature(): Feature = Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
+            addStringProperty(PROP_ID, PENDING_ID)
+        }
     }
 }
 
 /** Convenience for the callers that hold [GeoPoint] lists rather than shapes. */
-internal fun List<GeoPoint>.asShape(id: String, clickable: Boolean = false) =
-    MapShape(id = id, points = this, clickable = clickable)
+internal fun List<GeoPoint>.asShape(id: String, clickable: Boolean = false) = MapShape(id = id, points = this, clickable = clickable)

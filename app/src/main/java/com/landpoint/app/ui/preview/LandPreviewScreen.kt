@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -93,7 +92,10 @@ fun LandPreviewScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscard = false; onDiscard() }) {
+                TextButton(onClick = {
+                    showDiscard = false
+                    onDiscard()
+                }) {
                     Text(stringResource(R.string.discard_throw))
                 }
             }
@@ -180,7 +182,9 @@ fun LandPreviewScreen(
                         )
                     }
                     val cornerText = pluralStringResource(
-                        R.plurals.boundary_corners, points.size, points.size
+                        R.plurals.boundary_corners,
+                        points.size,
+                        points.size
                     )
                     val periText = perimeter?.let {
                         stringResource(R.string.boundary_perimeter, it.roundToInt().toString())
@@ -216,7 +220,8 @@ fun LandPreviewScreen(
                                             R.string.boundary_corner_number,
                                             index + 1,
                                             GeoUtils.formatDecimal(
-                                                corner.latitude, corner.longitude
+                                                corner.latitude,
+                                                corner.longitude
                                             )
                                         ),
                                         style = MaterialTheme.typography.bodySmall,
@@ -227,7 +232,9 @@ fun LandPreviewScreen(
                                         Icon(
                                             Icons.Outlined.PhotoCamera,
                                             contentDescription = pluralStringResource(
-                                                R.plurals.corner_photo_count, count, count
+                                                R.plurals.corner_photo_count,
+                                                count,
+                                                count
                                             ),
                                             tint = MaterialTheme.colorScheme.primary
                                         )

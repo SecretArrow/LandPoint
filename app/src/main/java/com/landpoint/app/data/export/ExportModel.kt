@@ -33,6 +33,16 @@ data class LandExportJson(
     val geometryJson: String? = null,
     /** Added in version 2; only ever populated inside a .zip archive. */
     val photos: List<PhotoExportJson> = emptyList(),
+
+    /** Added in version 3: ownership and registry bookkeeping. */
+    val ownerId: String? = null,
+    /** The owner's name as it was at export time; informational, never re-imported. */
+    val ownerName: String? = null,
+    val landRight: String? = null,
+    val status: String = "aktif",
+    val certificateNumber: String? = null,
+    val spptNumber: String? = null,
+    val acquisitionDate: Long? = null,
     val createdAt: Long,
     val updatedAt: Long
 )
@@ -52,12 +62,32 @@ data class PhotoExportJson(
     val createdAt: Long
 )
 
+/**
+ * An owner as she appears in a backup archive. `photoFileName` points at an
+ * entry inside the archive's `owners/` folder; the id is stable so lands can
+ * reference their owner across a backup-and-restore round trip.
+ */
+@Serializable
+data class OwnerExportJson(
+    val uuid: String,
+    val fullName: String,
+    val nik: String? = null,
+    val address: String = "",
+    val phone: String? = null,
+    val email: String? = null,
+    val photoFileName: String? = null,
+    val createdAt: Long,
+    val updatedAt: Long
+)
+
 @Serializable
 data class LandPointBackup(
     val version: Int = CURRENT_BACKUP_VERSION,
     val exportedAt: Long,
-    val lands: List<LandExportJson>
+    val lands: List<LandExportJson>,
+    /** Added in version 3; older files simply have none. */
+    val owners: List<OwnerExportJson> = emptyList()
 )
 
-/** 1 = lands only. 2 = adds boundary geometry and photos. */
-const val CURRENT_BACKUP_VERSION = 2
+/** 1 = lands only. 2 = adds boundary geometry and photos. 3 = adds owners. */
+const val CURRENT_BACKUP_VERSION = 3

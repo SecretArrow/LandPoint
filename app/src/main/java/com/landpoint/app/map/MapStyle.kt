@@ -13,9 +13,4 @@ package com.landpoint.app.map
  * brought back to a depth that source publishes, or they are left looking at the
  * blank grey of tiles that were never made.
  */
-data class MapStyle(
-    val key: String,
-    val json: String,
-    val minZoom: Double,
-    val maxZoom: Double
-)
+data class MapStyle(val key: String, val json: String, val minZoom: Double, val maxZoom: Double)

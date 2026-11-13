@@ -1,7 +1,14 @@
 package com.landpoint.app.util
 
 import java.util.Locale
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.asin
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 object GeoUtils {
 
@@ -14,8 +21,8 @@ object GeoUtils {
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         val a = sin(dLat / 2).pow(2) +
-                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
-                sin(dLon / 2).pow(2)
+            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+            sin(dLon / 2).pow(2)
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
         return EARTH_RADIUS_M * c
     }
@@ -27,7 +34,7 @@ object GeoUtils {
         val dLon = Math.toRadians(lon2 - lon1)
         val y = sin(dLon) * cos(Math.toRadians(lat2))
         val x = cos(Math.toRadians(lat1)) * sin(Math.toRadians(lat2)) -
-                sin(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * cos(dLon)
+            sin(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * cos(dLon)
         val bearing = Math.toDegrees(atan2(y, x))
         return (bearing + 360.0) % 360.0
     }
@@ -101,11 +108,17 @@ object GeoUtils {
         val locale = Locale.getDefault()
         return if (imperial) {
             val feet = meters * 3.28084
-            if (feet < 1000) "${feet.roundToInt()} ft"
-            else "%.1f mi".format(locale, feet / 5280.0)
+            if (feet < 1000) {
+                "${feet.roundToInt()} ft"
+            } else {
+                "%.1f mi".format(locale, feet / 5280.0)
+            }
         } else {
-            if (meters < 1000) "${meters.roundToInt()} m"
-            else "%.1f km".format(locale, meters / 1000.0)
+            if (meters < 1000) {
+                "${meters.roundToInt()} m"
+            } else {
+                "%.1f km".format(locale, meters / 1000.0)
+            }
         }
     }
 
@@ -117,14 +130,12 @@ object GeoUtils {
      * have. Below a metre it prints as "<1" instead of rounding to a nought no
      * receiver would mean.
      */
-    fun formatAccuracy(metres: Double): String =
-        if (metres < 1.0) "<1" else metres.roundToInt().toString()
+    fun formatAccuracy(metres: Double): String = if (metres < 1.0) "<1" else metres.roundToInt().toString()
 
     /**
      * Format coordinates as decimal degrees (e.g. 37.7749, -122.4194)
      */
-    fun formatDecimal(lat: Double, lon: Double): String =
-        "%.6f, %.6f".format(Locale.US, lat, lon)
+    fun formatDecimal(lat: Double, lon: Double): String = "%.6f, %.6f".format(Locale.US, lat, lon)
 
     /**
      * Format coordinates as DMS (degrees, minutes, seconds with N/S/E/W).
@@ -160,13 +171,15 @@ object GeoUtils {
      */
     fun geoUri(lat: Double, lon: Double, label: String? = null): String {
         val encoded = label?.let { android.net.Uri.encode(it) }
-        return if (encoded != null) "geo:$lat,$lon?q=$lat,$lon($encoded)"
-        else "geo:$lat,$lon"
+        return if (encoded != null) {
+            "geo:$lat,$lon?q=$lat,$lon($encoded)"
+        } else {
+            "geo:$lat,$lon"
+        }
     }
 
     /**
      * Generate https://maps.google.com/ link for sharing.
      */
-    fun googleMapsLink(lat: Double, lon: Double): String =
-        "https://maps.google.com/?q=$lat,$lon"
+    fun googleMapsLink(lat: Double, lon: Double): String = "https://maps.google.com/?q=$lat,$lon"
 }

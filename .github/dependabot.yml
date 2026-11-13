@@ -1,0 +1,32 @@
+version: 2
+
+# Dependabot keeps the two dependency surfaces current:
+# - the GitHub Actions pinned by SHA in .github/workflows/
+# - the Gradle version catalog in gradle/libs.versions.toml
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      androidx:
+        patterns:
+          - "androidx.*"
+          - "com.google.android.*"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin.*"
+          - "org.jetbrains.kotlinx.*"
+          - "com.google.devtools.ksp"
+      other:
+        patterns:
+          - "*"

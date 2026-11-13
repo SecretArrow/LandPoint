@@ -43,11 +43,7 @@ import com.landpoint.app.ui.components.openAppSettings
 import com.landpoint.app.ui.components.rememberLocationPermission
 import kotlinx.coroutines.launch
 
-private data class Intro(
-    val icon: ImageVector,
-    @StringRes val title: Int,
-    @StringRes val body: Int
-)
+private data class Intro(val icon: ImageVector, @StringRes val title: Int, @StringRes val body: Int)
 
 /**
  * Three things a first-time user cannot work out from the screens themselves:
@@ -123,8 +119,11 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 Spacer(modifier = Modifier.weight(1f))
                 Button(
                     onClick = {
-                        if (onLast) onFinish()
-                        else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
+                        if (onLast) {
+                            onFinish()
+                        } else {
+                            scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
+                        }
                     }
                 ) {
                     Text(
@@ -241,8 +240,11 @@ private fun Dots(count: Int, current: Int) {
                 modifier = Modifier
                     .size(8.dp)
                     .background(
-                        if (index == current) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceVariant,
+                        if (index == current) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
                         CircleShape
                     )
             )

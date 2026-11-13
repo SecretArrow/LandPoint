@@ -53,11 +53,7 @@ private const val FEET_PER_MILE = 5280.0
  *   in acres is the kind of mismatch that makes a reader distrust both.
  */
 @Composable
-fun MapScaleBar(
-    controller: LandMapController,
-    modifier: Modifier = Modifier,
-    imperial: Boolean = false
-) {
+fun MapScaleBar(controller: LandMapController, modifier: Modifier = Modifier, imperial: Boolean = false) {
     val density = LocalDensity.current
     // The measurement first, always: it is the only one of the two that carries the
     // live camera. The closed form stands in for the frames where there is nothing to

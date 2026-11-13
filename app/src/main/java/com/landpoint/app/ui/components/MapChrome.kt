@@ -16,9 +16,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -66,12 +66,7 @@ private const val CHROME_ALPHA = 0.92f
  * of them unevenly spaced.
  */
 @Composable
-fun MapControl(
-    icon: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun MapControl(icon: ImageVector, contentDescription: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
         modifier = modifier.size(MAP_CONTROL_SIZE),
@@ -97,12 +92,7 @@ fun MapControl(
  *   button rather than leaving a dead one on screen.
  */
 @Composable
-fun MapSideControls(
-    onZoomIn: () -> Unit,
-    onZoomOut: () -> Unit,
-    onMyLocation: (() -> Unit)?,
-    modifier: Modifier = Modifier
-) {
+fun MapSideControls(onZoomIn: () -> Unit, onZoomOut: () -> Unit, onMyLocation: (() -> Unit)?, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.padding(horizontal = 8.dp),
         horizontalAlignment = Alignment.End,
@@ -341,12 +331,7 @@ fun MapAttribution(basemap: BasemapMode, modifier: Modifier = Modifier) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BasemapSheet(
-    current: BasemapMode,
-    hasVectorMap: Boolean,
-    onPick: (BasemapMode) -> Unit,
-    onDismiss: () -> Unit
-) {
+fun BasemapSheet(current: BasemapMode, hasVectorMap: Boolean, onPick: (BasemapMode) -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -384,15 +369,13 @@ fun BasemapSheet(
 }
 
 @Composable
-private fun BasemapRow(
-    mode: BasemapMode,
-    selected: Boolean,
-    available: Boolean,
-    onPick: () -> Unit
-) {
+private fun BasemapRow(mode: BasemapMode, selected: Boolean, available: Boolean, onPick: () -> Unit) {
     val labelColour =
-        if (available) MaterialTheme.colorScheme.onSurface
-        else MaterialTheme.colorScheme.onSurfaceVariant
+        if (available) {
+            MaterialTheme.colorScheme.onSurface
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
 
     Row(
         modifier = Modifier

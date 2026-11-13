@@ -11,7 +11,10 @@ import kotlin.math.sqrt
  * is treated as its own thing rather than counted as GPS.
  */
 enum class FixSource {
-    GPS, FUSED, NETWORK, OTHER;
+    GPS,
+    FUSED,
+    NETWORK,
+    OTHER;
 
     companion object {
         /**
@@ -42,7 +45,10 @@ data class GeoSample(
 )
 
 enum class FixQuality {
-    EXCELLENT, GOOD, FAIR, POOR;
+    EXCELLENT,
+    GOOD,
+    FAIR,
+    POOR;
 
     companion object {
         fun of(accuracyMeters: Double): FixQuality = when {
@@ -133,6 +139,7 @@ object LocationAveraging {
         }
         return maxOf(reported ?: fallback, floor)
     }
+
     /**
      * Combines [samples] into a single fix, or null if the list is empty.
      *
@@ -249,8 +256,11 @@ object LocationAveraging {
     internal fun median(values: List<Double>): Double {
         val sorted = values.sorted()
         val mid = sorted.size / 2
-        return if (sorted.size % 2 == 1) sorted[mid]
-        else (sorted[mid - 1] + sorted[mid]) / 2.0
+        return if (sorted.size % 2 == 1) {
+            sorted[mid]
+        } else {
+            (sorted[mid - 1] + sorted[mid]) / 2.0
+        }
     }
 
     /** Shortest signed longitude difference, so ±180° is not a 360° jump. */

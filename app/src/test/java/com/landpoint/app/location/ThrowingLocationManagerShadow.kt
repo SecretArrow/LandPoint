@@ -45,14 +45,14 @@ class ThrowingLocationManagerShadow : ShadowLocationManager() {
     private fun assertPermitted() {
         if (!permitted) {
             throw SecurityException(
-                "\"$provider\" location provider requires ACCESS_FINE_LOCATION or " +
+                "\"$PROVIDER\" location provider requires ACCESS_FINE_LOCATION or " +
                     "ACCESS_COARSE_LOCATION permission."
             )
         }
     }
 
     companion object {
-        private const val provider = "gps"
+        private const val PROVIDER = "gps"
 
         @Volatile
         private var permitted: Boolean = true
@@ -70,5 +70,4 @@ class ThrowingLocationManagerShadow : ShadowLocationManager() {
 }
 
 /** Convenience for reading the shadow's state in assertions. */
-fun Context.locationManager(): LocationManager =
-    getSystemService(Context.LOCATION_SERVICE) as LocationManager
+fun Context.locationManager(): LocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager

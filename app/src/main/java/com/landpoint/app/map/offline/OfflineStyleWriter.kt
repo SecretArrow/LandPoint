@@ -4,13 +4,13 @@ import android.content.Context
 import android.content.res.AssetManager
 import com.landpoint.app.map.MapProvider
 import com.landpoint.app.map.TileSpec
+import java.io.File
+import java.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import java.io.File
-import java.io.IOException
 
 /**
  * Writes the stripped-down style a download is defined against.
@@ -29,10 +29,7 @@ import java.io.IOException
  * The file has to outlive the process. MapLibre re-reads the style URL when it resumes
  * a part-finished region after a restart, so this goes in `filesDir` and stays there.
  */
-class OfflineStyleWriter(
-    private val context: Context,
-    private val assets: AssetManager
-) {
+class OfflineStyleWriter(private val context: Context, private val assets: AssetManager) {
     private val json = Json { ignoreUnknownKeys = true }
 
     private val styleDir: File get() = File(File(context.filesDir, "maps"), "styles")
@@ -78,6 +75,5 @@ class OfflineStyleWriter(
         }
     }
 
-    private fun readAsset(path: String): String =
-        assets.open(path).bufferedReader().use { it.readText() }
+    private fun readAsset(path: String): String = assets.open(path).bufferedReader().use { it.readText() }
 }

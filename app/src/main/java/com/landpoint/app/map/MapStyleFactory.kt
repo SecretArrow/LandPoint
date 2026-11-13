@@ -106,7 +106,8 @@ class MapStyleFactory(private val assets: AssetManager) {
         val key = listOfNotNull(provider.mode.key, if (night) "night" else "day", archive)
             .joinToString("|")
         cached?.let { hit ->
-            if (hit.key == key && hit.minZoom == provider.minZoom &&
+            if (hit.key == key &&
+                hit.minZoom == provider.minZoom &&
                 hit.maxZoom == provider.maxZoom
             ) {
                 return hit
@@ -227,25 +228,24 @@ class MapStyleFactory(private val assets: AssetManager) {
      *   same order, so a later tier draws over an earlier one exactly where it has a
      *   tile and leaves the earlier one visible — enlarged — where it does not.
      */
-    private fun rasterStyle(tiers: List<Pair<String, JsonObject>>, night: Boolean): String =
-        buildJsonObject {
-            put("version", 8)
-            put("name", "LandPoint Raster")
-            put("glyphs", GLYPHS)
-            putJsonObject("sources") { tiers.forEach { (id, source) -> put(id, source) } }
-            putJsonArray("layers") {
-                add(
-                    buildJsonObject {
-                        put("id", "background")
-                        put("type", "background")
-                        putJsonObject("paint") {
-                            put("background-color", if (night) "#12161c" else "#e8e6e1")
-                        }
+    private fun rasterStyle(tiers: List<Pair<String, JsonObject>>, night: Boolean): String = buildJsonObject {
+        put("version", 8)
+        put("name", "LandPoint Raster")
+        put("glyphs", GLYPHS)
+        putJsonObject("sources") { tiers.forEach { (id, source) -> put(id, source) } }
+        putJsonArray("layers") {
+            add(
+                buildJsonObject {
+                    put("id", "background")
+                    put("type", "background")
+                    putJsonObject("paint") {
+                        put("background-color", if (night) "#12161c" else "#e8e6e1")
                     }
-                )
-                tiers.forEach { (id, _) -> add(rasterLayer(id, night)) }
-            }
-        }.toString()
+                }
+            )
+            tiers.forEach { (id, _) -> add(rasterLayer(id, night)) }
+        }
+    }.toString()
 
     /**
      * One raster source, in the shape MapLibre's style parser expects.
@@ -257,20 +257,15 @@ class MapStyleFactory(private val assets: AssetManager) {
      *   MapLibre collects attributions per source, and the same line twice reads as two
      *   different providers.
      */
-    private fun rasterSource(
-        templates: List<String>,
-        tileSize: Int,
-        minZoom: Double,
-        maxZoom: Double,
-        attribution: String?
-    ): JsonObject = buildJsonObject {
-        put("type", "raster")
-        putJsonArray("tiles") { templates.forEach { template -> add(JsonPrimitive(template)) } }
-        put("tileSize", tileSize)
-        put("minzoom", minZoom)
-        put("maxzoom", maxZoom)
-        attribution?.let { put("attribution", it) }
-    }
+    private fun rasterSource(templates: List<String>, tileSize: Int, minZoom: Double, maxZoom: Double, attribution: String?): JsonObject =
+        buildJsonObject {
+            put("type", "raster")
+            putJsonArray("tiles") { templates.forEach { template -> add(JsonPrimitive(template)) } }
+            put("tileSize", tileSize)
+            put("minzoom", minZoom)
+            put("maxzoom", maxZoom)
+            attribution?.let { put("attribution", it) }
+        }
 
     /**
      * The layer that draws one tier. Built here rather than inline so every tier of a
@@ -292,16 +287,14 @@ class MapStyleFactory(private val assets: AssetManager) {
         }
     }
 
-    private fun readAsset(path: String): String =
-        assets.open(path).bufferedReader().use { it.readText() }
+    private fun readAsset(path: String): String = assets.open(path).bufferedReader().use { it.readText() }
 
     /**
      * A missing or wrongly-typed member is treated as absent rather than thrown on.
      * These documents ship inside the APK, so a malformed one is a build mistake that
      * shows up as a map missing a layer — not something to crash a user's phone over.
      */
-    private fun JsonElement?.jsonObjectOrEmpty(): JsonObject =
-        this as? JsonObject ?: JsonObject(emptyMap())
+    private fun JsonElement?.jsonObjectOrEmpty(): JsonObject = this as? JsonObject ?: JsonObject(emptyMap())
 }
 
 /**

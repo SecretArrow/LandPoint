@@ -15,12 +15,7 @@ import java.io.File
  * @param minZoom the shallowest zoom worth requesting. Zero everywhere so far, but
  *   an archive covering one province has no world-level tiles and says so.
  */
-data class MapProvider(
-    val mode: BasemapMode,
-    val tiles: TileSpec,
-    val minZoom: Double,
-    val maxZoom: Double
-) {
+data class MapProvider(val mode: BasemapMode, val tiles: TileSpec, val minZoom: Double, val maxZoom: Double) {
     /** @see BasemapMode.allowsOfflineDownload */
     val allowsOfflineDownload: Boolean get() = mode.allowsOfflineDownload
 
@@ -237,8 +232,4 @@ object MapProviders {
  * out of the PMTiles header and reading a header on the main thread once per
  * recomposition is how a map screen starts to stutter.
  */
-data class ImportedArchiveSpec(
-    val file: File,
-    val vector: Boolean,
-    val minZoom: Double = 0.0
-)
+data class ImportedArchiveSpec(val file: File, val vector: Boolean, val minZoom: Double = 0.0)

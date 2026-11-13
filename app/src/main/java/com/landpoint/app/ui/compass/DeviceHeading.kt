@@ -25,8 +25,10 @@ fun rememberDeviceHeading(): Float? {
     }
     val hasCompass = remember {
         sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null ||
-                (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null &&
-                        sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null)
+            (
+                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null &&
+                    sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null
+                )
     }
 
     var heading by remember { mutableFloatStateOf(Float.NaN) }

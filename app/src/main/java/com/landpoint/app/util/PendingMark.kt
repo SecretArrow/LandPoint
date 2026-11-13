@@ -102,8 +102,7 @@ data class PendingMark(
      * corner while a mark hangs there changes the answer, and a stored one would
      * go on promising "corner 5" after corner 4 had gone.
      */
-    fun placementIn(existing: List<GeoPoint>, edgeToleranceM: Double): Placement =
-        placement(existing, point, edgeToleranceM, after)
+    fun placementIn(existing: List<GeoPoint>, edgeToleranceM: Double): Placement = placement(existing, point, edgeToleranceM, after)
 
     /**
      * The same mark moved one step along [bearingDeg] — what an arrow button does.
@@ -120,8 +119,7 @@ data class PendingMark(
     }
 
     /** The same mark dragged under a finger to [latitude], [longitude]. */
-    fun movedTo(latitude: Double, longitude: Double): PendingMark =
-        copy(point = GeoPoint(latitude, longitude), source = MarkSource.MAP)
+    fun movedTo(latitude: Double, longitude: Double): PendingMark = copy(point = GeoPoint(latitude, longitude), source = MarkSource.MAP)
 
     companion object {
 
@@ -153,22 +151,23 @@ data class PendingMark(
          *   where the mark belongs regardless of [edgeToleranceM]. See
          *   [PendingMark.after].
          */
-        fun placement(
-            existing: List<GeoPoint>,
-            candidate: GeoPoint,
-            edgeToleranceM: Double,
-            after: Int? = null
-        ): Placement {
+        fun placement(existing: List<GeoPoint>, candidate: GeoPoint, edgeToleranceM: Double, after: Int? = null): Placement {
             if (!CornerDraft.acceptTap(existing, candidate)) {
                 return Placement.TooClose(nearCorner = nearestCorner(existing, candidate))
             }
             // A stated sequence beats a guessed one: where the mark came from a
             // bearing off a named corner, that corner decides, not how near the
             // arithmetic happened to land to some other side.
-            val at = if (after != null && after in existing.indices) after + 1
-            else BoundaryEdits.edgeNear(existing, candidate, edgeToleranceM)
-            return if (at == null || at >= existing.size) Placement.Append(number = existing.size + 1)
-            else Placement.Insert(at = at)
+            val at = if (after != null && after in existing.indices) {
+                after + 1
+            } else {
+                BoundaryEdits.edgeNear(existing, candidate, edgeToleranceM)
+            }
+            return if (at == null || at >= existing.size) {
+                Placement.Append(number = existing.size + 1)
+            } else {
+                Placement.Insert(at = at)
+            }
         }
 
         /**
@@ -197,8 +196,10 @@ data class PendingMark(
             var bestM = Double.MAX_VALUE
             existing.forEachIndexed { index, corner ->
                 val metres = GeoUtils.distance(
-                    corner.latitude, corner.longitude,
-                    candidate.latitude, candidate.longitude
+                    corner.latitude,
+                    corner.longitude,
+                    candidate.latitude,
+                    candidate.longitude
                 )
                 if (metres < bestM) {
                     bestM = metres

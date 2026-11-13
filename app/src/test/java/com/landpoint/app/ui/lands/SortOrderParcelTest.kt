@@ -15,8 +15,7 @@ import org.junit.Test
  */
 class SortOrderParcelTest {
 
-    private fun sortedNames(vararg lands: Land) =
-        lands.toList().sortedWith(SortOrder.PARCEL_ASC.comparator()).map { it.name }
+    private fun sortedNames(vararg lands: Land) = lands.toList().sortedWith(SortOrder.PARCEL_ASC.comparator()).map { it.name }
 
     @Test
     fun `numbers sort the way they are read, not the way they are spelled`() {

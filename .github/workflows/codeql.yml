@@ -1,0 +1,57 @@
+name: "CodeQL"
+
+# CodeQL security scanning. The repo is public now, so the GitHub free plan
+# covers CodeQL code-scanning results upload (the security-events: write
+# permission below is what lets the analyze step push SARIF to the Security
+# tab). Kotlin is analyzed under the `java` language in CodeQL — there is no
+# separate `kotlin` language — and autobuild handles the Gradle build.
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Weekly Monday 06:00 UTC — catches new CodeQL query packs released between
+    # PR-driven scans without waking up every day.
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  # Required for the analyze step to upload SARIF results to the Security tab.
+  security-events: write
+
+jobs:
+  analyze:
+    name: analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
+        with:
+          # Kotlin is analyzed as part of the `java` language in CodeQL.
+          languages: java
+          # build-mode: none lets the autobuild step below compile the project
+          # itself (the default for Java/Kotlin projects that use a build
+          # wrapper like Gradle).
+          build-mode: none
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@9418214df1f2c4b8128c770156c409013b07d6b9 # v3

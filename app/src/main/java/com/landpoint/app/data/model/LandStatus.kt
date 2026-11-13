@@ -16,8 +16,6 @@ enum class LandStatus(val key: String, @StringRes val labelRes: Int) {
 
     companion object {
         fun fromKey(key: String?): LandStatus = entries.firstOrNull { it.key == key } ?: ACTIVE
-
-        fun fromLabel(label: String?): LandStatus? = entries.firstOrNull { it.label.name == label }
     }
 }
 

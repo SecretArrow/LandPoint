@@ -25,16 +25,16 @@ tags:
 # Long-press a card to enter selection mode.
 - longPressOn: 'Kebun Percobaan'
 - extendedWaitUntil:
-    visible: '^Select all shown$'
+    visible: '^(Select all shown|Pilih semua yang tampil)$'
     timeout: 10000
-- tapOn: '^Select all shown$'
+- tapOn: '^(Select all shown|Pilih semua yang tampil)$'
 
-- tapOn: '^Export selected$'
+- tapOn: '^(Export selected|Ekspor yang dipilih)$'
 - extendedWaitUntil:
-    visible: '^Export selected as$'
+    visible: '^(Export selected as|Ekspor pilihan sebagai)$'
     timeout: 10000
 
-- tapOn: '^Export CSV$'
+- tapOn: '^(Export CSV|Ekspor CSV)$'
 
 # The system save sheet: the file name is pre-filled, SAVE confirms.
 - extendedWaitUntil:
@@ -44,5 +44,5 @@ tags:
 
 # Back in the app, the confirmation message appears.
 - extendedWaitUntil:
-    visible: 'Exported'
+    visible: 'Exported|diekspor'
     timeout: 15000

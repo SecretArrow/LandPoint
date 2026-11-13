@@ -43,11 +43,7 @@ import androidx.compose.ui.unit.dp
  * than at the 40 dp Material 3 default which is a lottery on a moving bus.
  */
 @Composable
-fun CornerModeToolbar(
-    currentMode: CornerPickerMode,
-    onModeChange: (CornerPickerMode) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun CornerModeToolbar(currentMode: CornerPickerMode, onModeChange: (CornerPickerMode) -> Unit, modifier: Modifier = Modifier) {
     val modes = CornerPickerMode.entries
     val modeLabel = stringResource(currentMode.labelRes)
     val hintText = stringResource(currentMode.hintRes)

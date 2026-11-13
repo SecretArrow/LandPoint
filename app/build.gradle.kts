@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "com.landpoint.app"
-        minSdk = 28
+        minSdk = 24
         targetSdk = 35
         // CI (release.yml) passes -PlpVersionCode=<commit count> and
         // -PlpVersionName=<tag> so the numbers follow the history; a local
@@ -170,8 +170,8 @@ dependencies {
     implementation(libs.sqlcipher.android)
 
     implementation(libs.androidx.datastore.preferences)
-    // Back-ports the Android 12 splash screen to Android 9, which is most of the
-    // phones this app targets.
+    // Back-ports the Android 12 splash screen to Android 7 (Nougat), which is
+    // now the minimum.
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.exifinterface)
     // Fingerprint or screen-lock confirmation for the app lock. Pulls in

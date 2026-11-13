@@ -45,12 +45,18 @@ tags:
 - hideKeyboard
 
 # Open the corner picker (scrolls down through the form if needed).
+# The button's Text is rendered as "  " + stringResource(boundary_pick_on_map)
+# in LandEditScreen.kt — i.e. two leading spaces are prepended in code to space
+# the icon from its label. Anchoring with ^...$ without allowing that padding
+# makes the matcher reject the element on every scroll frame, so scrollUntilVisible
+# never resolves. Allow surrounding whitespace while keeping the anchored,
+# bilingual shape so we don't pick up unrelated "Mark on the map" substrings.
 - scrollUntilVisible:
     element:
-      text: '^(Mark on the map|Tandai di peta)$'
+      text: '^\s*(Mark on the map|Tandai di peta)\s*$'
     direction: DOWN
     timeout: 20000
-- tapOn: '^(Mark on the map|Tandai di peta)$'
+- tapOn: '^\s*(Mark on the map|Tandai di peta)\s*$'
 - extendedWaitUntil:
     visible: '^(Enter coordinates|Ketik koordinat)$'
     timeout: 20000

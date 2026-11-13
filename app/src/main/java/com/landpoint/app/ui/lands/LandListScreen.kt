@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -219,12 +220,18 @@ fun LandListScreen(
             // Hidden during selection: the bar above owns the actions then, and
             // a "save land" button next to a delete button invites a misfire.
             if (!state.isSelecting) {
+                val fabLabel = stringResource(R.string.list_fab_save_land)
                 ExtendedFloatingActionButton(
                     onClick = {
                         if (permission.isGranted) onNewLand() else permission.request()
                     },
+                    // The label text is rendered but not always carried into the
+                    // accessibility tree by the FAB's merged semantics, which
+                    // leaves TalkBack users with an unlabelled button and UI
+                    // tests with nothing to tap. State it explicitly.
+                    modifier = Modifier.semantics { contentDescription = fabLabel },
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.list_fab_save_land)) }
+                    text = { Text(fabLabel) }
                 )
             }
         }

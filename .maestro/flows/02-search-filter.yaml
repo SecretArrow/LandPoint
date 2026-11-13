@@ -1,6 +1,8 @@
 # E2E 2 — search narrows the list, and an impossible term empties it.
+appId: com.landpoint.app.debug
 name: 02-search-filter
-tags: [core]
+tags:
+- core
 ---
 # A stop/launch pair gives a cold start, which lands on the list tab no
 # matter which screen the previous flow ended on.

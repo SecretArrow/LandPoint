@@ -2,8 +2,10 @@
 #
 # Covers: the Settings backup flow with a passphrase, the system save sheet,
 # deleting every record, and restoring the backup from the saved file.
+appId: com.landpoint.app.debug
 name: 04-backup-restore
-tags: [core]
+tags:
+- core
 ---
 - stopApp
 - launchApp

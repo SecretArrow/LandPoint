@@ -1,3 +1,0 @@
-# Shared configuration for every flow in this directory. The debug build
-# carries the ".debug" application id suffix from app/build.gradle.kts.
-appId: com.landpoint.app.debug

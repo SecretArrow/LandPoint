@@ -2,8 +2,10 @@
 #
 # Covers: multi-select, "select all shown", the export-format dialog, and the
 # SAF save sheet (its SAVE button is part of the system UI, in caps on API 30).
+appId: com.landpoint.app.debug
 name: 03-export-csv
-tags: [core]
+tags:
+- core
 ---
 - stopApp
 - launchApp

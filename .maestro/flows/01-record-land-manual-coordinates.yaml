@@ -8,8 +8,10 @@
 #   - the debug APK is installed,
 #   - ACCESS_FINE/COARSE_LOCATION are pre-granted (no system dialog),
 #   - a GPS fix is seeded with `adb emu geo fix`.
+appId: com.landpoint.app.debug
 name: 01-record-land-manual-coordinates
-tags: [core]
+tags:
+- core
 ---
 - launchApp
 

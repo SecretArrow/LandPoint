@@ -33,6 +33,10 @@ jobs:
       # versionName line in app/build.gradle.kts is an expression with a
       # default (`?: "1.0.0"`), not a literal — extract the last version-like
       # quoted string on that line instead of matching `versionName = "..."`.
+      # NOTE: The versionName embedded in the built APK/AAB comes from the tag
+      # via -PlpVersionName="${GITHUB_REF_NAME#v}" (see the Build step), not
+      # from this default. APP_VERSION here is just the build.gradle.kts
+      # fallback, used for the staging filenames and the changelog file table.
       - name: Read app version
         shell: bash
         run: |
@@ -96,7 +100,7 @@ jobs:
         run: ./gradlew :app:testDebugUnitTest
 
       - name: Build signed release APK and AAB
-        run: ./gradlew assembleRelease bundleRelease -PlpVersionCode="$VERSION_CODE"
+        run: ./gradlew assembleRelease bundleRelease -PlpVersionCode="$VERSION_CODE" -PlpVersionName="${GITHUB_REF_NAME#v}"
 
       - name: Generate changelog from conventional commits
         shell: bash
@@ -113,16 +117,16 @@ jobs:
             echo "## Changes since ${prev:-the beginning}"
             echo
             echo "### Added"
-            git log --no-merges --pretty=format:"%s" "$range" | grep -iE '^(feat|add)' | sed 's/^[^:]*: */- /' || true
+            git log --no-merges --first-parent --pretty=format:"%s" "$range" | grep -iE '^(feat|add)' | sed 's/^[^:]*: */- /' || true
             echo
             echo "### Fixed"
-            git log --no-merges --pretty=format:"%s" "$range" | grep -iE '^(fix|bugfix|hotfix)' | sed 's/^[^:]*: */- /' || true
+            git log --no-merges --first-parent --pretty=format:"%s" "$range" | grep -iE '^(fix|bugfix|hotfix)' | sed 's/^[^:]*: */- /' || true
             echo
             echo "### Maintenance"
-            git log --no-merges --pretty=format:"%s" "$range" | grep -iE '^(chore|refactor|perf|docs|test|ci|style|build)' | sed 's/^[^:]*: */- /' || true
+            git log --no-merges --first-parent --pretty=format:"%s" "$range" | grep -iE '^(chore|refactor|perf|docs|test|ci|style|build)' | sed 's/^[^:]*: */- /' || true
             echo
             echo "### Other"
-            git log --no-merges --pretty=format:"%s" "$range" | grep -viE '^(feat|add|fix|bugfix|hotfix|chore|refactor|perf|docs|test|ci|style|build|Release)' | sed 's/^/- /' || true
+            git log --no-merges --first-parent --pretty=format:"%s" "$range" | grep -viE '^(feat|add|fix|bugfix|hotfix|chore|refactor|perf|docs|test|ci|style|build|Release)' | sed 's/^/- /' || true
             echo
             echo "## Which file to install"
             echo
@@ -136,7 +140,7 @@ jobs:
             echo
             echo "\`LandPoint-$APP_VERSION.aab\` is the Play-Store-style bundle; sideloaders want the APKs."
             echo
-            echo '- Requires Android 9 (Pie) or newer; no Google Play Services and no map API key needed.'
+            echo '- Requires Android 7 (Nougat) or newer; no Google Play Services and no map API key needed.'
             echo '- Signed with the project release key; updating an existing install is safe.'
             echo "- \`SHA256SUMS\` lists the checksum of every file above — verify with \`sha256sum -c SHA256SUMS\`."
           } > CHANGELOG.md

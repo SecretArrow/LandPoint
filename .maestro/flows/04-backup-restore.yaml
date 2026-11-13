@@ -10,6 +10,14 @@ tags:
 - stopApp
 - launchApp
 
+# A slow CI emulator sometimes raises a system "isn't responding" dialog over
+# whatever is on screen; dismiss it when present so the flow can proceed.
+- runFlow:
+    when:
+      visible: '^Wait$'
+    commands:
+      - tapOn: '^Wait$'
+
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'
     timeout: 20000

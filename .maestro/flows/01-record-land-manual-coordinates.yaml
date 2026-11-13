@@ -16,9 +16,17 @@ tags:
 - launchApp
 
 # First run shows the introduction; skip it.
+# A slow CI emulator sometimes raises a system "isn't responding" dialog over
+# whatever is on screen; dismiss it when present so the flow can proceed.
+- runFlow:
+    when:
+      visible: '^Wait$'
+    commands:
+      - tapOn: '^Wait$'
+
 - extendedWaitUntil:
     visible: '^Skip$'
-    timeout: 20000
+    timeout: 30000
 - tapOn: '^Skip$'
 
 # The list screen's big FAB.

@@ -248,6 +248,20 @@ jobs:
             adb shell pm grant com.landpoint.app.debug android.permission.ACCESS_COARSE_LOCATION
             echo "Seeding a GPS position the editor can capture"
             adb emu geo fix 106.8270 -6.1750
+
+            # A freshly booted API 30 emulator on a shared runner is still
+            # dexopting its own system services for a while, and asking it to
+            # cold-start the app in that window raises "Process system isn't
+            # responding" dialogs that block every flow. Let it settle, then
+            # warm the app once so the flows launch a verified, jitted process.
+            echo "Letting the system settle after boot"
+            sleep 45
+            echo "Warming the app once before the flows"
+            adb shell am start -n com.landpoint.app.debug/com.landpoint.app.MainActivity
+            sleep 30
+            adb shell am force-stop com.landpoint.app.debug
+            sleep 5
+
             echo "Installing Maestro"
             curl -fsSL "https://get.maestro.mobile.dev" | bash
             # The runner action executes each script line as its own shell, so

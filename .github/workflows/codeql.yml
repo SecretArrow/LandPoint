@@ -26,6 +26,9 @@ concurrency:
 permissions:
   security-events: write
   contents: read
+  # The action reads its own workflow run to report status; without this the
+  # SARIF upload step fails with "Resource not accessible by integration".
+  actions: read
 
 jobs:
   analyze:

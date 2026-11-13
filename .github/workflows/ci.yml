@@ -260,10 +260,12 @@ jobs:
             adb emu geo fix 106.8270 -6.1750
             echo "Installing Maestro"
             curl -fsSL "https://get.maestro.mobile.dev" | bash
-            export PATH="$PATH:$HOME/.maestro/bin"
-            maestro --version
+            # The runner action executes each script line as its own shell, so
+            # an exported PATH would not survive to the next line: call the
+            # binary by its absolute path instead.
+            "$HOME/.maestro/bin/maestro" --version
             echo "Running flows"
-            maestro test .maestro/flows
+            "$HOME/.maestro/bin/maestro" test .maestro/flows
 
       - name: Upload Maestro results
         if: failure()

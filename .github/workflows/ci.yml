@@ -241,21 +241,47 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -memory 3072
           disable-animations: true
           script: |
-            echo "Installing debug APK (x86_64 split)"
-            adb install -r app/build/outputs/apk/debug/app-x86_64-debug.apk
+            # The runner reports "Emulator booted" the moment sys.boot_completed
+            # flips to 1, but the package manager service is still dexopting its
+            # own system packages for another minute or so. Installing in that
+            # window fails with "Broken pipe (32)" — a transient error that a
+            # retry survives. Settle, then install with retry, then warm the app.
+            echo "Waiting for the package manager to settle after boot"
+            adb wait-for-device
+            for i in $(seq 1 30); do
+              if adb shell pm path android 2>/dev/null | grep -q package:; then
+                echo "Package manager ready (after $((i*2))s)"
+                break
+              fi
+              sleep 2
+            done
+            sleep 15
+
+            echo "Installing debug APK (x86_64 split) with retry"
+            for i in 1 2 3; do
+              if adb install -r -t app/build/outputs/apk/debug/app-x86_64-debug.apk; then
+                echo "Install succeeded on attempt $i"
+                break
+              fi
+              echo "Install attempt $i failed; retrying in 15s"
+              sleep 15
+              if [ "$i" = "3" ]; then
+                echo "Install failed after 3 attempts"
+                adb shell dumpsys package 2>/dev/null | tail -50 || true
+                exit 1
+              fi
+            done
+
             echo "Pre-granting runtime permissions so no system dialog interrupts a flow"
             adb shell pm grant com.landpoint.app.debug android.permission.ACCESS_FINE_LOCATION
             adb shell pm grant com.landpoint.app.debug android.permission.ACCESS_COARSE_LOCATION
             echo "Seeding a GPS position the editor can capture"
             adb emu geo fix 106.8270 -6.1750
 
-            # A freshly booted API 30 emulator on a shared runner is still
-            # dexopting its own system services for a while, and asking it to
-            # cold-start the app in that window raises "Process system isn't
-            # responding" dialogs that block every flow. Let it settle, then
-            # warm the app once so the flows launch a verified, jitted process.
-            echo "Letting the system settle after boot"
-            sleep 45
+            # Cold-starting the app immediately after install on a freshly
+            # booted emulator raises "Process system isn't responding" dialogs
+            # that block every flow. Warm it once so the flows launch a
+            # verified, jitted process.
             echo "Warming the app once before the flows"
             adb shell am start -n com.landpoint.app.debug/com.landpoint.app.MainActivity
             sleep 30

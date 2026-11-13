@@ -187,30 +187,57 @@ app to *find* your land again — not to *prove* where it ends.
 
 ## Building from source
 
-The project builds with a standard Android toolchain: JDK 17, Android SDK 35,
-Gradle 8.11.1.
+**Everything is built by GitHub Actions; nothing is built locally.** The
+repository *is* the build environment: push a branch, and CI compiles, lints,
+tests and packages it. Local toolchain setup is only needed if you want to run
+the app on a device straight from Android Studio — verification never happens
+on a developer machine.
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `ci.yml` | push/PR to `main` & `develop` | ktlint, detekt and Android Lint in parallel, then unit tests with a Kover coverage report, then Maestro end-to-end flows on an API 30 emulator; on pushes to `develop` an auto-fix job reformats and commits |
+| `release.yml` | push of a `v*` tag | unit tests, signed release APKs (per-ABI + universal) and an AAB, a changelog built from conventional commits, SHA-256 checksums, and a GitHub Release |
+| `nightly.yml` | cron 02:00 UTC | full test run plus a debug APK artifact |
+
+CodeQL is not part of the pipeline: this repository is private, and uploading
+code-scanning results requires GitHub Advanced Security. The security surface
+is covered instead by detekt, Android Lint, Dependabot (actions + Gradle) and
+the secret-handling rules in `SECURITY.md`. Should the repository become public
+or gain Advanced Security, adding `.github/workflows/codeql.yml` back is a
+five-minute change.
+
+Jobs only run when the changed files are relevant (a README edit does not boot
+an emulator), every action is pinned to a full commit SHA, every job holds the
+minimum permission it needs, and pushes to the same branch cancel the previous
+run.
+
+### Branching and releases
+
+- `main` — protected: only pull requests whose CI is green may merge into it.
+- `develop` — the working branch; feature branches (`feature/*`) merge into it
+  by pull request.
+- `v*` tags on `main` — cut a release; the tag itself is the only release
+  action a human performs.
+
+Release signing never touches the repository. The keystore arrives in CI as
+GitHub Secrets — `KEYSTORE_ZIP_BASE64` (base64 of a password-protected zip),
+`KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` — is unpacked into the runner
+workspace, signs the build, and is gone when the runner is. `versionCode` is
+the commit count and `versionName` comes from the tag, so both follow the
+history automatically. See `SECURITY.md` for the rotation procedure.
+
+### Quality gates
 
 ```bash
-source env.sh            # sets JAVA_HOME, ANDROID_HOME, PATH
-gradle assembleDebug     # debug APK
-gradle testDebugUnitTest # unit tests
-gradle assembleRelease   # signed release APKs — four per-ABI plus one universal
+./gradlew ktlintCheck detekt :app:lintDebug   # style, smells, Android Lint
+./gradlew :app:testDebugUnitTest              # unit tests
+./gradlew :app:koverHtmlReportDebug           # coverage report
 ```
 
-Every push is compiled, tested and release-built by GitHub Actions
-(`.github/workflows/build.yml`), which is where verification is meant to happen;
-building locally is for when you are changing something and want the loop shorter.
-
-Release signing reads `keystore.properties` in the project root:
-
-```properties
-storeFile=landpoint-release.jks
-storePassword=…
-keyAlias=landpoint
-keyPassword=…
-```
-
-Without that file the release build still runs; it just produces an unsigned APK.
+`ktlint` reads its code style from the committed `.editorconfig`;
+`detekt` is configured in `config/detekt/` with a baseline so it only ever
+blocks *new* issues. End-to-end flows live in `.maestro/flows/` and run on an
+emulator in CI — see the header of each flow for what it covers.
 
 ### Build memory
 

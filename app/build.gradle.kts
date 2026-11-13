@@ -6,6 +6,9 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
 }
 
 val keystorePropsFile = rootProject.file("keystore.properties")
@@ -21,8 +24,11 @@ android {
         applicationId = "com.landpoint.app"
         minSdk = 28
         targetSdk = 35
-        versionCode = 10
-        versionName = "1.6.0"
+        // CI (release.yml) passes -PlpVersionCode=<commit count> and
+        // -PlpVersionName=<tag> so the numbers follow the history; a local
+        // invocation without them falls back to these.
+        versionCode = (project.findProperty("lpVersionCode") as String?)?.toInt() ?: 10
+        versionName = (project.findProperty("lpVersionName") as String?) ?: "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "in")
     }
@@ -118,6 +124,23 @@ android {
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.incremental", "true")
+}
+
+// Style gate: ktlint reads its code style and rule overrides from the committed
+// .editorconfig (ktlint_code_style = android_studio), so a run in CI and a run
+// anywhere else can never disagree about what "clean" means.
+ktlint {
+    version.set(libs.versions.ktlintCli.get())
+}
+
+// Code-smell gate. The config only turns off rules that cannot be satisfied
+// here; everything else fires, and pre-existing findings live in the committed
+// baseline so the gate only ever blocks NEW issues.
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    baseline = file("$rootDir/config/detekt/baseline.xml")
+    parallel = false
 }
 
 dependencies {

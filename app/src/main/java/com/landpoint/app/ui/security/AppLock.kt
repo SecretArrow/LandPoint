@@ -163,8 +163,11 @@ private fun LockScreen(failure: String?, onUnlock: () -> Unit) {
             Text(
                 failure ?: stringResource(R.string.lock_message),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (failure != null) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (failure != null) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 textAlign = TextAlign.Center
             )
             Button(onClick = onUnlock) { Text(stringResource(R.string.lock_unlock)) }
@@ -177,12 +180,7 @@ private fun LockScreen(failure: String?, onUnlock: () -> Unit) {
  * button is set, and none may be: the framework supplies the cancel affordance
  * itself once a device credential is allowed.
  */
-private fun promptFor(
-    activity: FragmentActivity,
-    title: String,
-    subtitle: String,
-    onResult: (Boolean, String?) -> Unit
-) {
+private fun promptFor(activity: FragmentActivity, title: String, subtitle: String, onResult: (Boolean, String?) -> Unit) {
     val callback = object : BiometricPrompt.AuthenticationCallback() {
         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
             onResult(true, null)
@@ -214,16 +212,15 @@ private fun promptFor(
     }.onFailure { onResult(false, it.message) }
 }
 
-private fun authenticators(): Int =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        // WEAK rather than STRONG: this gate guards a view of the user's own
-        // records, not a cryptographic key, and STRONG needlessly excludes the
-        // face and iris sensors on plenty of phones.
-        BiometricManager.Authenticators.BIOMETRIC_WEAK or
-            BiometricManager.Authenticators.DEVICE_CREDENTIAL
-    } else {
-        BiometricManager.Authenticators.BIOMETRIC_WEAK
-    }
+private fun authenticators(): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+    // WEAK rather than STRONG: this gate guards a view of the user's own
+    // records, not a cryptographic key, and STRONG needlessly excludes the
+    // face and iris sensors on plenty of phones.
+    BiometricManager.Authenticators.BIOMETRIC_WEAK or
+        BiometricManager.Authenticators.DEVICE_CREDENTIAL
+} else {
+    BiometricManager.Authenticators.BIOMETRIC_WEAK
+}
 
 /**
  * The Activity is not [LocalContext] here — the theme wraps it to switch language

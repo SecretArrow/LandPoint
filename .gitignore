@@ -13,3 +13,20 @@ local.properties
 keystore.properties
 /.kotlin
 /dist
+
+# --- Signing material: none of this may ever reach the repository -------
+# The release key lives only as GitHub Secrets (KEYSTORE_ZIP_BASE64 and
+# friends); see SECURITY.md for the rotation procedure if any of these leak.
+*.keystore
+key-sign-apk.zip
+key-sign-apk.zip.b64
+*.pem
+.env
+.env.*
+keystore.properties
+signing/
+release/
+# Backups of a keystore, under any name someone thought of.
+*-release.jks
+*-release.keystore
+keybackup*

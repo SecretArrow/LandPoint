@@ -16,11 +16,7 @@ import kotlin.math.tan
  * beside it because corners get inserted, deleted and reordered constantly, and
  * two parallel lists would drift apart on the first of those.
  */
-data class GeoPoint(
-    val latitude: Double,
-    val longitude: Double,
-    val accuracyM: Double? = null
-)
+data class GeoPoint(val latitude: Double, val longitude: Double, val accuracyM: Double? = null)
 
 /**
  * Geodesic area and perimeter for a boundary walked on the ground.
@@ -57,12 +53,7 @@ object PolygonMath {
         return abs(total * EARTH_RADIUS_M * EARTH_RADIUS_M)
     }
 
-    private fun polarTriangleArea(
-        tan1: Double,
-        lon1: Double,
-        tan2: Double,
-        lon2: Double
-    ): Double {
+    private fun polarTriangleArea(tan1: Double, lon1: Double, tan2: Double, lon2: Double): Double {
         val deltaLon = lon1 - lon2
         val t = tan1 * tan2
         return 2.0 * atan2(t * sin(deltaLon), 1 + t * cos(deltaLon))
@@ -105,8 +96,14 @@ object PolygonMath {
                 // Adjacent sides, and the last against the first, share an end.
                 if (i == jNext || j == iNext) continue
                 if (crosses(
-                        xs[i], ys[i], xs[iNext], ys[iNext],
-                        xs[j], ys[j], xs[jNext], ys[jNext]
+                        xs[i],
+                        ys[i],
+                        xs[iNext],
+                        ys[iNext],
+                        xs[j],
+                        ys[j],
+                        xs[jNext],
+                        ys[jNext]
                     )
                 ) {
                     return (i + 1) to (j + 1)
@@ -123,10 +120,7 @@ object PolygonMath {
      * editor refuses at entry, and reporting them here would put a warning on
      * boundaries that are fine.
      */
-    private fun crosses(
-        ax: Double, ay: Double, bx: Double, by: Double,
-        cx: Double, cy: Double, dx: Double, dy: Double
-    ): Boolean {
+    private fun crosses(ax: Double, ay: Double, bx: Double, by: Double, cx: Double, cy: Double, dx: Double, dy: Double): Boolean {
         val d1 = cross(cx, cy, dx, dy, ax, ay)
         val d2 = cross(cx, cy, dx, dy, bx, by)
         val d3 = cross(ax, ay, bx, by, cx, cy)
@@ -136,9 +130,8 @@ object PolygonMath {
     }
 
     /** Which side of the line through (x1,y1)-(x2,y2) the point (px,py) falls. */
-    private fun cross(
-        x1: Double, y1: Double, x2: Double, y2: Double, px: Double, py: Double
-    ): Double = (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1)
+    private fun cross(x1: Double, y1: Double, x2: Double, y2: Double, px: Double, py: Double): Double =
+        (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1)
 
     /** Total length of the closed boundary, including the edge back to the start. */
     fun perimeterM(points: List<GeoPoint>): Double {
@@ -183,10 +176,16 @@ object PolygonMath {
         return Side(
             toIndex = to,
             lengthM = GeoUtils.distance(
-                from.latitude, from.longitude, next.latitude, next.longitude
+                from.latitude,
+                from.longitude,
+                next.latitude,
+                next.longitude
             ),
             bearingDeg = GeoUtils.bearing(
-                from.latitude, from.longitude, next.latitude, next.longitude
+                from.latitude,
+                from.longitude,
+                next.latitude,
+                next.longitude
             )
         )
     }
@@ -227,7 +226,9 @@ object PolygonMath {
             z += sin(lat)
         }
         val n = points.size
-        x /= n; y /= n; z /= n
+        x /= n
+        y /= n
+        z /= n
         val hyp = kotlin.math.sqrt(x * x + y * y)
         return GeoPoint(
             latitude = Math.toDegrees(atan2(z, hyp)),
@@ -241,15 +242,13 @@ object PolygonMath {
      * threshold tied to the fix accuracy keeps the shape honest instead of
      * recording GPS jitter as corners.
      */
-    fun isMeaningfulStep(
-        previous: GeoPoint?,
-        candidate: GeoPoint,
-        accuracyM: Double
-    ): Boolean {
+    fun isMeaningfulStep(previous: GeoPoint?, candidate: GeoPoint, accuracyM: Double): Boolean {
         if (previous == null) return true
         val moved = GeoUtils.distance(
-            previous.latitude, previous.longitude,
-            candidate.latitude, candidate.longitude
+            previous.latitude,
+            previous.longitude,
+            candidate.latitude,
+            candidate.longitude
         )
         return moved >= maxOf(2.0, accuracyM)
     }

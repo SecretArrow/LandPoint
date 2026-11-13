@@ -1,0 +1,116 @@
+# E2E 1 — record a land and draw its boundary by typing coordinates.
+#
+# Covers: first-run introduction, the Save-land flow, the corner picker's
+# "Enter coordinates" source (the survey-letter path), mark acceptance, and
+# the saved record appearing with its name.
+#
+# Preconditions established by the CI job before the flows run:
+#   - the debug APK is installed,
+#   - ACCESS_FINE/COARSE_LOCATION are pre-granted (no system dialog),
+#   - a GPS fix is seeded with `adb emu geo fix`.
+appId: com.landpoint.app.debug
+name: 01-record-land-manual-coordinates
+tags:
+- core
+---
+- launchApp
+
+# First run shows the introduction; skip it.
+# A slow CI emulator sometimes raises a system "isn't responding" dialog over
+# whatever is on screen; dismiss it when present so the flow can proceed.
+- runFlow:
+    when:
+      visible: '^Wait$'
+    commands:
+      - tapOn: '^Wait$'
+
+- extendedWaitUntil:
+    visible: '^Skip$'
+    timeout: 30000
+- tapOn: '^Skip$'
+
+# The list screen's big FAB.
+- extendedWaitUntil:
+    visible: '^Save land$'
+    timeout: 15000
+- tapOn: '^Save land$'
+
+- extendedWaitUntil:
+    visible: '^Land details$'
+    timeout: 20000
+
+# The name field (label "Name *"; "*" must be regex-escaped).
+- tapOn: '^Name \*$'
+- inputText: 'Kebun Percobaan'
+- hideKeyboard
+
+# Open the corner picker (scrolls down through the form if needed).
+- scrollUntilVisible:
+    element:
+      text: '^Mark on the map$'
+    direction: DOWN
+    timeout: 20000
+- tapOn: '^Mark on the map$'
+- extendedWaitUntil:
+    visible: '^Enter coordinates$'
+    timeout: 20000
+
+# Corner 1
+- tapOn: '^Enter coordinates$'
+- extendedWaitUntil:
+    visible: '^Add a corner$'
+    timeout: 10000
+- tapOn: '^Latitude$'
+- inputText: '-6.175000'
+- tapOn: '^Longitude$'
+- inputText: '106.827000'
+- tapOn: '^Save$'
+- extendedWaitUntil:
+    visible: '^Use this mark$'
+    timeout: 10000
+- tapOn: '^Use this mark$'
+
+# Corner 2
+- extendedWaitUntil:
+    visible: '^Enter coordinates$'
+    timeout: 10000
+- tapOn: '^Enter coordinates$'
+- tapOn: '^Latitude$'
+- inputText: '-6.174900'
+- tapOn: '^Longitude$'
+- inputText: '106.827200'
+- tapOn: '^Save$'
+- extendedWaitUntil:
+    visible: '^Use this mark$'
+    timeout: 10000
+- tapOn: '^Use this mark$'
+
+# Corner 3
+- extendedWaitUntil:
+    visible: '^Enter coordinates$'
+    timeout: 10000
+- tapOn: '^Enter coordinates$'
+- tapOn: '^Latitude$'
+- inputText: '-6.174800'
+- tapOn: '^Longitude$'
+- inputText: '106.827100'
+- tapOn: '^Save$'
+- extendedWaitUntil:
+    visible: '^Use this mark$'
+    timeout: 10000
+- tapOn: '^Use this mark$'
+
+# Accept the boundary and save the record.
+- extendedWaitUntil:
+    visible: '^Use this boundary$'
+    timeout: 10000
+- tapOn: '^Use this boundary$'
+- extendedWaitUntil:
+    visible: '^Save$'
+    timeout: 15000
+- tapOn: '^Save$'
+
+# The saved record shows its name, wherever the editor returns to.
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 15000

@@ -75,8 +75,7 @@ internal object DatabaseKey {
         runCatching { keyStore().deleteEntry(ALIAS) }
     }
 
-    private fun prefs(context: Context): SharedPreferences =
-        // SharedPreferences rather than the DataStore the rest of the app settled
+    private fun prefs(context: Context): SharedPreferences = // SharedPreferences rather than the DataStore the rest of the app settled
         // on: this is read while the database is being opened, from a plain
         // function with no coroutine to collect a Flow in. What it holds is a
         // sealed blob that is useless without the hardware key anyway.
@@ -138,8 +137,7 @@ internal object DatabaseKey {
 
     private fun keyStore(): KeyStore = KeyStore.getInstance(PROVIDER).apply { load(null) }
 
-    private fun wrappingKey(): SecretKey =
-        (keyStore().getKey(ALIAS, null) as? SecretKey) ?: generate()
+    private fun wrappingKey(): SecretKey = (keyStore().getKey(ALIAS, null) as? SecretKey) ?: generate()
 
     private fun generate(): SecretKey = try {
         generate(strongBox = true)
@@ -152,26 +150,25 @@ internal object DatabaseKey {
         generate(strongBox = false)
     }
 
-    private fun generate(strongBox: Boolean): SecretKey =
-        KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, PROVIDER).apply {
-            init(
-                KeyGenParameterSpec.Builder(
-                    ALIAS,
-                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-                )
-                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                    .setKeySize(256)
-                    // Deliberately not setUserAuthenticationRequired or
-                    // setUnlockedDeviceRequired. Either would make the key
-                    // unusable while the screen is locked, which is when a
-                    // location fix or an export could still be finishing — and
-                    // would put a second lock in front of an app that already
-                    // offers one it can explain. The threat this addresses is a
-                    // phone in somebody else's hands, which the screen lock and
-                    // the app lock answer directly.
-                    .setIsStrongBoxBacked(strongBox)
-                    .build()
+    private fun generate(strongBox: Boolean): SecretKey = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, PROVIDER).apply {
+        init(
+            KeyGenParameterSpec.Builder(
+                ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
             )
-        }.generateKey()
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                // Deliberately not setUserAuthenticationRequired or
+                // setUnlockedDeviceRequired. Either would make the key
+                // unusable while the screen is locked, which is when a
+                // location fix or an export could still be finishing — and
+                // would put a second lock in front of an app that already
+                // offers one it can explain. The threat this addresses is a
+                // phone in somebody else's hands, which the screen lock and
+                // the app lock answer directly.
+                .setIsStrongBoxBacked(strongBox)
+                .build()
+        )
+    }.generateKey()
 }

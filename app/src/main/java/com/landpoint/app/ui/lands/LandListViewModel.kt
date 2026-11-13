@@ -42,12 +42,7 @@ enum class SortOrder(@StringRes val labelRes: Int) {
  * The four interaction flows, bundled so [LandListViewModel.uiState] stays
  * within `combine`'s five-flow limit.
  */
-private data class Interaction(
-    val selectedIds: Set<String>,
-    val isBusy: Boolean,
-    val message: String?,
-    val pendingDelete: Set<String>
-)
+private data class Interaction(val selectedIds: Set<String>, val isBusy: Boolean, val message: String?, val pendingDelete: Set<String>)
 
 /**
  * How a chosen order arranges the list.
@@ -155,7 +150,10 @@ class LandListViewModel(
             Triple(units, format, area)
         },
         combine(
-            selectedIds, busy, message, pendingDeletes.ids
+            selectedIds,
+            busy,
+            message,
+            pendingDeletes.ids
         ) { ids, isBusy, msg, pending -> Interaction(ids, isBusy, msg, pending) }
     ) { lands, filters, prefs, interaction ->
         val (q, sort, location) = filters
@@ -168,11 +166,16 @@ class LandListViewModel(
             visible.map { land ->
                 land.copy(
                     distanceMeters = GeoUtils.distance(
-                        location.first, location.second, land.latitude, land.longitude
+                        location.first,
+                        location.second,
+                        land.latitude,
+                        land.longitude
                     )
                 )
             }
-        } else visible
+        } else {
+            visible
+        }
 
         val filtered = if (q.isBlank()) withDistance else withDistance.filter { it.matches(q) }
 
@@ -216,10 +219,10 @@ class LandListViewModel(
     private fun Land.matches(q: String): Boolean {
         val needle = q.trim().lowercase()
         return name.lowercase().contains(needle) ||
-                description.lowercase().contains(needle) ||
-                notes.lowercase().contains(needle) ||
-                address?.lowercase()?.contains(needle) == true ||
-                parcelNumber?.lowercase()?.contains(needle) == true
+            description.lowercase().contains(needle) ||
+            notes.lowercase().contains(needle) ||
+            address?.lowercase()?.contains(needle) == true ||
+            parcelNumber?.lowercase()?.contains(needle) == true
     }
 
     fun setQuery(value: String) {
@@ -284,19 +287,18 @@ class LandListViewModel(
      * the user tapped" is the honest thing to write to a file the user names,
      * even if the list changes while the write is in flight.
      */
-    private fun exportSelected(
-        uri: Uri,
-        @StringRes failureRes: Int,
-        export: suspend (List<Land>) -> ExportResult
-    ) {
+    private fun exportSelected(uri: Uri, @StringRes failureRes: Int, export: suspend (List<Land>) -> ExportResult) {
         val lands = uiState.value.selectedLands
         if (lands.isEmpty()) return
         viewModelScope.launch {
             busy.value = true
             message.value = try {
                 val result = export(lands)
-                if (result.isFailure) strings.get(failureRes, result.error ?: "")
-                else strings.plural(R.plurals.msg_exported, result.count)
+                if (result.isFailure) {
+                    strings.get(failureRes, result.error ?: "")
+                } else {
+                    strings.plural(R.plurals.msg_exported, result.count)
+                }
             } catch (e: Exception) {
                 // A chosen file can be on a card pulled mid-write, or a provider
                 // that dies; the list screen must not go down with it.

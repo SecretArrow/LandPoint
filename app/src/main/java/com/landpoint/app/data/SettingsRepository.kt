@@ -9,22 +9,22 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.landpoint.app.R
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import java.util.Locale
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class SettingsRepository(private val context: Context) {
 
     private object Keys {
-        val DARK_MODE = stringPreferencesKey("dark_mode")        // system | light | dark
-        val MEASUREMENT_UNITS = stringPreferencesKey("units")     // metric | imperial
-        val COORD_FORMAT = stringPreferencesKey("coord_format")   // decimal | dms
-        val LANGUAGE = stringPreferencesKey("language")           // system | en | in
-        val AREA_UNIT = stringPreferencesKey("area_unit")         // AreaUnit.key
-        val BASEMAP = stringPreferencesKey("basemap")             // BasemapMode.key
-        val OFFLINE_MAP = stringPreferencesKey("offline_map")      // archive file name
+        val DARK_MODE = stringPreferencesKey("dark_mode") // system | light | dark
+        val MEASUREMENT_UNITS = stringPreferencesKey("units") // metric | imperial
+        val COORD_FORMAT = stringPreferencesKey("coord_format") // decimal | dms
+        val LANGUAGE = stringPreferencesKey("language") // system | en | in
+        val AREA_UNIT = stringPreferencesKey("area_unit") // AreaUnit.key
+        val BASEMAP = stringPreferencesKey("basemap") // BasemapMode.key
+        val OFFLINE_MAP = stringPreferencesKey("offline_map") // archive file name
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val APP_LOCK = booleanPreferencesKey("app_lock")
         val SECURE_SCREEN = booleanPreferencesKey("secure_screen")
@@ -81,12 +81,16 @@ class SettingsRepository(private val context: Context) {
         SQM("sqm", R.string.area_unit_sqm, R.string.value_area_sqm, 1.0, 0),
         ARE("are", R.string.area_unit_are, R.string.value_area_are, 100.0, 2),
         HECTARE("hectare", R.string.area_unit_hectare, R.string.value_area_hectare, 10_000.0, 3),
+
         /** Tumbak, known as bata in much of West Java. */
         TUMBAK("tumbak", R.string.area_unit_tumbak, R.string.value_area_tumbak, 14.0, 1),
+
         /** Ubin/ru, the Central and East Java equivalent — 14.0625 m², not 14. */
         UBIN("ubin", R.string.area_unit_ubin, R.string.value_area_ubin, 14.0625, 1),
+
         /** Rante, used on plantation land in Sumatra — a 20 m square. */
         RANTE("rante", R.string.area_unit_rante, R.string.value_area_rante, 400.0, 2),
+
         /**
          * Bahu (bau), the colonial-era Javanese unit, standardised at 7096.5 m².
          * Often quoted as "500 ubin", but that uses a historical ubin of
@@ -172,11 +176,7 @@ class SettingsRepository(private val context: Context) {
      * screen already spends all five; one flow for the group spares that screen
      * another layer of nesting every time a switch is added here.
      */
-    data class Privacy(
-        val appLock: Boolean = false,
-        val secureScreen: Boolean = false,
-        val stripPhotoLocation: Boolean = true
-    )
+    data class Privacy(val appLock: Boolean = false, val secureScreen: Boolean = false, val stripPhotoLocation: Boolean = true)
 
     /**
      * [Privacy.stripPhotoLocation] is the one that defaults to on. A camera

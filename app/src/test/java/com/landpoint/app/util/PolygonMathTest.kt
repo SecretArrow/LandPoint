@@ -85,8 +85,8 @@ class PolygonMathTest {
             at(0.0, 0.0),
             at(0.0, 20.0),
             at(20.0, 20.0),
-            at(20.0, 0.0),   // these last two belong
-            at(30.0, 10.0)   // the other way round
+            at(20.0, 0.0), // these last two belong
+            at(30.0, 10.0) // the other way round
         )
         assertEquals(3 to 5, PolygonMath.selfCrossing(outOfOrder))
     }

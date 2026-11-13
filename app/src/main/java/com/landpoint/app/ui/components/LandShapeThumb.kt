@@ -36,11 +36,7 @@ import kotlin.math.min
  * Lands stored as a single point have no outline to draw and get a pin instead.
  */
 @Composable
-fun LandShapeThumb(
-    land: Land,
-    modifier: Modifier = Modifier,
-    size: Dp = 44.dp
-) {
+fun LandShapeThumb(land: Land, modifier: Modifier = Modifier, size: Dp = 44.dp) {
     // Land.boundary is a getter that re-parses the stored JSON on every read, and
     // a walked boundary can hold hundreds of points. Inside a LazyColumn that
     // would be re-parsed on every frame, so the result is kept per record.
@@ -86,6 +82,7 @@ fun LandShapeThumb(
         }
     }
 }
+
 /**
  * Fits this ring into a [width] × [height] box, [inset] in from each edge.
  *

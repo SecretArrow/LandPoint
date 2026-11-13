@@ -11,11 +11,7 @@ import com.landpoint.app.data.model.CornerPoint
  */
 object PreviewDraftStore {
 
-    data class Draft(
-        val name: String = "",
-        val corners: List<CornerPoint> = emptyList(),
-        val photoCounts: Map<String, Int> = emptyMap()
-    )
+    data class Draft(val name: String = "", val corners: List<CornerPoint> = emptyList(), val photoCounts: Map<String, Int> = emptyMap())
 
     @Volatile
     var draft: Draft = Draft()

@@ -1,10 +1,10 @@
 package com.landpoint.app.data.model
 
 import com.landpoint.app.util.GeoPoint
+import java.util.UUID
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.UUID
 
 /**
  * How a boundary is stored in `geometry_json`.
@@ -52,12 +52,7 @@ data class StoredGeometry(
  * geometry written before ids existed get a generated id on load.
  */
 @Serializable
-data class CornerPoint(
-    val id: String = "",
-    val latitude: Double,
-    val longitude: Double,
-    val accuracyM: Double? = null
-) {
+data class CornerPoint(val id: String = "", val latitude: Double, val longitude: Double, val accuracyM: Double? = null) {
     fun toGeoPoint(): GeoPoint = GeoPoint(latitude, longitude, accuracyM)
 }
 
@@ -66,11 +61,10 @@ fun newCornerId(): String = UUID.randomUUID().toString()
 fun GeoPoint.toCorner(id: String = newCornerId()): CornerPoint =
     CornerPoint(id = id, latitude = latitude, longitude = longitude, accuracyM = accuracyM)
 
-fun List<GeoPoint>.toCorners(ids: List<String>? = null): List<CornerPoint> =
-    mapIndexed { index, point ->
-        val id = ids?.getOrNull(index)?.takeIf { it.isNotBlank() } ?: newCornerId()
-        point.toCorner(id)
-    }
+fun List<GeoPoint>.toCorners(ids: List<String>? = null): List<CornerPoint> = mapIndexed { index, point ->
+    val id = ids?.getOrNull(index)?.takeIf { it.isNotBlank() } ?: newCornerId()
+    point.toCorner(id)
+}
 
 fun List<CornerPoint>.toGeoPoints(): List<GeoPoint> = map { it.toGeoPoint() }
 
@@ -124,13 +118,16 @@ object GeometryCodec {
             val accuracy = stored.accuracy?.takeIf { it.size == stored.coordinates.size }
             val ids = stored.ids?.takeIf { it.size == stored.coordinates.size }
             stored.coordinates.mapIndexedNotNull { index, pair ->
-                if (pair.size < 2) null
-                else CornerPoint(
-                    id = ids?.get(index)?.takeIf { it.isNotBlank() } ?: newCornerId(),
-                    latitude = pair[1],
-                    longitude = pair[0],
-                    accuracyM = accuracy?.get(index)?.takeIf { it.isFinite() && it > 0.0 }
-                )
+                if (pair.size < 2) {
+                    null
+                } else {
+                    CornerPoint(
+                        id = ids?.get(index)?.takeIf { it.isNotBlank() } ?: newCornerId(),
+                        latitude = pair[1],
+                        longitude = pair[0],
+                        accuracyM = accuracy?.get(index)?.takeIf { it.isFinite() && it > 0.0 }
+                    )
+                }
             }
         }.getOrElse { emptyList() }
     }
@@ -146,14 +143,17 @@ object GeometryCodec {
             // with would hang one corner's accuracy on another.
             val accuracy = stored.accuracy?.takeIf { it.size == stored.coordinates.size }
             stored.coordinates.mapIndexedNotNull { index, pair ->
-                if (pair.size < 2) null
-                else GeoPoint(
-                    latitude = pair[1],
-                    longitude = pair[0],
-                    // Indexed against coordinates, so a dropped malformed pair
-                    // cannot shift the remaining figures onto the wrong corners.
-                    accuracyM = accuracy?.get(index)?.takeIf { it.isFinite() && it > 0.0 }
-                )
+                if (pair.size < 2) {
+                    null
+                } else {
+                    GeoPoint(
+                        latitude = pair[1],
+                        longitude = pair[0],
+                        // Indexed against coordinates, so a dropped malformed pair
+                        // cannot shift the remaining figures onto the wrong corners.
+                        accuracyM = accuracy?.get(index)?.takeIf { it.isFinite() && it > 0.0 }
+                    )
+                }
             }
         }.getOrElse { emptyList() }
     }

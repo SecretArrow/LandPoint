@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.landpoint.app.map.GeoBounds
 import com.landpoint.app.map.MapLibreInit
+import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +19,6 @@ import org.maplibre.android.offline.OfflineRegion
 import org.maplibre.android.offline.OfflineRegionError
 import org.maplibre.android.offline.OfflineRegionStatus
 import org.maplibre.android.offline.OfflineTilePyramidRegionDefinition
-import kotlin.coroutines.resume
 
 private const val TAG = "OfflineRegionStore"
 
@@ -92,11 +92,7 @@ class OfflineRegionStore(private val context: Context) {
      *   see [OfflineStyleWriter], which writes a minimal one to local storage.
      * @return the new region's id, or null if MapLibre refused to create it.
      */
-    suspend fun create(
-        meta: OfflineRegionMeta,
-        styleUrl: String,
-        pixelRatio: Float
-    ): Long? = withContext(Dispatchers.Main) {
+    suspend fun create(meta: OfflineRegionMeta, styleUrl: String, pixelRatio: Float): Long? = withContext(Dispatchers.Main) {
         val definition = OfflineTilePyramidRegionDefinition(
             styleUrl,
             meta.bounds.toLatLngBounds(),
@@ -254,22 +250,21 @@ class OfflineRegionStore(private val context: Context) {
         statusOf(region)
     }
 
-    private suspend fun statusOf(region: OfflineRegion): RegionStatus =
-        suspendCancellableCoroutine { continuation ->
-            region.getStatus(object : OfflineRegion.OfflineRegionStatusCallback {
-                // Both parameters are nullable in MapLibre's own signature, unlike the
-                // observer's, so they are taken as written: a null reading is a reading
-                // that did not arrive, and is reported as an empty one.
-                override fun onStatus(status: OfflineRegionStatus?) {
-                    continuation.resume(status?.toRegionStatus() ?: RegionStatus())
-                }
+    private suspend fun statusOf(region: OfflineRegion): RegionStatus = suspendCancellableCoroutine { continuation ->
+        region.getStatus(object : OfflineRegion.OfflineRegionStatusCallback {
+            // Both parameters are nullable in MapLibre's own signature, unlike the
+            // observer's, so they are taken as written: a null reading is a reading
+            // that did not arrive, and is reported as an empty one.
+            override fun onStatus(status: OfflineRegionStatus?) {
+                continuation.resume(status?.toRegionStatus() ?: RegionStatus())
+            }
 
-                override fun onError(error: String?) {
-                    Log.w(TAG, "getStatus: $error")
-                    continuation.resume(RegionStatus())
-                }
-            })
-        }
+            override fun onError(error: String?) {
+                Log.w(TAG, "getStatus: $error")
+                continuation.resume(RegionStatus())
+            }
+        })
+    }
 
     /**
      * A hard ceiling on tiles across all regions, enforced inside MapLibre.
@@ -342,14 +337,13 @@ class OfflineRegionStore(private val context: Context) {
      * instead leaves the offline screen empty and inert, which is the truth about
      * that device: no renderer, so no saved maps either.
      */
-    private fun manageOnMain(): OfflineManager? =
-        if (MapLibreInit.isAvailable) {
-            runCatching { OfflineManager.getInstance(context) }
-                .onFailure { Log.w(TAG, "no offline manager", it) }
-                .getOrNull()
-        } else {
-            null
-        }
+    private fun manageOnMain(): OfflineManager? = if (MapLibreInit.isAvailable) {
+        runCatching { OfflineManager.getInstance(context) }
+            .onFailure { Log.w(TAG, "no offline manager", it) }
+            .getOrNull()
+    } else {
+        null
+    }
 }
 
 /** One saved area, as the UI needs it. */

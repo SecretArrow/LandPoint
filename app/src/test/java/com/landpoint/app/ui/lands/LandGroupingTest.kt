@@ -2,10 +2,10 @@ package com.landpoint.app.ui.lands
 
 import com.landpoint.app.data.export.LandTestFactory
 import com.landpoint.app.data.model.Land
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Locale
 
 /**
  * The headings the list draws over itself.
@@ -32,11 +32,9 @@ class LandGroupingTest {
     private fun rows(lands: List<Land>, order: SortOrder) =
         groupedRows(lands.sortedWith(order.comparator()), order, Locale.ENGLISH, noParcel)
 
-    private fun headings(rows: List<LandRow>) =
-        rows.filterIsInstance<LandRow.Header>().map { it.label to it.count }
+    private fun headings(rows: List<LandRow>) = rows.filterIsInstance<LandRow.Header>().map { it.label to it.count }
 
-    private fun names(rows: List<LandRow>) =
-        rows.filterIsInstance<LandRow.Item>().map { it.land.name }
+    private fun names(rows: List<LandRow>) = rows.filterIsInstance<LandRow.Item>().map { it.land.name }
 
     @Test
     fun `dates are headed by their month, counted`() {

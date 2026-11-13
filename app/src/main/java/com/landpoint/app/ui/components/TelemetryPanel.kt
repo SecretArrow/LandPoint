@@ -7,11 +7,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.MyLocation
@@ -78,11 +78,7 @@ private val ICON_SIZE = 18.dp
  * were deciding whether to trust the dot underneath.
  */
 @Composable
-fun TelemetryPanel(
-    state: TrackingState,
-    onShowDetail: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun TelemetryPanel(state: TrackingState, onShowDetail: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onShowDetail,
         modifier = modifier.widthIn(max = PANEL_MAX_WIDTH),
@@ -107,11 +103,7 @@ fun TelemetryPanel(
  *   settings instead of an ask that would be swallowed.
  */
 @Composable
-fun LocationAccessChip(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    blocked: Boolean = false
-) {
+fun LocationAccessChip(onClick: () -> Unit, modifier: Modifier = Modifier, blocked: Boolean = false) {
     val action = stringResource(
         if (blocked) R.string.permission_open_settings else R.string.permission_grant
     )
@@ -214,10 +206,7 @@ private fun CollapsedReadout(state: TrackingState) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TelemetrySheet(
-    state: TrackingState,
-    onDismiss: () -> Unit
-) {
+fun TelemetrySheet(state: TrackingState, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -404,8 +393,7 @@ private fun signalText(state: TrackingState): String {
  * second to stay true, and a clock time that has stopped moving says the same thing
  * — the fixes have stopped — without a ticker behind it.
  */
-private fun timeText(timestamp: Long): String =
-    SimpleDateFormat("HH:mm:ss", Localization.numberLocale()).format(Date(timestamp))
+private fun timeText(timestamp: Long): String = SimpleDateFormat("HH:mm:ss", Localization.numberLocale()).format(Date(timestamp))
 
 private fun SignalStrength.labelRes(): Int = when (this) {
     SignalStrength.NONE -> R.string.telemetry_signal_none

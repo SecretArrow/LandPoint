@@ -43,11 +43,8 @@ import kotlinx.coroutines.launch
  * release it in `onCleared`; a style document has nothing to release, so that whole
  * pairing is gone and what a screen gets instead is a string.
  */
-class MapPrefsViewModel(
-    private val settings: SettingsRepository,
-    private val archives: ArchiveStore,
-    private val styles: MapStyleFactory
-) : ViewModel() {
+class MapPrefsViewModel(private val settings: SettingsRepository, private val archives: ArchiveStore, private val styles: MapStyleFactory) :
+    ViewModel() {
 
     /**
      * What is drawn, what units to rule in, and whether there is an imported map to
@@ -109,11 +106,7 @@ class MapPrefsViewModel(
  *   imported style can be picked at all, which is why it travels with the provider
  *   instead of being asked for again by each screen.
  */
-data class MapPrefsState(
-    val provider: MapProvider,
-    val hasVectorMap: Boolean,
-    val imperial: Boolean
-)
+data class MapPrefsState(val provider: MapProvider, val hasVectorMap: Boolean, val imperial: Boolean)
 
 /**
  * What a map screen needs in order to draw, and to change what it draws.
@@ -179,9 +172,7 @@ class MapPrefs internal constructor(
  * handle. Finding the archive is part of resolving the preference, so it happens here.
  */
 @Composable
-fun rememberMapPrefs(
-    viewModel: MapPrefsViewModel = viewModel(factory = MapPrefsViewModel.Factory)
-): MapPrefs {
+fun rememberMapPrefs(viewModel: MapPrefsViewModel = viewModel(factory = MapPrefsViewModel.Factory)): MapPrefs {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val dark = isSystemInDarkTheme()
     val provider = state?.provider

@@ -30,14 +30,13 @@ object CornerDraft {
      * Every corner is checked, not just the last one, so a tap cannot quietly
      * stack a second vertex onto a corner placed earlier in the ring.
      */
-    fun acceptTap(
-        existing: List<GeoPoint>,
-        candidate: GeoPoint,
-        minSeparationM: Double = MIN_TAP_SEPARATION_M
-    ): Boolean = existing.none { corner ->
-        GeoUtils.distance(
-            corner.latitude, corner.longitude,
-            candidate.latitude, candidate.longitude
-        ) < minSeparationM
-    }
+    fun acceptTap(existing: List<GeoPoint>, candidate: GeoPoint, minSeparationM: Double = MIN_TAP_SEPARATION_M): Boolean =
+        existing.none { corner ->
+            GeoUtils.distance(
+                corner.latitude,
+                corner.longitude,
+                candidate.latitude,
+                candidate.longitude
+            ) < minSeparationM
+        }
 }

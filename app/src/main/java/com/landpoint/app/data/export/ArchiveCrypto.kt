@@ -67,9 +67,8 @@ object ArchiveCrypto {
     class WrongPassphraseException : IOException("Wrong password for this backup")
 
     /** Does this file start with our marker? */
-    fun looksEncrypted(probe: ByteArray): Boolean =
-        probe.size >= MAGIC.size &&
-            MAGIC.indices.all { probe[it] == MAGIC[it] }
+    fun looksEncrypted(probe: ByteArray): Boolean = probe.size >= MAGIC.size &&
+        MAGIC.indices.all { probe[it] == MAGIC[it] }
 
     /**
      * Wraps [sink] so everything written to the returned stream is encrypted.
@@ -196,11 +195,7 @@ object ArchiveCrypto {
         }
     }
 
-    private class FrameReader(
-        private val source: InputStream,
-        private val key: SecretKey,
-        private val chunkBytes: Int
-    ) : InputStream() {
+    private class FrameReader(private val source: InputStream, private val key: SecretKey, private val chunkBytes: Int) : InputStream() {
 
         private var plain = ByteArray(0)
         private var offset = 0
@@ -246,34 +241,38 @@ object ArchiveCrypto {
             // authenticated — so the flag cannot be flipped to hide a truncation.
             plain = decrypt(iv, payload, isFinal = false)
                 ?: decrypt(iv, payload, isFinal = true)?.also { sawFinal = true }
-                ?: throw if (index == 0L) WrongPassphraseException()
-                else IOException("Backup is damaged or was altered")
+                ?: throw if (index == 0L) {
+                    WrongPassphraseException()
+                } else {
+                    IOException("Backup is damaged or was altered")
+                }
             offset = 0
             index++
         }
 
-        private fun decrypt(iv: ByteArray, payload: ByteArray, isFinal: Boolean): ByteArray? =
-            try {
-                Cipher.getInstance(TRANSFORMATION).run {
-                    init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, iv))
-                    updateAAD(aad(index, isFinal))
-                    doFinal(payload)
-                }
-            } catch (_: BadPaddingException) {
-                // AEADBadTagException on most providers, but the superclass is what
-                // the JCE contract promises for a tag that does not match.
-                null
+        private fun decrypt(iv: ByteArray, payload: ByteArray, isFinal: Boolean): ByteArray? = try {
+            Cipher.getInstance(TRANSFORMATION).run {
+                init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, iv))
+                updateAAD(aad(index, isFinal))
+                doFinal(payload)
             }
+        } catch (_: BadPaddingException) {
+            // AEADBadTagException on most providers, but the superclass is what
+            // the JCE contract promises for a tag that does not match.
+            null
+        }
     }
 }
 
 private fun OutputStream.writeIntBE(value: Int) {
-    write(byteArrayOf(
-        (value ushr 24).toByte(),
-        (value ushr 16).toByte(),
-        (value ushr 8).toByte(),
-        value.toByte()
-    ))
+    write(
+        byteArrayOf(
+            (value ushr 24).toByte(),
+            (value ushr 16).toByte(),
+            (value ushr 8).toByte(),
+            value.toByte()
+        )
+    )
 }
 
 private fun InputStream.readIntBE(): Int? {

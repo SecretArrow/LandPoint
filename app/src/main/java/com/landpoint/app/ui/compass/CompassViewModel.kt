@@ -46,10 +46,14 @@ class CompassViewModel(
     ) { land, pos, units ->
         val distance = if (land != null && pos != null) {
             GeoUtils.distance(pos.first, pos.second, land.latitude, land.longitude)
-        } else null
+        } else {
+            null
+        }
         val bearing = if (land != null && pos != null) {
             GeoUtils.bearing(pos.first, pos.second, land.latitude, land.longitude)
-        } else null
+        } else {
+            null
+        }
 
         CompassUiState(
             land = land,

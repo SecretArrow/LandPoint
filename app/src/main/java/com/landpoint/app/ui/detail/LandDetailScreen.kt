@@ -61,6 +61,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -72,7 +73,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.landpoint.app.R
 import com.landpoint.app.data.model.Land
 import com.landpoint.app.data.model.Photo
-import androidx.compose.ui.res.pluralStringResource
 import com.landpoint.app.ui.components.LandMap
 import com.landpoint.app.ui.components.LandShapeThumb
 import com.landpoint.app.ui.components.MapAttribution
@@ -87,10 +87,10 @@ import com.landpoint.app.util.GeoPoint
 import com.landpoint.app.util.GeoUtils
 import com.landpoint.app.util.PolygonMath
 import com.landpoint.app.util.ShareUtils
-import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,6 +102,7 @@ fun LandDetailScreen(
     viewModel: LandDetailViewModel = viewModel(factory = LandDetailViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val history by viewModel.history.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHost = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -211,6 +212,7 @@ fun LandDetailScreen(
             else -> DetailContent(
                 land = land,
                 state = state,
+                history = history,
                 onNavigate = { ShareUtils.navigateTo(context, land) },
                 onCompass = { onCompass(land.id) },
                 onShape = { onShape(land.id) },
@@ -247,6 +249,7 @@ fun LandDetailScreen(
 private fun DetailContent(
     land: Land,
     state: LandDetailUiState,
+    history: List<com.landpoint.app.data.model.AuditEntry>,
     onNavigate: () -> Unit,
     onCompass: () -> Unit,
     onShape: () -> Unit,
@@ -255,7 +258,6 @@ private fun DetailContent(
     val dateFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -277,8 +279,11 @@ private fun DetailContent(
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             stringResource(
-                                if (land.isPolygon) R.string.label_shape_polygon
-                                else R.string.label_shape_point
+                                if (land.isPolygon) {
+                                    R.string.label_shape_polygon
+                                } else {
+                                    R.string.label_shape_point
+                                }
                             ).uppercase(),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -307,8 +312,11 @@ private fun DetailContent(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    if (state.dms) GeoUtils.formatDMS(land.latitude, land.longitude)
-                    else GeoUtils.formatDecimal(land.latitude, land.longitude),
+                    if (state.dms) {
+                        GeoUtils.formatDMS(land.latitude, land.longitude)
+                    } else {
+                        GeoUtils.formatDecimal(land.latitude, land.longitude)
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = FontFamily.Monospace,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -425,6 +433,9 @@ private fun DetailContent(
             )
         }
 
+        RegistryCard(land = land)
+        HistoryCard(history = history, dateFormat = dateFormat)
+
         Text(
             stringResource(R.string.legal_disclaimer),
             style = MaterialTheme.typography.bodySmall,
@@ -442,11 +453,7 @@ private fun DetailContent(
  * with one gesture — a tap that opens the real map, where panning belongs.
  */
 @Composable
-private fun BoundaryMapCard(
-    land: Land,
-    boundary: List<GeoPoint>,
-    onOpen: () -> Unit
-) {
+private fun BoundaryMapCard(land: Land, boundary: List<GeoPoint>, onOpen: () -> Unit) {
     val boundaryColour = MaterialTheme.colorScheme.primary.toArgb()
     val openLabel = stringResource(R.string.shape_open_preview)
     // Said by the transparent button in front of the map, not by the map: one
@@ -560,8 +567,11 @@ private fun CornerCoordinates(
             val coordinates = stringResource(
                 R.string.boundary_corner_number,
                 index + 1,
-                if (dms) GeoUtils.formatDMS(point.latitude, point.longitude)
-                else GeoUtils.formatDecimal(point.latitude, point.longitude)
+                if (dms) {
+                    GeoUtils.formatDMS(point.latitude, point.longitude)
+                } else {
+                    GeoUtils.formatDecimal(point.latitude, point.longitude)
+                }
             )
             // How well the corner was known when it was taken. On a record being
             // read back — or shown to someone else — that is part of what the
@@ -571,8 +581,11 @@ private fun CornerCoordinates(
             }
             // Proof, where there is any: how many photos this corner holds.
             val cornerId = corners.getOrNull(index)?.id
-            val photoCount = if (cornerId == null) 0
-                else photos.count { it.cornerId == cornerId }
+            val photoCount = if (cornerId == null) {
+                0
+            } else {
+                photos.count { it.cornerId == cornerId }
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -588,7 +601,9 @@ private fun CornerCoordinates(
                     Icon(
                         Icons.Outlined.PhotoCamera,
                         contentDescription = pluralStringResource(
-                            R.plurals.corner_photo_count, photoCount, photoCount
+                            R.plurals.corner_photo_count,
+                            photoCount,
+                            photoCount
                         ),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
@@ -599,8 +614,11 @@ private fun CornerCoordinates(
         if (boundary.size > collapsedCount) {
             TextButton(onClick = { expanded = !expanded }) {
                 Text(
-                    if (expanded) stringResource(R.string.boundary_corners_collapse)
-                    else stringResource(R.string.boundary_corners_show_all, boundary.size)
+                    if (expanded) {
+                        stringResource(R.string.boundary_corners_collapse)
+                    } else {
+                        stringResource(R.string.boundary_corners_show_all, boundary.size)
+                    }
                 )
             }
         }
@@ -672,6 +690,100 @@ private fun DetailPhoto(photo: Photo) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2
             )
+        }
+    }
+}
+
+/**
+ * Registry bookkeeping of the parcel: owner, land right, status and papers.
+ * Shown as a plain list of labelled lines; the interesting states (disputed)
+ * carry a colour so they are found without reading.
+ */
+@Composable
+private fun RegistryCard(land: Land) {
+    val hasAnything = land.ownerName != null ||
+        !land.landRight.isNullOrBlank() ||
+        land.status != com.landpoint.app.data.model.LandStatus.ACTIVE.key ||
+        !land.certificateNumber.isNullOrBlank() ||
+        !land.spptNumber.isNullOrBlank() ||
+        land.acquisitionDate != null
+    if (!hasAnything) return
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                stringResource(R.string.registry_card_title).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            land.ownerName?.let {
+                DetailField(stringResource(R.string.field_owner), it)
+            }
+            land.landRight?.takeIf { it.isNotBlank() }?.let {
+                DetailField(stringResource(R.string.field_land_right), it)
+            }
+            if (land.status != com.landpoint.app.data.model.LandStatus.ACTIVE.key) {
+                val status = com.landpoint.app.data.model.LandStatus.fromKey(land.status)
+                DetailField(
+                    stringResource(R.string.field_status),
+                    stringResource(status.labelRes)
+                )
+            }
+            land.certificateNumber?.takeIf { it.isNotBlank() }?.let {
+                DetailField(stringResource(R.string.field_certificate_number), it)
+            }
+            land.spptNumber?.takeIf { it.isNotBlank() }?.let {
+                DetailField(stringResource(R.string.field_sppt_number), it)
+            }
+            land.acquisitionDate?.let {
+                DetailField(
+                    stringResource(R.string.field_acquisition_date),
+                    SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(it))
+                )
+            }
+        }
+    }
+}
+
+/**
+ * What happened to this record and when. The audit trail is deliberately local
+ * and deliberately terse: no accounts, no "who", just the moments the record
+ * changed, newest first.
+ */
+@Composable
+private fun HistoryCard(history: List<com.landpoint.app.data.model.AuditEntry>, dateFormat: SimpleDateFormat) {
+    if (history.isEmpty()) return
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                stringResource(R.string.history_card_title).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            history.take(10).forEach { entry ->
+                val action = stringResource(
+                    when (entry.action) {
+                        com.landpoint.app.data.model.AuditActions.CREATE ->
+                            R.string.audit_action_created
+                        com.landpoint.app.data.model.AuditActions.UPDATE ->
+                            R.string.audit_action_updated
+                        else -> R.string.audit_action_deleted
+                    },
+                    entry.detail
+                )
+                Text(action, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    dateFormat.format(Date(entry.timestamp)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ package com.landpoint.app.data
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -13,7 +14,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.File
 
 /**
  * A photo that cannot be written must cost the user the photo, never the land

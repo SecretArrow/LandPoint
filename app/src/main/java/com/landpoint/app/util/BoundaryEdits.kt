@@ -21,18 +21,24 @@ import kotlin.math.hypot
  */
 object BoundaryEdits {
 
-    fun removeAt(points: List<GeoPoint>, index: Int): List<GeoPoint> =
-        if (index !in points.indices) points
-        else points.filterIndexed { i, _ -> i != index }
+    fun removeAt(points: List<GeoPoint>, index: Int): List<GeoPoint> = if (index !in points.indices) {
+        points
+    } else {
+        points.filterIndexed { i, _ -> i != index }
+    }
 
-    fun replaceAt(points: List<GeoPoint>, index: Int, point: GeoPoint): List<GeoPoint> =
-        if (index !in points.indices) points
-        else points.mapIndexed { i, existing -> if (i == index) point else existing }
+    fun replaceAt(points: List<GeoPoint>, index: Int, point: GeoPoint): List<GeoPoint> = if (index !in points.indices) {
+        points
+    } else {
+        points.mapIndexed { i, existing -> if (i == index) point else existing }
+    }
 
     /** Inserts before [index]. An index of `points.size` appends. */
-    fun insertAt(points: List<GeoPoint>, index: Int, point: GeoPoint): List<GeoPoint> =
-        if (index !in 0..points.size) points
-        else points.toMutableList().apply { add(index, point) }
+    fun insertAt(points: List<GeoPoint>, index: Int, point: GeoPoint): List<GeoPoint> = if (index !in 0..points.size) {
+        points
+    } else {
+        points.toMutableList().apply { add(index, point) }
+    }
 
     /**
      * Swaps two corners, which is what the move-up and move-down buttons do.
@@ -72,11 +78,7 @@ object BoundaryEdits {
      * top of itself. The separation rule itself is [CornerDraft.acceptTap]'s —
      * a typed corner and a tapped one deserve the same threshold.
      */
-    fun isDistinct(
-        points: List<GeoPoint>,
-        candidate: GeoPoint,
-        ignoreIndex: Int? = null
-    ): Boolean = CornerDraft.acceptTap(
+    fun isDistinct(points: List<GeoPoint>, candidate: GeoPoint, ignoreIndex: Int? = null): Boolean = CornerDraft.acceptTap(
         existing = points.filterIndexed { i, _ -> i != ignoreIndex },
         candidate = candidate
     )

@@ -1,10 +1,10 @@
 package com.landpoint.app.util
 
+import kotlin.math.cos
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.math.cos
 
 /**
  * The arithmetic behind the sketch in the PDF.
@@ -18,18 +18,13 @@ class BoundarySketchTest {
     private val boxW = 220f
     private val boxH = 150f
     private val padding = 6f
-    private val usableW = boxW - padding * 2   // 208
-    private val usableH = boxH - padding * 2   // 138
+    private val usableW = boxW - padding * 2 // 208
+    private val usableH = boxH - padding * 2 // 138
 
     private val metresPerDegree = 6371000.0 * Math.PI / 180.0
 
     /** A rectangle [eastM] by [northM], corners listed anticlockwise from the SW. */
-    private fun rect(
-        eastM: Double,
-        northM: Double,
-        lat: Double = -6.9,
-        lon: Double = 107.6
-    ): List<GeoPoint> {
+    private fun rect(eastM: Double, northM: Double, lat: Double = -6.9, lon: Double = 107.6): List<GeoPoint> {
         val dLat = northM / metresPerDegree
         val dLon = eastM / (metresPerDegree * cos(Math.toRadians(lat)))
         return listOf(
@@ -140,8 +135,12 @@ class BoundarySketchTest {
             GeoPoint(lat + step * 2, 107.6)
         )
         val sketch = BoundarySketch.of(line, boxW, boxH)!!
-        assertEquals("no east-west span, so every corner sits on one vertical",
-            0.0, xs(sketch).max() - xs(sketch).min(), 0.01)
+        assertEquals(
+            "no east-west span, so every corner sits on one vertical",
+            0.0,
+            xs(sketch).max() - xs(sketch).min(),
+            0.01
+        )
         assertEquals((padding + usableW / 2).toDouble(), xs(sketch).min(), 0.5)
         assertEquals(usableH.toDouble(), ys(sketch).max() - ys(sketch).min(), 0.5)
         assertTrue(sketch.metresPerPoint.isFinite() && sketch.metresPerPoint > 0.0)

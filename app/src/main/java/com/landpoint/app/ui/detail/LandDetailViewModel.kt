@@ -71,10 +71,14 @@ class LandDetailViewModel(
         val (areaUnit, msg) = areaAndMessage
         val distance = if (land != null && location != null) {
             GeoUtils.distance(location.first, location.second, land.latitude, land.longitude)
-        } else null
+        } else {
+            null
+        }
         val bearing = if (land != null && location != null) {
             GeoUtils.bearing(location.first, location.second, land.latitude, land.longitude)
-        } else null
+        } else {
+            null
+        }
 
         LandDetailUiState(
             land = land,
@@ -94,6 +98,22 @@ class LandDetailViewModel(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = LandDetailUiState()
     )
+
+    /**
+     * What happened to this record, newest first. Kept as its own flow rather
+     * than folded into `uiState`: that combine is already at its five-flow
+     * limit, and the history belongs to the audit trail rather than to the
+     * land's own state.
+     */
+    val history: StateFlow<List<com.landpoint.app.data.model.AuditEntry>> =
+        repository.observeAuditFor(
+            com.landpoint.app.data.model.AuditEntities.LAND,
+            landId
+        ).stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
 
     init {
         refreshLocation()

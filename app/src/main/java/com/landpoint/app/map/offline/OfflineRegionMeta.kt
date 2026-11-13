@@ -55,14 +55,7 @@ data class OfflineRegionMeta(
             encodeDefaults = true
         }
 
-        fun of(
-            name: String,
-            createdAt: Long,
-            bounds: GeoBounds,
-            minZoom: Int,
-            maxZoom: Int,
-            styleKey: String
-        ) = OfflineRegionMeta(
+        fun of(name: String, createdAt: Long, bounds: GeoBounds, minZoom: Int, maxZoom: Int, styleKey: String) = OfflineRegionMeta(
             name = name,
             createdAt = createdAt,
             south = bounds.south,

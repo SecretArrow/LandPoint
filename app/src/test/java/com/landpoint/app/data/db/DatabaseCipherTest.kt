@@ -1,12 +1,12 @@
 package com.landpoint.app.data.db
 
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 /**
  * The header check decides whether an existing database gets migrated or handed
@@ -25,8 +25,7 @@ class DatabaseCipherTest {
     /** The first sixteen bytes of any unencrypted SQLite file. */
     private val header = "SQLite format 3".toByteArray(Charsets.US_ASCII) + 0
 
-    private fun file(name: String, bytes: ByteArray): File =
-        folder.newFile(name).apply { writeBytes(bytes) }
+    private fun file(name: String, bytes: ByteArray): File = folder.newFile(name).apply { writeBytes(bytes) }
 
     @Test
     fun `a real sqlite file is recognised`() {

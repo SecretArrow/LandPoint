@@ -14,8 +14,7 @@ import org.junit.Test
  */
 class NaturalOrderTest {
 
-    private fun sorted(vararg values: String) =
-        values.toList().sortedWith(Comparator { a, b -> NaturalOrder.compare(a, b) })
+    private fun sorted(vararg values: String) = values.toList().sortedWith(Comparator { a, b -> NaturalOrder.compare(a, b) })
 
     @Test
     fun `numbers inside text are compared as numbers`() {

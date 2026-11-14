@@ -95,16 +95,18 @@ jobs:
       - name: Run unit tests
         run: ./gradlew :app:testDebugUnitTest
 
-      - name: Build signed release APK and AAB
+      - name: Build unsigned release APK and AAB
+        # No signingConfig on the release build type — APKs come out unsigned.
+        # The next step signs them explicitly with apksigner so we can force
+        # v1 (JAR) signing, which AGP 8.x auto-disables when minSdk >= 24.
         run: ./gradlew assembleRelease bundleRelease -PlpVersionCode="$VERSION_CODE" -PlpVersionName="${GITHUB_REF_NAME#v}"
 
-      - name: Re-sign APKs with v1+v2+v3 (force JAR signing)
-        # AGP 8.x auto-disables v1 (JAR) signing when minSdk >= 24, even with
-        # enableV1Signing=true, because Google deems v2 sufficient past API 24.
-        # But Android 7.0 (API 24, our minSdk) and several OEM package
-        # installers reject v2-only APKs with "not a valid installation
-        # package". Re-sign every APK explicitly with apksigner, forcing all
-        # three schemes. apksigner replaces any existing signature.
+      - name: Sign APKs with v1+v2+v3 (zipalign + apksigner)
+        # Builds unsigned APKs, re-zipaligns with -p (page-align .so to 4 KB)
+        # so v1 JAR signing validates, then signs with apksigner forcing all
+        # three schemes. Early Android 7.0/7.1 firmware has a buggy v2
+        # verifier that rejects v2-only APKs with "not a valid installation
+        # package" — v1 is the fallback those devices need.
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -112,15 +114,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
-          if [ ! -x "$APKSIGNER" ]; then
-            APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f 2>/dev/null | sort -V | tail -1)
-          fi
-          test -n "$APKSIGNER" || { echo "apksigner not found"; exit 1; }
+          BT=$(dirname "$(find "$ANDROID_HOME/build-tools" -name apksigner -type f 2>/dev/null | sort -V | tail -1)")
+          APKSIGNER="$BT/apksigner"
+          ZIPALIGN="$BT/zipalign"
+          JARSIGNER=$(command -v jarsigner)
+          test -x "$APKSIGNER" || { echo "apksigner not found"; exit 1; }
+          test -x "$ZIPALIGN" || { echo "zipalign not found"; exit 1; }
+          test -n "$JARSIGNER" || { echo "jarsigner not found"; exit 1; }
           KS=$(grep '^storeFile=' keystore.properties | cut -d= -f2-)
           test -f "$KS" || { echo "keystore not found at $KS"; exit 1; }
           for apk in app/build/outputs/apk/release/app-*-release.apk; do
-            echo "--- re-signing $apk (v1+v2+v3) ---"
+            echo "--- aligning + signing $apk (v1+v2+v3) ---"
+            "$ZIPALIGN" -p -f 4 "$apk" "$apk.aligned"
+            mv "$apk.aligned" "$apk"
             "$APKSIGNER" sign \
               --ks "$KS" \
               --ks-pass "pass:$KEYSTORE_PASSWORD" \
@@ -131,7 +137,13 @@ jobs:
               --v3-signing-enabled true \
               "$apk"
           done
-          echo "All release APKs re-signed with v1+v2+v3."
+          # AAB uses JAR signing (no apksigner for bundles).
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          echo "--- signing $AAB (jarsigner) ---"
+          "$JARSIGNER" -keystore "$KS" -storepass "$KEYSTORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" -sigalg SHA256withRSA -digestalg SHA-256 \
+            "$AAB" "$KEY_ALIAS"
+          echo "All release artifacts signed (APKs v1+v2+v3, AAB v1)."
 
       - name: Verify APK signatures (v1 + v2 + v3)
         # Gate that fails the release BEFORE publish if any APK is missing v1,

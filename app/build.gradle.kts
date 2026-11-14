@@ -40,12 +40,6 @@ android {
                 storePassword = keystoreProps.getProperty("storePassword")
                 keyAlias = keystoreProps.getProperty("keyAlias")
                 keyPassword = keystoreProps.getProperty("keyPassword")
-                // AGP 8.x auto-disables v1 (JAR) signing when minSdk >= 24, so
-                // the release.yml workflow re-signs every APK with apksigner
-                // --v1-signing-enabled true after the build to force v1 back
-                // on for Android 7.0 (our minSdk) compatibility. Keep v3 here
-                // so the AAB (which apksigner does not touch) still rotates.
-                enableV3Signing = true
             }
         }
     }
@@ -55,9 +49,13 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            if (keystoreProps.isNotEmpty()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            // NOTE: no signingConfig here. AGP 8.x auto-disables v1 (JAR)
+            // signing when minSdk >= 24, and even enableV1Signing=true is
+            // ignored — producing v2-only APKs that early Android 7.0/7.1
+            // firmware rejects with "not a valid installation package".
+            // The release.yml workflow builds UNSIGNED APKs here, then signs
+            // them explicitly with apksigner --v1-signing-enabled true after
+            // zipalign, which does produce v1+v2+v3.
         }
         debug {
             applicationIdSuffix = ".debug"

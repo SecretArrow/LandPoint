@@ -24,10 +24,13 @@ tags:
 
 # --- Make an encrypted backup -------------------------------------------
 - tapOn: '^(Settings|Pengaturan)$'
-- extendedWaitUntil:
-    visible: '^(Backup and export|Pencadangan dan ekspor)$'
-    timeout: 15000
-
+# The backup section sits below the language and appearance cards — scroll
+# to the header instead of asserting on it from the top of the screen.
+- scrollUntilVisible:
+    element:
+      text: '^(Backup and export|Pencadangan dan ekspor)$'
+    direction: DOWN
+    timeout: 30000
 - scrollUntilVisible:
     element:
       text: '^(Full backup \(with photos\)|Cadangan lengkap \(dengan foto\))$'
@@ -49,11 +52,22 @@ tags:
     timeout: 15000
 - tapOn: '^SAVE$'
 
+# Toast text is "Backup saved: 1 locations, 0 photos" — full-match regex.
 - extendedWaitUntil:
-    visible: 'Backup saved|Cadangan tersimpan'
+    visible: '^(Backup saved.*|Cadangan tersimpan.*)$'
+    timeout: 20000
+
+# The toast pops while the system save sheet is still closing, so the
+# back press above once closed the sheet instead of Settings. Wait for
+# the Settings screen to have focus again first.
+- extendedWaitUntil:
+    visible: '^(Settings|Pengaturan)$'
     timeout: 20000
 
 # --- Wipe every record ---------------------------------------------------
+# Settings is a full-screen page without the bottom bar — back to the
+# dashboard first, then across to Lands.
+- back
 - tapOn: '^(Lands|Tanah)$'
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'
@@ -61,9 +75,8 @@ tags:
 
 - longPressOn: 'Kebun Percobaan'
 - extendedWaitUntil:
-    visible: '^(Select all shown|Pilih semua yang tampil)$'
+    visible: '^(1 selected|1 dipilih)$'
     timeout: 10000
-- tapOn: '^(Select all shown|Pilih semua yang tampil)$'
 - tapOn: '^(Delete selected|Hapus yang dipilih)$'
 - extendedWaitUntil:
     visible: '^(Delete|Hapus)$'
@@ -76,11 +89,18 @@ tags:
     timeout: 15000
 
 # --- Restore the backup --------------------------------------------------
-- tapOn: '^(Settings|Pengaturan)$'
+# Settings lives behind the gear on the Home dashboard; the Lands tab has
+# no settings entry of its own.
+- tapOn: '^(Home|Beranda)$'
 - extendedWaitUntil:
-    visible: '^(Restore and import|Pemulihan dan impor)$'
+    visible: '^(Settings|Pengaturan)$'
     timeout: 15000
-
+- tapOn: '^(Settings|Pengaturan)$'
+- scrollUntilVisible:
+    element:
+      text: '^(Restore and import|Pemulihan dan impor)$'
+    direction: DOWN
+    timeout: 30000
 - scrollUntilVisible:
     element:
       text: '^(Restore full backup|Pulihkan cadangan lengkap)$'
@@ -105,8 +125,9 @@ tags:
 - tapOn: '^(Open|Buka)$'
 
 # The summary snackbar ("Imported 1") confirms the restore ran.
+# Toast text is "Imported 1" / "1 diimpor" — full-match regex.
 - extendedWaitUntil:
-    visible: 'Imported|diimpor'
+    visible: '^(Imported.*|.*diimpor)$'
     timeout: 20000
 
 - tapOn: '^(Lands|Tanah)$'

@@ -39,13 +39,19 @@ tags:
 
 # Save with nothing typed: the form explains itself rather than just failing.
 - tapOn: '^(Save|Simpan)$'
+# The message continues "...to recognise this owner later" — an unanchored
+# alternation has to match the whole node text, so widen it.
 - extendedWaitUntil:
-    visible: 'A name is needed|Nama diperlukan agar pemilik ini dikenali nanti'
+    visible: '^(A name is needed.*|Nama diperlukan.*)$'
     timeout: 10000
 
 - tapOn: '^(Full name \*|Nama lengkap \*)$'
 - inputText: 'Budi Santoso'
-- tapOn: 'NIK'
+# The open keyboard covers the NIK field below; put it away first. The
+# label is "NIK (identity number)" in English and just "NIK" in
+# Indonesian — a plain tapOn string matches exactly, so use a regex.
+- hideKeyboard
+- tapOn: '^NIK.*$'
 - inputText: '3201234567890001'
 - hideKeyboard
 - tapOn: '^(Save|Simpan)$'

@@ -49,13 +49,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // NOTE: no signingConfig here. AGP 8.x auto-disables v1 (JAR)
-            // signing when minSdk >= 24, and even enableV1Signing=true is
-            // ignored — producing v2-only APKs that early Android 7.0/7.1
-            // firmware rejects with "not a valid installation package".
-            // The release.yml workflow builds UNSIGNED APKs here, then signs
-            // them explicitly with apksigner --v1-signing-enabled true after
-            // zipalign, which does produce v1+v2+v3.
+            if (keystoreProps.isNotEmpty()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         debug {
             applicationIdSuffix = ".debug"

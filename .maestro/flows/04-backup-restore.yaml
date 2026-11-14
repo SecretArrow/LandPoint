@@ -82,6 +82,12 @@ tags:
     timeout: 15000
 
 # --- Restore the backup --------------------------------------------------
+# Settings lives behind the gear on the Home dashboard; the Lands tab has
+# no settings entry of its own.
+- tapOn: '^(Home|Beranda)$'
+- extendedWaitUntil:
+    visible: '^(Settings|Pengaturan)$'
+    timeout: 15000
 - tapOn: '^(Settings|Pengaturan)$'
 - scrollUntilVisible:
     element:

@@ -245,6 +245,8 @@
     <!-- Local, mode-driven messages raised by the picker itself. -->
     <string name="corner_picker_need_three">Need at least 3 corners</string>
     <string name="corner_picker_insert_coming_soon">Insert mode coming soon</string>
+    <!-- Accessibility label for the "+" handles drawn at edge midpoints in INSERT mode. -->
+    <string name="corner_insert_handle">Insert corner here</string>
 
     <!-- Boundary preview -->
     <string name="shape_title">Boundary</string>

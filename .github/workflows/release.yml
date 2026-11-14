@@ -98,6 +98,31 @@ jobs:
       - name: Build signed release APK and AAB
         run: ./gradlew assembleRelease bundleRelease -PlpVersionCode="$VERSION_CODE" -PlpVersionName="${GITHUB_REF_NAME#v}"
 
+      - name: Verify APK signatures (v1 + v2 + v3)
+        # v1.0.7 shipped v2-only APKs and Android 7 (our minSdk) plus several
+        # OEM installers rejected them with "not a valid installation
+        # package". This gate fails the release BEFORE it is published if any
+        # APK is missing v1, so the broken-build failure mode cannot recur.
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          if [ ! -x "$APKSIGNER" ]; then
+            APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f 2>/dev/null | sort -V | tail -1)
+          fi
+          test -n "$APKSIGNER" || { echo "apksigner not found"; exit 1; }
+          for apk in app/build/outputs/apk/release/app-*-release.apk; do
+            echo "--- $apk ---"
+            "$APKSIGNER" verify --verbose --print-certs "$apk" | \
+              grep -E "Verified|v1 scheme|v2 scheme|v3 scheme|v4 scheme"
+            # v1 (JAR) is mandatory for Android 7.0 (minSdk 24).
+            "$APKSIGNER" verify --verbose "$apk" | grep -q "v1 scheme (JAR signing): true" || {
+              echo "ERROR: $apk missing v1 (JAR) signature — Android 7 will reject it.";
+              exit 1;
+            }
+          done
+          echo "All release APKs carry v1+v2 (and v3 where applicable) signatures."
+
       - name: Generate changelog from conventional commits
         shell: bash
         run: |

@@ -235,6 +235,15 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
 
+      # Newer runner images (ubuntu-26.04) ship /dev/kvm but no longer put the
+      # runner user in the kvm group, so the emulator silently falls back to
+      # -accel off: a six-minute boot and swipes that crawl one card per
+      # twenty seconds. 0666 on the device node restores hardware acceleration
+      # for the emulator-runner's own launch below.
+      - name: Grant KVM access
+        run: |
+          test -e /dev/kvm && sudo chmod 666 /dev/kvm || echo "no /dev/kvm on this runner"
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
 

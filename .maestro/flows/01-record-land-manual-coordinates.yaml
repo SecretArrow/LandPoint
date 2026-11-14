@@ -51,11 +51,13 @@ tags:
 # makes the matcher reject the element on every scroll frame, so scrollUntilVisible
 # never resolves. Allow surrounding whitespace while keeping the anchored,
 # bilingual shape so we don't pick up unrelated "Mark on the map" substrings.
+# The Boundary card sits below Coordinates in the form. On a software
+# emulator (no KVM) swipes crawl, so give the scroll a generous budget.
 - scrollUntilVisible:
     element:
       text: '^\s*(Mark on the map|Tandai di peta)\s*$'
     direction: DOWN
-    timeout: 20000
+    timeout: 60000
 - tapOn: '^\s*(Mark on the map|Tandai di peta)\s*$'
 # The four mark sources (by numbers, by bearing, from a neighbour, plus
 # "place a mark here" from the FAB) are IconButtons whose labels reach the

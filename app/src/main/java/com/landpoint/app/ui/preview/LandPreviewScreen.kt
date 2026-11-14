@@ -1,6 +1,11 @@
 package com.landpoint.app.ui.preview
 
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,13 +27,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -46,9 +59,23 @@ import com.landpoint.app.ui.components.PARCEL_ZOOM
 import com.landpoint.app.ui.components.rememberLandMapController
 import com.landpoint.app.ui.components.rememberMapPrefs
 import com.landpoint.app.util.AreaFormat
+import com.landpoint.app.util.GeoPoint
 import com.landpoint.app.util.GeoUtils
 import com.landpoint.app.util.PolygonMath
+import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.roundToInt
+
+// Hero draw-in tuning (spec §4.3). The outline draws in over DRAW_IN_DURATION_MS,
+// then the hero overlay cross-fades to the underlying map over REVEAL_DURATION_MS
+// so the final state is the normal map-rendered polygon, not a second outline.
+private const val DRAW_IN_DURATION_MS = 800
+private const val REVEAL_DURATION_MS = 300
+private const val HERO_INSET_FRACTION = 0.12f
+private const val STROKE_WIDTH_FRACTION = 0.006f
+private const val CORNER_RADIUS_FRACTION = 0.014f
+private const val CORNER_INNER_RADIUS_FRACTION = 0.75f
+private const val SHAPE_FILL_ALPHA = 0.22f
 
 /**
  * Preview of the unsaved shape on its own screen.
@@ -70,6 +97,27 @@ fun LandPreviewScreen(
     val prefs = rememberMapPrefs()
     val controller = rememberLandMapController()
     val accent = MaterialTheme.colorScheme.primary.toArgb()
+
+    // Hero draw-in animation (spec §4.3). The polygon outline draws in over
+    // DRAW_IN_DURATION_MS with FastOutSlowInEasing; corner markers pop in
+    // sequentially as the outline reaches them; then the hero overlay
+    // cross-fades to the underlying map. Reduced-motion users get the final
+    // state immediately — the system animator scale is the same flag Compose's
+    // own animations honour, so this stays consistent with the rest of the app.
+    val context = LocalContext.current
+    val reduceMotion = remember {
+        val scale = try {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE
+            )
+        } catch (e: Settings.SettingNotFoundException) {
+            1f
+        }
+        scale <= 0f
+    }
+    val drawProgress = remember { Animatable(if (reduceMotion) 1f else 0f) }
+    val reveal = remember { Animatable(if (reduceMotion) 1f else 0f) }
 
     var showDiscard by remember { mutableStateOf(false) }
     BackHandler { onBackToEdit() }
@@ -122,18 +170,59 @@ fun LandPreviewScreen(
                     )
                 }
             }
-            androidx.compose.runtime.LaunchedEffect(points) {
+            LaunchedEffect(points) {
                 controller.frameOnce(points, PARCEL_ZOOM)
+            }
+            // Hero draw-in lifecycle. Re-runs if the draft changes while the
+            // screen is open; reduced-motion jumps straight to the final state.
+            LaunchedEffect(points, reduceMotion) {
+                if (points.isEmpty()) return@LaunchedEffect
+                if (reduceMotion) {
+                    drawProgress.snapTo(1f)
+                    reveal.snapTo(1f)
+                } else {
+                    drawProgress.snapTo(0f)
+                    reveal.snapTo(0f)
+                    drawProgress.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = DRAW_IN_DURATION_MS,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                    reveal.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = REVEAL_DURATION_MS,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                }
             }
             LandMap(
                 style = prefs.style,
                 controller = controller,
                 accentColour = accent,
-                modifier = Modifier.fillMaxSize(),
+                // The map fades in as the hero overlay fades out, so the user
+                // sees the drawn-in outline cross-fade to the map's polygon.
+                modifier = Modifier.fillMaxSize().alpha(reveal.value),
                 shapes = shapes,
                 corners = corners,
                 contentDescription = stringResource(R.string.preview_title)
             )
+            // Hero overlay sits above the map (so the map can cross-fade in
+            // underneath it) and below the chrome — the top bar, side controls
+            // and bottom sheet stay visible throughout the draw-in.
+            val heroAlpha = 1f - reveal.value
+            if (heroAlpha > 0f) {
+                ParcelHeroDrawIn(
+                    points = points,
+                    progress = drawProgress.value,
+                    outlineColor = MaterialTheme.colorScheme.primary,
+                    backgroundColor = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxSize().alpha(heroAlpha)
+                )
+            }
         }
 
         Column(modifier = Modifier.align(Alignment.TopStart).fillMaxWidth()) {
@@ -263,5 +352,123 @@ fun LandPreviewScreen(
                 }
             }
         }
+    }
+}
+
+/**
+ * The draw-in overlay itself: a [Canvas] that paints the polygon outline
+ * progressively (clipped to `progress × totalLength` via [PathMeasure]) and
+ * fades each corner marker in sequentially as the outline reaches it.
+ *
+ * The projection mirrors [com.landpoint.app.ui.components.LandShapeThumb]'s so
+ * the shape the user sees draw in is the shape they will see on the map
+ * underneath once the cross-fade completes.
+ */
+@Composable
+private fun ParcelHeroDrawIn(
+    points: List<GeoPoint>,
+    progress: Float,
+    outlineColor: Color,
+    backgroundColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        // Hide the underlying map so the draw-in reads as the focal element
+        // rather than a second outline painted over the map's.
+        drawRect(color = backgroundColor)
+
+        if (points.isEmpty()) return@Canvas
+
+        val inset = size.minDimension * HERO_INSET_FRACTION
+        val projected = projectParcelPoints(
+            points = points,
+            width = size.width,
+            height = size.height,
+            inset = inset
+        )
+        if (projected.isEmpty()) return@Canvas
+
+        val path = Path()
+        projected.forEachIndexed { index, (x, y) ->
+            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        if (points.size >= 3) path.close()
+
+        // Faint fill so a closed polygon reads as a shape, not just a line; it
+        // fades in with the outline so the fill never appears ahead of it.
+        if (points.size >= 3 && progress > 0f) {
+            drawPath(
+                path = path,
+                color = outlineColor.copy(alpha = SHAPE_FILL_ALPHA * progress)
+            )
+        }
+
+        // Outline clipped to progress × totalLength — the "draws in" effect.
+        val measure = PathMeasure().apply { setPath(path, false) }
+        val totalLen = measure.length
+        if (totalLen > 0f && progress > 0f) {
+            val partial = Path()
+            measure.getSegment(0f, totalLen * progress, partial, true)
+            drawPath(
+                path = partial,
+                color = outlineColor,
+                style = Stroke(width = size.minDimension * STROKE_WIDTH_FRACTION)
+            )
+        }
+
+        // Corner markers pop in sequentially: corner i begins fading at
+        // progress = i / cornerCount and is fully visible by (i + 1) / cornerCount.
+        val cornerCount = projected.size
+        val fadeWindow = if (cornerCount > 0) 1f / cornerCount else 1f
+        val cornerR = size.minDimension * CORNER_RADIUS_FRACTION
+        for (i in projected.indices) {
+            val (x, y) = projected[i]
+            val startFraction = i.toFloat() / cornerCount
+            val fade = ((progress - startFraction) / fadeWindow).coerceIn(0f, 1f)
+            if (fade <= 0f) continue
+            // White ring then accent fill — matches the map's corner style
+            // (LAYER_CORNER: accent fill with a white stroke) so the cross-fade
+            // to the map is not a colour jump.
+            drawCircle(
+                color = Color.White.copy(alpha = fade),
+                radius = cornerR,
+                center = Offset(x, y)
+            )
+            drawCircle(
+                color = outlineColor.copy(alpha = fade),
+                radius = cornerR * CORNER_INNER_RADIUS_FRACTION,
+                center = Offset(x, y)
+            )
+        }
+    }
+}
+
+/**
+ * Projects geographic coordinates into a [width] × [height] box, [inset] in from
+ * each edge, preserving aspect ratio and the cos(latitude) longitude correction.
+ *
+ * Mirrors [com.landpoint.app.ui.components.LandShapeThumb]'s projection so the
+ * hero outline is recognisable as the same shape the map shows underneath.
+ */
+private fun projectParcelPoints(points: List<GeoPoint>, width: Float, height: Float, inset: Float): List<Pair<Float, Float>> {
+    if (points.isEmpty()) return emptyList()
+    val minLat = points.minOf { it.latitude }
+    val maxLat = points.maxOf { it.latitude }
+    val minLon = points.minOf { it.longitude }
+    val maxLon = points.maxOf { it.longitude }
+    val midLatRad = Math.toRadians((minLat + maxLat) / 2.0)
+    val lonScale = cos(midLatRad).coerceAtLeast(0.01)
+    val spanY = (maxLat - minLat).coerceAtLeast(1e-9)
+    val spanX = ((maxLon - minLon) * lonScale).coerceAtLeast(1e-9)
+    val boxW = (width - inset * 2).coerceAtLeast(1f)
+    val boxH = (height - inset * 2).coerceAtLeast(1f)
+    val scale = min(boxW / spanX, boxH / spanY)
+    val offsetX = inset + (boxW - spanX * scale).toFloat() / 2f
+    val offsetY = inset + (boxH - spanY * scale).toFloat() / 2f
+    return points.map { point ->
+        val x = offsetX + ((point.longitude - minLon) * lonScale * scale).toFloat()
+        // Screen y grows downwards; latitude grows north, so y is flipped.
+        val y = offsetY + ((maxLat - point.latitude) * scale).toFloat()
+        x to y
     }
 }

@@ -235,6 +235,8 @@
     <!-- Pesan lokal, dipicu oleh mode pemilih sudut itu sendiri. -->
     <string name="corner_picker_need_three">Butuh minimal 3 sudut</string>
     <string name="corner_picker_insert_coming_soon">Mode Sisip segera hadir</string>
+    <!-- Label aksesibilitas untuk gagang "+" yang digambar pada titik tengah sisi di mode Sisip. -->
+    <string name="corner_insert_handle">Sisipkan sudut di sini</string>
 
     <!-- Pratinjau batas bidang -->
     <string name="shape_title">Batas bidang</string>

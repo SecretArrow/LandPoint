@@ -28,19 +28,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Read from the build file rather than repeated in three filenames below,
-      # so bumping the app version does not mean editing this workflow. The
-      # versionName line in app/build.gradle.kts is an expression with a
-      # default (`?: "1.0.0"`), not a literal — extract the last version-like
-      # quoted string on that line instead of matching `versionName = "..."`.
-      # NOTE: The versionName embedded in the built APK/AAB comes from the tag
-      # via -PlpVersionName="${GITHUB_REF_NAME#v}" (see the Build step), not
-      # from this default. APP_VERSION here is just the build.gradle.kts
-      # fallback, used for the staging filenames and the changelog file table.
       - name: Read app version
         shell: bash
         run: |
-          version=$(grep 'versionName' app/build.gradle.kts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+([-+][a-zA-Z0-9.]+)?' | tail -1)
+          # The version comes from the tag name (v1.0.3 → 1.0.3), not from
+          # grepping build.gradle.kts. The build.gradle.kts versionName is an
+          # Elvis-default expression that resolves to the tag via -PlpVersionName
+          # at build time, but grepping the source only sees the default "1.0.0".
+          # Using the tag directly makes the asset filenames match the release.
+          version="${GITHUB_REF_NAME#v}"
           test -n "$version" || { echo "versionName not found in app/build.gradle.kts"; exit 1; }
           echo "APP_VERSION=$version" >> "$GITHUB_ENV"
           echo "Building LandPoint $version"
@@ -117,16 +113,16 @@ jobs:
             echo "## Changes since ${prev:-the beginning}"
             echo
             echo "### Added"
-            git log --no-merges --first-parent --pretty=format:"%s" "$range" | grep -iE '^(feat|add)' | sed 's/^[^:]*: */- /' || true
+            git log --first-parent --pretty=format:"%s" "$range" | grep -iE '^(feat|add)' | sed 's/^[^:]*: */- /' || true
             echo
             echo "### Fixed"
-            git log --no-merges --first-parent --pretty=format:"%s" "$range" | grep -iE '^(fix|bugfix|hotfix)' | sed 's/^[^:]*: */- /' || true
+            git log --first-parent --pretty=format:"%s" "$range" | grep -iE '^(fix|bugfix|hotfix)' | sed 's/^[^:]*: */- /' || true
             echo
             echo "### Maintenance"
-            git log --no-merges --first-parent --pretty=format:"%s" "$range" | grep -iE '^(chore|refactor|perf|docs|test|ci|style|build)' | sed 's/^[^:]*: */- /' || true
+            git log --first-parent --pretty=format:"%s" "$range" | grep -iE '^(chore|refactor|perf|docs|test|ci|style|build)' | sed 's/^[^:]*: */- /' || true
             echo
             echo "### Other"
-            git log --no-merges --first-parent --pretty=format:"%s" "$range" | grep -viE '^(feat|add|fix|bugfix|hotfix|chore|refactor|perf|docs|test|ci|style|build|Release)' | sed 's/^/- /' || true
+            git log --first-parent --pretty=format:"%s" "$range" | grep -viE '^(feat|add|fix|bugfix|hotfix|chore|refactor|perf|docs|test|ci|style|build|Merge pull request|Merge branch)' | sed 's/^/- /' || true
             echo
             echo "## Which file to install"
             echo

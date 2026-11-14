@@ -21,6 +21,13 @@ tags:
     visible: 'Kebun Percobaan'
     timeout: 20000
 
+# The app cold-starts on the Home dashboard; the search bar lives on the
+# Lands tab's top bar.
+- tapOn: '^(Lands|Tanah)$'
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 15000
+
 # Open the search field (the top-bar icon carries the content description).
 - tapOn: '^(Search|Cari)$'
 - inputText: 'Percobaan'

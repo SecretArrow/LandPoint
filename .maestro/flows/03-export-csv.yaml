@@ -22,6 +22,13 @@ tags:
     visible: 'Kebun Percobaan'
     timeout: 20000
 
+# Selection mode lives on the Lands tab; a long-press on the dashboard's
+# "Recent parcels" row opens the detail screen instead.
+- tapOn: '^(Lands|Tanah)$'
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 15000
+
 # Long-press a card to enter selection mode.
 - longPressOn: 'Kebun Percobaan'
 - extendedWaitUntil:
@@ -43,6 +50,8 @@ tags:
 - tapOn: '^SAVE$'
 
 # Back in the app, the confirmation message appears.
+# Maestro regexes must match the whole node text, so anchor around the
+# localized toast: "Exported 1 location" / "1 lokasi diekspor".
 - extendedWaitUntil:
-    visible: 'Exported|diekspor'
+    visible: '^(Exported .*|.*diekspor)$'
     timeout: 15000

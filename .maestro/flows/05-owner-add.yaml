@@ -39,8 +39,10 @@ tags:
 
 # Save with nothing typed: the form explains itself rather than just failing.
 - tapOn: '^(Save|Simpan)$'
+# The message continues "...to recognise this owner later" — an unanchored
+# alternation has to match the whole node text, so widen it.
 - extendedWaitUntil:
-    visible: 'A name is needed|Nama diperlukan agar pemilik ini dikenali nanti'
+    visible: '^(A name is needed.*|Nama diperlukan.*)$'
     timeout: 10000
 
 - tapOn: '^(Full name \*|Nama lengkap \*)$'

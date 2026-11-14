@@ -98,11 +98,44 @@ jobs:
       - name: Build signed release APK and AAB
         run: ./gradlew assembleRelease bundleRelease -PlpVersionCode="$VERSION_CODE" -PlpVersionName="${GITHUB_REF_NAME#v}"
 
+      - name: Re-sign APKs with v1+v2+v3 (force JAR signing)
+        # AGP 8.x auto-disables v1 (JAR) signing when minSdk >= 24, even with
+        # enableV1Signing=true, because Google deems v2 sufficient past API 24.
+        # But Android 7.0 (API 24, our minSdk) and several OEM package
+        # installers reject v2-only APKs with "not a valid installation
+        # package". Re-sign every APK explicitly with apksigner, forcing all
+        # three schemes. apksigner replaces any existing signature.
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          if [ ! -x "$APKSIGNER" ]; then
+            APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f 2>/dev/null | sort -V | tail -1)
+          fi
+          test -n "$APKSIGNER" || { echo "apksigner not found"; exit 1; }
+          KS=$(grep '^storeFile=' keystore.properties | cut -d= -f2-)
+          test -f "$KS" || { echo "keystore not found at $KS"; exit 1; }
+          for apk in app/build/outputs/apk/release/app-*-release.apk; do
+            echo "--- re-signing $apk (v1+v2+v3) ---"
+            "$APKSIGNER" sign \
+              --ks "$KS" \
+              --ks-pass "pass:$KEYSTORE_PASSWORD" \
+              --ks-key-alias "$KEY_ALIAS" \
+              --key-pass "pass:$KEY_PASSWORD" \
+              --v1-signing-enabled true \
+              --v2-signing-enabled true \
+              --v3-signing-enabled true \
+              "$apk"
+          done
+          echo "All release APKs re-signed with v1+v2+v3."
+
       - name: Verify APK signatures (v1 + v2 + v3)
-        # v1.0.7 shipped v2-only APKs and Android 7 (our minSdk) plus several
-        # OEM installers rejected them with "not a valid installation
-        # package". This gate fails the release BEFORE it is published if any
-        # APK is missing v1, so the broken-build failure mode cannot recur.
+        # Gate that fails the release BEFORE publish if any APK is missing v1,
+        # so the broken-build failure mode (v1.0.7) cannot recur.
         shell: bash
         run: |
           set -euo pipefail
@@ -113,15 +146,14 @@ jobs:
           test -n "$APKSIGNER" || { echo "apksigner not found"; exit 1; }
           for apk in app/build/outputs/apk/release/app-*-release.apk; do
             echo "--- $apk ---"
-            "$APKSIGNER" verify --verbose --print-certs "$apk" | \
-              grep -E "Verified|v1 scheme|v2 scheme|v3 scheme|v4 scheme"
-            # v1 (JAR) is mandatory for Android 7.0 (minSdk 24).
-            "$APKSIGNER" verify --verbose "$apk" | grep -q "v1 scheme (JAR signing): true" || {
+            "$APKSIGNER" verify --verbose "$apk" | \
+              grep -E "Verified using v1|Verified using v2|Verified using v3"
+            "$APKSIGNER" verify --verbose "$apk" | grep -q "Verified using v1 scheme (JAR signing): true" || {
               echo "ERROR: $apk missing v1 (JAR) signature — Android 7 will reject it.";
               exit 1;
             }
           done
-          echo "All release APKs carry v1+v2 (and v3 where applicable) signatures."
+          echo "All release APKs carry v1+v2+v3 signatures."
 
       - name: Generate changelog from conventional commits
         shell: bash

@@ -40,16 +40,11 @@ android {
                 storePassword = keystoreProps.getProperty("storePassword")
                 keyAlias = keystoreProps.getProperty("keyAlias")
                 keyPassword = keystoreProps.getProperty("keyPassword")
-                // Ship ALL three signature schemes, not just v2. AGP 8.x with
-                // minSdk 24 should default to v1+v2, but v1.0.7 came out
-                // v2-only and many Android 7 phones (our minSdk) and several
-                // OEM package installers rejected the APK with "not a valid
-                // installation package". Pin all three explicitly:
-                //   - v1 (JAR):    required by Android 7.0 (API 24), the floor.
-                //   - v2 (APK):    Android 7.0+; validates whole-file.
-                //   - v3 (APK):    Android 9+; supports key rotation.
-                enableV1Signing = true
-                enableV2Signing = true
+                // AGP 8.x auto-disables v1 (JAR) signing when minSdk >= 24, so
+                // the release.yml workflow re-signs every APK with apksigner
+                // --v1-signing-enabled true after the build to force v1 back
+                // on for Android 7.0 (our minSdk) compatibility. Keep v3 here
+                // so the AAB (which apksigner does not touch) still rotates.
                 enableV3Signing = true
             }
         }

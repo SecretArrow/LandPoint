@@ -529,10 +529,9 @@ internal class LandMapOverlay {
          * [LAYER_MIDPOINT_PLUS] as a literal, and it is never selected because
          * it is not part of the ring to be selected against.
          */
-        private fun MapCorner.toMidpointFeature(): Feature =
-            Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
-                addStringProperty(PROP_ID, id)
-            }
+        private fun MapCorner.toMidpointFeature(): Feature = Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
+            addStringProperty(PROP_ID, id)
+        }
 
         /**
          * The accuracy radius as a real circle on the ground.

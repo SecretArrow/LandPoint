@@ -224,19 +224,8 @@
     <string name="corner_picker_delete_selected">Hapus sudut %1$d</string>
 
     <!-- Toolbar mode pemilih sudut (spec §4.5) -->
-    <string name="corner_mode_add">Tambah</string>
-    <string name="corner_mode_move">Pindah</string>
-    <string name="corner_mode_insert">Sisip</string>
-    <string name="corner_mode_delete">Hapus</string>
-    <string name="corner_mode_hint_add">Ketuk peta atau gunakan GPS untuk menambah sudut</string>
-    <string name="corner_mode_hint_move">Seret gagang sudut untuk memindahkannya</string>
-    <string name="corner_mode_hint_insert">Ketuk + pada sisi untuk menyisipkan sudut di situ</string>
-    <string name="corner_mode_hint_delete">Ketuk sudut untuk menghapusnya</string>
     <!-- Pesan lokal, dipicu oleh mode pemilih sudut itu sendiri. -->
-    <string name="corner_picker_need_three">Butuh minimal 3 sudut</string>
-    <string name="corner_picker_insert_coming_soon">Mode Sisip segera hadir</string>
     <!-- Label aksesibilitas untuk gagang "+" yang digambar pada titik tengah sisi di mode Sisip. -->
-    <string name="corner_insert_handle">Sisipkan sudut di sini</string>
 
     <!-- Pratinjau batas bidang -->
     <string name="shape_title">Batas bidang</string>

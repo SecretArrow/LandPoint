@@ -682,12 +682,10 @@ private fun MarkControls(
     val spoken = stringResource(R.string.corner_picker_mark_a11y, coordinates)
 
     PickerCard {
-        // Announced on every change rather than only when the panel appears: with
-        // TalkBack on, the arrows are the whole positioning mechanism and a silent
-        // 0.1 m step is indistinguishable from a button that did nothing.
+        // Line 1: coordinates — compact monospace, announced live for TalkBack.
         Text(
             coordinates,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             fontFamily = FontFamily.Monospace,
             modifier = Modifier.semantics {
                 liveRegion = LiveRegionMode.Polite
@@ -695,41 +693,69 @@ private fun MarkControls(
             }
         )
 
-        // Only while the mark is still what the receiver reported. A fix nudged
-        // 40 cm north has no business quoting that reading's accuracy, and
-        // PendingMark demotes it to a map mark for exactly that reason.
-        if (mark.source == MarkSource.GPS) {
-            val accuracy = mark.point.accuracyM?.let {
-                stringResource(R.string.boundary_corner_accuracy, GeoUtils.formatAccuracy(it))
-            }
-            val samples = state.cornerSamples.takeIf { it > 0 }?.let {
-                pluralStringResource(R.plurals.edit_samples, it, it)
-            }
-            val reading = listOfNotNull(accuracy, samples).joinToString("  ")
-            if (reading.isNotEmpty()) {
-                Text(
-                    reading,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        PlacementLine(placement)
-
+        // Line 2: placement + accuracy on one row to save vertical space.
+        // Only the accuracy that belongs to the original GPS reading is shown;
+        // a nudged mark has no business quoting the receiver's accuracy.
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            NudgePad(step = state.markStepM, onNudge = onNudgeMark, onStep = onMarkStep)
-            MarkSourceButtons(
-                actions = sources,
-                columns = 2,
-                modifier = Modifier.weight(1f)
-            )
+            PlacementLine(placement, compact = true)
+            if (mark.source == MarkSource.GPS) {
+                val accuracy = mark.point.accuracyM?.let {
+                    stringResource(R.string.boundary_corner_accuracy, GeoUtils.formatAccuracy(it))
+                }
+                val samples = state.cornerSamples.takeIf { it > 0 }?.let {
+                    pluralStringResource(R.plurals.edit_samples, it, it)
+                }
+                val reading = listOfNotNull(accuracy, samples).joinToString("  ")
+                if (reading.isNotEmpty()) {
+                    Text(
+                        reading,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
 
+        // Line 3: compact nudge pad — a single horizontal row of five cells
+        // (N, W, step, E, S) instead of a 3×3 grid. Saves ~80 dp of height.
+        NudgePad(
+            step = state.markStepM,
+            onNudge = onNudgeMark,
+            onStep = onMarkStep,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+
+        // Line 4: source buttons in a single horizontal row. Compact icons,
+        // each 36 dp visual with a 48 dp touch target via the IconButton default.
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            sources.forEach { action ->
+                val label = stringResource(action.label)
+                IconButton(
+                    onClick = action.onClick,
+                    enabled = action.enabled,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    if (action.busy) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp).semantics { contentDescription = label },
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(action.icon, contentDescription = label, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        }
+
+        // Line 5: Discard / Use this mark — side by side, compact.
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
@@ -737,8 +763,6 @@ private fun MarkControls(
             OutlinedButton(onClick = onDiscardMark, modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.corner_picker_discard_mark))
             }
-            // Refused rather than accepted-and-then-explained: a corner half a
-            // metre from one already recorded is the same peg measured twice.
             Button(
                 onClick = onUseMark,
                 enabled = placement !is Placement.TooClose,
@@ -752,7 +776,7 @@ private fun MarkControls(
 
 /** What using the mark would do to the ring, in one line. */
 @Composable
-private fun PlacementLine(placement: Placement?) {
+private fun PlacementLine(placement: Placement?, compact: Boolean = false) {
     val refused = placement is Placement.TooClose
     val text = when (placement) {
         is Placement.Append ->
@@ -769,7 +793,7 @@ private fun PlacementLine(placement: Placement?) {
 
     Text(
         text,
-        style = MaterialTheme.typography.labelMedium,
+        style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
         color = if (refused) {
             MaterialTheme.colorScheme.error
         } else {
@@ -779,69 +803,53 @@ private fun PlacementLine(placement: Placement?) {
 }
 
 /**
- * Four arrows around the step they move by.
+ * Five cells in a single horizontal row: N, W, step, E, S.
  *
- * The step sits in the middle of the pad and cycles on a tap — 5 m, 1 m, 0.5 m,
- * 0.1 m — rather than living in a labelled dropdown beside it. It is the only
- * figure on the pad, so it needs no name to say what it is, and it is under the
- * thumb that is already there.
+ * The step sits in the middle and cycles on a tap — 5 m, 1 m, 0.5 m,
+ * 0.1 m. Compass directions rather than left/right: the arrows move the
+ * mark north and east, which do not swap in a right-to-left layout.
  *
- * Compass directions rather than left and right: the arrows move the mark north
- * and east, which do not swap over in a right-to-left layout the way "back" and
- * "forward" do.
+ * Compact horizontal layout (was 3×3 grid) to leave the map as much of
+ * the screen as possible: the row is one cell tall rather than three.
  */
 @Composable
-private fun NudgePad(step: Double, onNudge: (Double) -> Unit, onStep: (Double) -> Unit) {
+private fun NudgePad(step: Double, onNudge: (Double) -> Unit, onStep: (Double) -> Unit, modifier: Modifier = Modifier) {
     val steps = PendingMark.STEPS_M
-    // -1 from indexOf wraps to the head of the list, which is where an unknown
-    // step should land anyway.
     val next = steps[(steps.indexOf(step) + 1) % steps.size]
     val stepLabel = stringResource(R.string.corner_picker_step_value, formatStep(step))
     val stepSpoken = stringResource(R.string.corner_picker_nudge_step) + ": " + stepLabel
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row {
-            NudgeSpacer()
-            NudgeButton(Icons.Default.North, R.string.corner_picker_nudge_north) { onNudge(0.0) }
-            NudgeSpacer()
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        NudgeButton(Icons.Default.North, R.string.corner_picker_nudge_north) { onNudge(0.0) }
+        NudgeButton(Icons.Default.West, R.string.corner_picker_nudge_west) { onNudge(270.0) }
+        TextButton(
+            onClick = { onStep(next) },
+            modifier = Modifier
+                .size(NUDGE_CELL)
+                .semantics { contentDescription = stepSpoken },
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            Text(stepLabel, style = MaterialTheme.typography.labelSmall, maxLines = 1)
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            NudgeButton(Icons.Default.West, R.string.corner_picker_nudge_west) { onNudge(270.0) }
-            TextButton(
-                onClick = { onStep(next) },
-                modifier = Modifier
-                    .size(NUDGE_CELL)
-                    .semantics { contentDescription = stepSpoken },
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Text(stepLabel, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-            }
-            NudgeButton(Icons.Default.East, R.string.corner_picker_nudge_east) { onNudge(90.0) }
-        }
-        Row {
-            NudgeSpacer()
-            NudgeButton(Icons.Default.South, R.string.corner_picker_nudge_south) { onNudge(180.0) }
-            NudgeSpacer()
-        }
+        NudgeButton(Icons.Default.East, R.string.corner_picker_nudge_east) { onNudge(90.0) }
+        NudgeButton(Icons.Default.South, R.string.corner_picker_nudge_south) { onNudge(180.0) }
     }
 }
 
-/** One cell of the nudge pad, sized as a full touch target. */
+/** One cell of the nudge pad — compact 40 dp visual, still a touch target. */
 @Composable
 private fun NudgeButton(icon: ImageVector, @StringRes label: Int, onClick: () -> Unit) {
     IconButton(onClick = onClick, modifier = Modifier.size(NUDGE_CELL)) {
-        Icon(icon, contentDescription = stringResource(label))
+        Icon(icon, contentDescription = stringResource(label), modifier = Modifier.size(20.dp))
     }
 }
 
-/** The pad's empty corners. */
-@Composable
-private fun NudgeSpacer() {
-    Spacer(modifier = Modifier.size(NUDGE_CELL))
-}
-
-/** One cell of the nudge pad: a full touch target, so a 0.1 m step is not a lottery. */
-private val NUDGE_CELL = 48.dp
+/** One cell of the nudge pad: compact but still touchable. */
+private val NUDGE_CELL = 40.dp
 
 /**
  * The card both control bars sit on.
@@ -856,14 +864,14 @@ private fun PickerCard(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         shape = MaterialTheme.shapes.large,
         tonalElevation = 3.dp,
-        shadowElevation = 6.dp
+        shadowElevation = 4.dp
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
             content = content
         )
     }

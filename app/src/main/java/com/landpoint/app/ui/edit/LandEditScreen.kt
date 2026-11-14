@@ -97,8 +97,6 @@ import com.landpoint.app.util.GeoUtils
 import com.landpoint.app.util.PolygonMath
 import java.io.File
 import kotlin.math.roundToInt
-package com.landpoint.app.ui.edit
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

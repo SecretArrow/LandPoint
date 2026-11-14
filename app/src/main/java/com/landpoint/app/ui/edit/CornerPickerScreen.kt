@@ -229,7 +229,6 @@ fun CornerPickerScreen(
     // finished with a mark still hanging — had nowhere to appear until the picker
     // closed. It gets its own host.
     val snackbarHost = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     LaunchedEffect(state.message) {
         state.message?.let {
             snackbarHost.showSnackbar(it)

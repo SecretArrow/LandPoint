@@ -51,7 +51,6 @@ internal class LandMapOverlay {
     private var shapes: FeatureCollection = EMPTY
     private var pins: FeatureCollection = EMPTY
     private var corners: FeatureCollection = EMPTY
-    private var midpoints: FeatureCollection = EMPTY
     private var accuracy: FeatureCollection = EMPTY
     private var fix: FeatureCollection = EMPTY
     private var pending: FeatureCollection = EMPTY
@@ -95,21 +94,9 @@ internal class LandMapOverlay {
         accent = accentColour
         selected = selectedColour
 
-        // Midpoint handles ride in through the same `corners` list as real
-        // corners, marked by an id prefix rather than a parameter of their own:
-        // adding one would ripple through `LandMap` and every screen that calls
-        // it, and the prefix is already enough for both the renderer and the
-        // tap handler to tell the two apart. Here is the only place that knows
-        // to split them, so the corner source never sees a handle and the
-        // midpoint source never sees a corner — each is drawn by its own layer
-        // with its own size, and a tap on a handle reports its prefixed id
-        // through [CORNER_LAYERS] the same way a corner tap reports its own.
-        val (realCorners, midpointHandles) = corners.partition { !it.id.startsWith(MIDPOINT_ID_PREFIX) }
-
         this.shapes = FeatureCollection.fromFeatures(shapes.mapNotNull { it.toFeature() })
         this.pins = FeatureCollection.fromFeatures(pins.map { it.toFeature() })
-        this.corners = FeatureCollection.fromFeatures(realCorners.map { it.toFeature() })
-        this.midpoints = FeatureCollection.fromFeatures(midpointHandles.map { it.toMidpointFeature() })
+        this.corners = FeatureCollection.fromFeatures(corners.map { it.toFeature() })
         this.accuracy = FeatureCollection.fromFeatures(
             listOfNotNull(fix?.toAccuracyFeature())
         )
@@ -135,7 +122,6 @@ internal class LandMapOverlay {
         style.addSource(GeoJsonSource(SRC_ACCURACY, accuracy))
         style.addSource(GeoJsonSource(SRC_FIX, fix))
         style.addSource(GeoJsonSource(SRC_PINS, pins))
-        style.addSource(GeoJsonSource(SRC_MIDPOINTS, midpoints))
         style.addSource(GeoJsonSource(SRC_CORNERS, corners))
         style.addSource(GeoJsonSource(SRC_PENDING, pending))
 
@@ -184,33 +170,6 @@ internal class LandMapOverlay {
                 PropertyFactory.circleColor(accent),
                 PropertyFactory.circleStrokeWidth(PIN_STROKE),
                 PropertyFactory.circleStrokeColor(AndroidColor.WHITE)
-            )
-        )
-        // Midpoint handles are drawn below the corners they sit between: a
-        // handle and a corner never share a spot (a midpoint is half way along
-        // a side, a corner is at its end), but on a very short side the two
-        // circles would overlap and the corner — the thing the user is more
-        // likely to be aiming at — has to win the pixel.
-        style.addLayer(
-            CircleLayer(LAYER_MIDPOINT_DOT, SRC_MIDPOINTS).withProperties(
-                PropertyFactory.circleRadius(MIDPOINT_RADIUS),
-                PropertyFactory.circleColor(accent),
-                PropertyFactory.circleStrokeWidth(MIDPOINT_STROKE),
-                PropertyFactory.circleStrokeColor(AndroidColor.WHITE)
-            )
-        )
-        style.addLayer(
-            SymbolLayer(LAYER_MIDPOINT_PLUS, SRC_MIDPOINTS).withProperties(
-                // A literal rather than `Expression.get(PROP_LABEL)`: the handle
-                // is always a "+", never a number, so there is nothing to read
-                // off the feature.
-                PropertyFactory.textField(Expression.literal(MIDPOINT_GLYPH)),
-                PropertyFactory.textFont(arrayOf(LABEL_FONT)),
-                PropertyFactory.textSize(MIDPOINT_TEXT),
-                PropertyFactory.textColor(AndroidColor.WHITE),
-                PropertyFactory.textAnchor(Property.TEXT_ANCHOR_CENTER),
-                PropertyFactory.textAllowOverlap(true),
-                PropertyFactory.textIgnorePlacement(true)
             )
         )
         style.addLayer(
@@ -277,8 +236,6 @@ internal class LandMapOverlay {
             ?.setProperties(PropertyFactory.circleColor(accent))
         style.getLayerAs<CircleLayer>(LAYER_PIN)
             ?.setProperties(PropertyFactory.circleColor(accent))
-        style.getLayerAs<CircleLayer>(LAYER_MIDPOINT_DOT)
-            ?.setProperties(PropertyFactory.circleColor(accent))
         style.getLayerAs<CircleLayer>(LAYER_CORNER)
             ?.setProperties(PropertyFactory.circleColor(cornerColour()))
         style.getLayerAs<CircleLayer>(LAYER_PENDING_RING)
@@ -296,7 +253,6 @@ internal class LandMapOverlay {
         style.getSourceAs<GeoJsonSource>(SRC_ACCURACY)?.setGeoJson(accuracy)
         style.getSourceAs<GeoJsonSource>(SRC_FIX)?.setGeoJson(fix)
         style.getSourceAs<GeoJsonSource>(SRC_PINS)?.setGeoJson(pins)
-        style.getSourceAs<GeoJsonSource>(SRC_MIDPOINTS)?.setGeoJson(midpoints)
         style.getSourceAs<GeoJsonSource>(SRC_CORNERS)?.setGeoJson(corners)
         style.getSourceAs<GeoJsonSource>(SRC_PENDING)?.setGeoJson(pending)
     }
@@ -336,7 +292,6 @@ internal class LandMapOverlay {
         const val SRC_SHAPES = "lp-shapes"
         const val SRC_PINS = "lp-pins"
         const val SRC_CORNERS = "lp-corners"
-        const val SRC_MIDPOINTS = "lp-midpoints"
         const val SRC_ACCURACY = "lp-accuracy"
         const val SRC_FIX = "lp-fix"
         const val SRC_PENDING = "lp-pending"
@@ -347,8 +302,6 @@ internal class LandMapOverlay {
         const val LAYER_FIX = "lp-fix-dot"
         const val LAYER_PIN_HALO = "lp-pin-halo"
         const val LAYER_PIN = "lp-pin-dot"
-        const val LAYER_MIDPOINT_DOT = "lp-midpoint-dot"
-        const val LAYER_MIDPOINT_PLUS = "lp-midpoint-plus"
         const val LAYER_CORNER = "lp-corner-dot"
         const val LAYER_CORNER_LABEL = "lp-corner-label"
         const val LAYER_PENDING_RING = "lp-pending-ring"
@@ -361,21 +314,10 @@ internal class LandMapOverlay {
          * finger is nearly always the one meant — and because a corner sits inside
          * the boundary it belongs to, so the other order would make a corner
          * untappable.
-         *
-         * The midpoint handle layers are listed after the corner layers so a
-         * corner wins a tap that lands on both — a corner and a handle never
-         * overlap on a sensible boundary, but on a side short enough for the two
-         * circles to share a hit box the corner is the likelier target. They are
-         * listed at all, rather than read by a separate query, because the
-         * existing `dispatchTap` already iterates [CORNER_LAYERS] and reports the
-         * first feature with an id — and a handle, drawn on its own source, has
-         * to be in that list to be hit.
          */
         val CORNER_LAYERS = arrayOf(
             LAYER_CORNER,
-            LAYER_CORNER_LABEL,
-            LAYER_MIDPOINT_DOT,
-            LAYER_MIDPOINT_PLUS
+            LAYER_CORNER_LABEL
         )
         val PIN_LAYERS = arrayOf(LAYER_PIN, LAYER_PIN_HALO)
 
@@ -408,23 +350,6 @@ internal class LandMapOverlay {
         const val TRUE = "1"
         const val FALSE = "0"
 
-        /**
-         * The prefix that marks a corner-feature as a midpoint handle rather
-         * than a real corner.
-         *
-         * The picker builds its `corners` list with one of these per edge when
-         * INSERT mode is active; the overlay splits them off into the midpoint
-         * source, and the tap handler recognises the prefix to route the press
-         * to `placeMarkAt` at the handle's coordinates rather than to select or
-         * delete as a real corner id would.
-         *
-         * A constant rather than a property on [MapCorner], because adding a
-         * field there would ripple through every screen that builds a corner and
-         * through the parcel preview that reads them back — and the prefix is
-         * already enough for both renderer and handler to tell the two apart.
-         */
-        const val MIDPOINT_ID_PREFIX = "lp-mid-"
-
         private const val LABEL_FONT = "Noto Sans Bold"
 
         /** MapLibre's blue for a device position, kept from the previous engine. */
@@ -445,18 +370,6 @@ internal class LandMapOverlay {
         private const val CORNER_STROKE_ON = 3f
         private const val CORNER_TEXT = 11f
         private const val CORNER_TEXT_ON = 13f
-
-        /**
-         * The handle is smaller than a corner on purpose: it is not part of the
-         * ring yet, and a disc the same size as a corner would read as one more
-         * corner rather than as a place to add one. The "+" glyph carries the
-         * meaning; the disc is there so the glyph has a background it can be
-         * read against on either basemap.
-         */
-        private const val MIDPOINT_RADIUS = 6f
-        private const val MIDPOINT_STROKE = 1.5f
-        private const val MIDPOINT_TEXT = 11f
-        private const val MIDPOINT_GLYPH = "+"
 
         /**
          * The mark is drawn larger than a corner, and hollow.
@@ -520,17 +433,6 @@ internal class LandMapOverlay {
             addStringProperty(PROP_ID, id)
             addStringProperty(PROP_LABEL, label)
             addStringProperty(PROP_SELECTED, if (selected) TRUE else FALSE)
-        }
-
-        /**
-         * A midpoint handle as a feature: just a point and its id.
-         *
-         * No label and no selected flag — the handle is always a "+", drawn by
-         * [LAYER_MIDPOINT_PLUS] as a literal, and it is never selected because
-         * it is not part of the ring to be selected against.
-         */
-        private fun MapCorner.toMidpointFeature(): Feature = Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
-            addStringProperty(PROP_ID, id)
         }
 
         /**

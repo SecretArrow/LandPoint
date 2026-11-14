@@ -47,6 +47,8 @@ tags:
 
 - tapOn: '^(Full name \*|Nama lengkap \*)$'
 - inputText: 'Budi Santoso'
+# The open keyboard covers the NIK field below; put it away first.
+- hideKeyboard
 - tapOn: 'NIK'
 - inputText: '3201234567890001'
 - hideKeyboard

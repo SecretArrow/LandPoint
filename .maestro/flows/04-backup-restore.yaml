@@ -58,6 +58,9 @@ tags:
     timeout: 20000
 
 # --- Wipe every record ---------------------------------------------------
+# Settings is a full-screen page without the bottom bar — back to the
+# dashboard first, then across to Lands.
+- back
 - tapOn: '^(Lands|Tanah)$'
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'
@@ -65,9 +68,8 @@ tags:
 
 - longPressOn: 'Kebun Percobaan'
 - extendedWaitUntil:
-    visible: '^(Select all shown|Pilih semua yang tampil)$'
+    visible: '^(1 selected|1 dipilih)$'
     timeout: 10000
-- tapOn: '^(Select all shown|Pilih semua yang tampil)$'
 - tapOn: '^(Delete selected|Hapus yang dipilih)$'
 - extendedWaitUntil:
     visible: '^(Delete|Hapus)$'

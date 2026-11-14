@@ -136,6 +136,14 @@ jobs:
             echo
             echo "\`LandPoint-$APP_VERSION.aab\` is the Play-Store-style bundle; sideloaders want the APKs."
             echo
+            echo '## Jika instal gagal — "not valid installation package"'
+            echo
+            echo '1. Pastikan file yang diunduh berakhiran `.apk` — file `.aab` tidak bisa dipasang langsung di HP.'
+            echo "2. Gunakan \`LandPoint-$APP_VERSION-arm64-v8a.apk\` untuk hampir semua HP, atau \`-universal.apk\` bila ragu."
+            echo '3. Bila unduhan terputus, hapus lalu unduh ulang, lalu cocokkan dengan `SHA256SUMS`.'
+            echo '4. Bila masih gagal, hapus dulu LandPoint yang lama, lalu pasang lagi.'
+            echo '5. LandPoint butuh Android 7 (Nougat) atau lebih baru.'
+            echo
             echo '- Requires Android 7 (Nougat) or newer; no Google Play Services and no map API key needed.'
             echo '- Signed with the project release key; updating an existing install is safe.'
             echo "- \`SHA256SUMS\` lists the checksum of every file above — verify with \`sha256sum -c SHA256SUMS\`."
@@ -167,6 +175,23 @@ jobs:
             sha256sum -- *.apk *.aab > SHA256SUMS
           )
           ls -l release
+
+      # "not a valid installation package" is what a phone shows when handed an
+      # unsigned or mid-signature-corrupted APK. apksigner verify fails here in
+      # CI for the same file, so a bad release never reaches the user.
+      - name: Verify every APK is signed and has the right versionCode
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          apksigner="$tools/apksigner"
+          badging=$("$tools/aapt2" dump badging)
+          for apk in release/*.apk; do
+            "$apksigner" verify --verbose "$apk" > /dev/null
+            code=$("$badging" "$apk" | grep -o "versionCode='[0-9]*'" | head -n1 | grep -o '[0-9]*')
+            test "$code" = "$VERSION_CODE" || { echo "$apk: versionCode $code != expected $VERSION_CODE"; exit 1; }
+            echo "OK: $(basename "$apk") — signature verified, versionCode $code"
+          done
 
       - name: Upload mapping and reports (14 days)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -47,7 +47,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,7 +64,6 @@ import androidx.compose.ui.unit.dp
 import com.landpoint.app.R
 import com.landpoint.app.ui.components.BasemapSheet
 import com.landpoint.app.ui.components.LandMap
-import com.landpoint.app.ui.components.LandMapOverlay
 import com.landpoint.app.ui.components.MapAttribution
 import com.landpoint.app.ui.components.MapControl
 import com.landpoint.app.ui.components.MapCorner
@@ -82,14 +80,12 @@ import com.landpoint.app.ui.components.PARCEL_ZOOM
 import com.landpoint.app.ui.components.rememberLandMapController
 import com.landpoint.app.ui.components.rememberMapPrefs
 import com.landpoint.app.util.AreaFormat
-import com.landpoint.app.util.BoundaryEdits
 import com.landpoint.app.util.GeoPoint
 import com.landpoint.app.util.GeoUtils
 import com.landpoint.app.util.Localization
 import com.landpoint.app.util.MarkSource
 import com.landpoint.app.util.PendingMark
 import com.landpoint.app.util.Placement
-import kotlinx.coroutines.launch
 
 /**
  * How close a tap has to be to an outline to count as landing *on* it rather
@@ -98,13 +94,6 @@ import kotlinx.coroutines.launch
  * surprising of the two mistakes.
  */
 private val EDGE_TOUCH_TARGET = 20.dp
-
-/**
- * The fewest corners a closed shape needs. Used by DELETE mode to refuse a tap
- * that would drop the boundary below a triangle — a two-corner boundary is a
- * line, and a one-corner boundary is a pin.
- */
-private const val MIN_BOUNDARY_CORNERS = 3
 
 /**
  * Picks boundary corners on a map that fills the screen.
@@ -145,7 +134,6 @@ fun CornerPickerScreen(
     onMoveCorner: (String, Double, Double) -> Unit,
     onSelectCorner: (String) -> Unit,
     onDeleteSelected: () -> Unit,
-    onDeleteCorner: (String) -> Unit,
     onCornerPhoto: (String) -> Unit = {},
     onUndo: () -> Unit,
     onClear: () -> Unit,
@@ -167,12 +155,6 @@ fun CornerPickerScreen(
     val controller = rememberLandMapController()
 
     var dialog by remember { mutableStateOf<PickerDialog?>(null) }
-
-    // The four ways the next touch can land: add, move, insert or delete a
-    // corner. The toolbar below the scale bar names which one is active and a
-    // one-line hint says how. ADD is the default because the picker opens to
-    // draw a boundary, and every other mode presupposes corners already drawn.
-    var currentMode by remember { mutableStateOf(CornerPickerMode.ADD) }
 
     // A finger is a fixed size on the glass and a wildly varying distance on the
     // ground, so how far a mark may reach for a side can only be answered at the
@@ -206,31 +188,8 @@ fun CornerPickerScreen(
         listOf(MapShape(id = DRAFT_SHAPE_ID, points = state.draftPoints))
     }
 
-    // The midpoints of every side the boundary has, one per edge, including the
-    // closing edge once the ring shuts. Two corners form a single open side;
-    // three or more close, and the side from the last corner back to the first
-    // is as real as any other — a peg missing on it is just as misplaced as one
-    // missing mid-side anywhere else. [BoundaryEdits.edgeMidpoint] encodes the
-    // same rule, so the count and the closure stay in step with the rest of the
-    // app.
-    //
-    // Computed only while INSERT is the active mode: the handles are the mode's
-    // whole interface, and drawing them in any other mode would put a "+" on
-    // every edge for no gesture to match. Carried as edge-index paired with
-    // point so a tap on a handle can look up its coordinates by the index
-    // encoded in the handle's id.
-    val midpointHandles: List<Pair<Int, GeoPoint>> = remember(state.draftPoints, currentMode) {
-        if (currentMode != CornerPickerMode.INSERT) return@remember emptyList()
-        val points = state.draftPoints
-        if (points.size < 2) return@remember emptyList()
-        val sides = if (points.size == 2) 1 else points.size
-        (0 until sides).mapNotNull { index ->
-            BoundaryEdits.edgeMidpoint(points, index)?.let { point -> index to point }
-        }
-    }
-
-    val corners = remember(state.draftBoundary, state.selectedCornerId, midpointHandles) {
-        val baseCorners = state.draftBoundary.mapIndexed { index, corner ->
+    val corners = remember(state.draftBoundary, state.selectedCornerId) {
+        state.draftBoundary.mapIndexed { index, corner ->
             MapCorner(
                 id = corner.id,
                 latitude = corner.point.latitude,
@@ -239,24 +198,6 @@ fun CornerPickerScreen(
                 selected = corner.id == state.selectedCornerId
             )
         }
-        // Midpoint handles ride in the same list as the corners — the overlay
-        // splits them off by id prefix and renders them with the smaller "+"
-        // style — so INSERT mode's handles appear and disappear with the mode
-        // without a second parameter on `LandMap` and a second wiring through
-        // every screen that calls it.
-        val handles = midpointHandles.map { (edgeIndex, point) ->
-            MapCorner(
-                id = LandMapOverlay.MIDPOINT_ID_PREFIX + edgeIndex,
-                latitude = point.latitude,
-                longitude = point.longitude,
-                // The label is unused by the midpoint layer — it draws "+" as a
-                // literal — but `MapCorner` requires one, and "+" is the honest
-                // value for anything that does read it.
-                label = "+",
-                selected = false
-            )
-        }
-        baseCorners + handles
     }
     val fix = currentLocation?.let {
         MapFix(latitude = it.latitude, longitude = it.longitude, accuracyM = it.accuracyM)
@@ -267,10 +208,7 @@ fun CornerPickerScreen(
     // without the map: place a mark at the centre, walk it there with the four
     // arrows, or type the coordinates in. All three now live on this screen.
     //
-    // In INSERT mode the same description also names the "+" handles, because
-    // they are the mode's only interface and a reader would otherwise have no
-    // way to know the edges themselves are tappable.
-    val baseMapDescription = stringResource(
+    val mapDescription = stringResource(
         R.string.picker_a11y_map,
         pluralStringResource(
             R.plurals.boundary_corners,
@@ -278,12 +216,6 @@ fun CornerPickerScreen(
             state.draftBoundary.size
         )
     )
-    val insertHandleHint = stringResource(R.string.corner_insert_handle)
-    val mapDescription = if (currentMode == CornerPickerMode.INSERT) {
-        "$baseMapDescription. $insertHandleHint"
-    } else {
-        baseMapDescription
-    }
 
     // Declared, not inlined at the call site, so the Unit coercion on the lambda
     // is plain to read. The editor supplies the position; there is nothing to ask
@@ -297,19 +229,12 @@ fun CornerPickerScreen(
     // finished with a mark still hanging — had nowhere to appear until the picker
     // closed. It gets its own host.
     val snackbarHost = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     LaunchedEffect(state.message) {
         state.message?.let {
             snackbarHost.showSnackbar(it)
             onMessageShown()
         }
     }
-
-    // Two sentences the picker raises on its own behalf — neither routes through
-    // the ViewModel, because neither changes any state. One refuses a delete that
-    // would drop the boundary below a triangle; INSERT mode used to raise the
-    // other, a "coming soon" stand-in, and now draws its own handles instead.
-    val needThreeCorners = stringResource(R.string.corner_picker_need_three)
 
     // Framed once per opening of the picker, and kept across rotation.
     LaunchedEffect(framePoints) { controller.frameOnce(framePoints, PARCEL_ZOOM) }
@@ -328,91 +253,23 @@ fun CornerPickerScreen(
             contentDescription = mapDescription,
             touchTolerance = EDGE_TOUCH_TARGET,
             onTap = { tap ->
-                // The mode the toolbar is showing decides what the same physical
-                // tap does. ADD and MOVE share their handling — the difference
-                // between them is whether the corner markers drag, decided below
-                // by `onMoveCorner` — so that switching between drawing and
-                // repositioning never takes away the place-a-mark gesture either
-                // mode is built on. DELETE rewires a corner tap straight to the
-                // remover; INSERT rewires a "+" handle tap to a mark hung at that
-                // handle's midpoint, slotted onto the side it was drawn for.
-                when (currentMode) {
-                    CornerPickerMode.ADD, CornerPickerMode.MOVE -> when (tap) {
-                        // Selects rather than swallowing the tap: a mistaken corner in
-                        // the middle of a ring used to be removable only by clearing
-                        // the lot.
-                        is MapTap.Corner -> onSelectCorner(tap.id)
-                        // Hangs a mark, or moves the one already hanging. Nothing is
-                        // written to the draft by touching the map at all.
-                        is MapTap.Ground ->
-                            onPlaceMark(tap.point.latitude, tap.point.longitude, tap.toleranceM)
-                        else -> Unit
-                    }
-
-                    CornerPickerMode.DELETE -> when (tap) {
-                        is MapTap.Corner -> {
-                            // A boundary stops closing below three corners, and a
-                            // two-corner boundary is a line rather than a shape, so
-                            // the last corner of a triangle stays put. The user is
-                            // told this rather than left to wonder why nothing
-                            // happened.
-                            if (state.draftBoundary.size > MIN_BOUNDARY_CORNERS) {
-                                onDeleteCorner(tap.id)
-                            } else {
-                                scope.launch { snackbarHost.showSnackbar(needThreeCorners) }
-                            }
-                        }
-                        // Bare ground in DELETE mode is a no-op: the hint already
-                        // says to tap a corner, and turning the gesture into a mark
-                        // would put a corner down while the user is taking them off.
-                        else -> Unit
-                    }
-
-                    CornerPickerMode.INSERT -> when (tap) {
-                        // A "+" handle is reported as a corner tap with the
-                        // midpoint id prefix, because the handle shares the
-                        // corner tap path through `CORNER_LAYERS`. Hang a mark
-                        // at the handle's coordinates: the placement logic that
-                        // already powers ADD mode's "insert between #X and #Y"
-                        // line reads a tap on an edge as belonging on that edge,
-                        // so the mark lands between the two corners the handle
-                        // was drawn for. The user then confirms with Use Mark,
-                        // the same two-step every other source goes through — a
-                        // corner placed by a handle is still a corner worth
-                        // being able to nudge before it commits.
-                        is MapTap.Corner -> {
-                            val id = tap.id
-                            if (id.startsWith(LandMapOverlay.MIDPOINT_ID_PREFIX)) {
-                                val edgeIndex = id
-                                    .removePrefix(LandMapOverlay.MIDPOINT_ID_PREFIX)
-                                    .toIntOrNull()
-                                val midpoint = midpointHandles
-                                    .firstOrNull { it.first == edgeIndex }?.second
-                                if (midpoint != null) {
-                                    onPlaceMark(midpoint.latitude, midpoint.longitude, reach())
-                                }
-                            }
-                            // A real corner tapped in INSERT mode is a no-op:
-                            // the hint already says to tap a "+" on an edge,
-                            // and selecting or deleting here would be doing
-                            // another mode's work under the wrong label.
-                        }
-                        // Bare ground in INSERT mode is a no-op for the same
-                        // reason as DELETE: the hint says what to tap, and
-                        // turning the gesture into a mark would put a corner
-                        // down while the user is mid-way through inserting one
-                        // elsewhere.
-                        else -> Unit
-                    }
+                when (tap) {
+                    // Selects rather than swallowing the tap: a mistaken corner in
+                    // the middle of a ring used to be removable only by clearing
+                    // the lot.
+                    is MapTap.Corner -> onSelectCorner(tap.id)
+                    // Hangs a mark, or moves the one already hanging. Nothing is
+                    // written to the draft by touching the map at all.
+                    is MapTap.Ground ->
+                        onPlaceMark(tap.point.latitude, tap.point.longitude, tap.toleranceM)
+                    else -> Unit
                 }
             },
-            // Dragging a corner repositions it through `onMoveCorner`; leaving
-            // this null in every other mode hands the touch back to the map's
-            // click listener, so a tap on a corner still selects it the way ADD
-            // always has. The dragger's own short-press path reports the same
-            // `MapTap.Corner` that a click would, so `onTap` above is the single
-            // place that decides what a corner touch means.
-            onMoveCorner = if (currentMode == CornerPickerMode.MOVE) onMoveCorner else null,
+            // Dragging a corner repositions it through `onMoveCorner`. The
+            // dragger's own short-press path reports the same `MapTap.Corner`
+            // that a click would, so `onTap` above is the single place that
+            // decides what a corner touch means.
+            onMoveCorner = onMoveCorner,
             onMovePending = { latitude, longitude -> onMoveMark(latitude, longitude, reach()) }
         )
 
@@ -483,15 +340,6 @@ fun CornerPickerScreen(
                     onLoadNeighbours()
                     dialog = PickerDialog.Neighbours
                 }
-            )
-
-            // Above the controls card, floating on its own surface: the mode
-            // the next touch will land in. Shown in both the idle and the
-            // mark-hanging state, because switching mode is something the user
-            // decides independently of whether a mark is hanging.
-            CornerModeToolbar(
-                currentMode = currentMode,
-                onModeChange = { currentMode = it }
             )
 
             if (mark == null) {

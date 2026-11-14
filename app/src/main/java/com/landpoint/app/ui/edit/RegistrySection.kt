@@ -2,6 +2,8 @@ package com.landpoint.app.ui.edit
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DatePicker
@@ -37,7 +39,7 @@ import java.util.Date
  * state, and which papers say so. Every field is optional — a boundary drawn
  * in a field with no papers yet is as valid a record as a certified one.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RegistrySection(
     state: LandEditUiState,
@@ -90,7 +92,11 @@ fun RegistrySection(
             stringResource(R.string.field_status),
             style = MaterialTheme.typography.labelMedium
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // FlowRow (not Row) so chips wrap to a new line when they would
+        // overflow the screen width — a plain Row with no weights squeezes
+        // the last chip to a one-character column and its label renders
+        // letter-per-line, as seen on narrow phones with all four statuses.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LandStatus.entries.forEach { status ->
                 FilterChip(
                     selected = state.status == status.key,

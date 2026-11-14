@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -547,6 +549,7 @@ private fun FormSection(title: String? = null, content: @Composable ColumnScope.
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun CoordinateSection(
     state: LandEditUiState,
@@ -589,35 +592,42 @@ private fun CoordinateSection(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            FilledTonalButton(onClick = onCapture, enabled = !state.isCapturing) {
-                if (state.isCapturing) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                } else {
-                    Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(18.dp))
-                }
-                Text(
-                    "  " + stringResource(
-                        if (state.isCapturing) {
-                            R.string.edit_getting_fix
-                        } else {
-                            R.string.edit_use_my_location
-                        }
-                    ),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-
-            if (state.hasCoordinates) {
-                OutlinedButton(onClick = onLookupAddress, enabled = !state.isLoadingAddress) {
+            // FlowRow (not Row) so the "Find address" button flows onto a new
+            // line when "Use my location" + label already fills the width.
+            // A plain Row with no weights squeezes the second button to a
+            // one-character column, and its label renders letter-per-line
+            // ("Find / addr / ess") — seen on narrow phones in portrait.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                FilledTonalButton(onClick = onCapture, enabled = !state.isCapturing) {
+                    if (state.isCapturing) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
                     Text(
-                        stringResource(
-                            if (state.isLoadingAddress) {
-                                R.string.edit_looking_up
+                        "  " + stringResource(
+                            if (state.isCapturing) {
+                                R.string.edit_getting_fix
                             } else {
-                                R.string.edit_find_address
+                                R.string.edit_use_my_location
                             }
-                        )
+                        ),
+                        style = MaterialTheme.typography.labelLarge
                     )
+                }
+
+                if (state.hasCoordinates) {
+                    OutlinedButton(onClick = onLookupAddress, enabled = !state.isLoadingAddress) {
+                        Text(
+                            stringResource(
+                                if (state.isLoadingAddress) {
+                                    R.string.edit_looking_up
+                                } else {
+                                    R.string.edit_find_address
+                                }
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -641,7 +651,13 @@ private fun CoordinateSection(
                     listOfNotNull(accuracyText, altitudeText, samplesText).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // weight(1f, fill = false) so this Text can shrink and the
+                    // QualityChip beside it keeps its intrinsic pill width —
+                    // without a weight, the long accuracy line squeezes the
+                    // badge to a one-character column and "Good" renders
+                    // letter-per-line (G/o/o/d) on narrow phones.
+                    modifier = Modifier.weight(1f, fill = false)
                 )
                 state.fixQuality?.let { QualityChip(it) }
             }

@@ -4,6 +4,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,7 +48,7 @@ import com.landpoint.app.util.AreaFormat
  * screen, each through the system file picker so the destination is always the
  * user's own choice. Nothing here uploads anywhere.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ReportsScreen(onOpenSettings: () -> Unit) {
     val viewModel: ReportsViewModel = viewModel(factory = ReportsViewModel.FACTORY)
@@ -145,45 +147,65 @@ fun ReportsScreen(onOpenSettings: () -> Unit) {
             item { SectionTitle(stringResource(R.string.reports_section_export)) }
 
             item {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.reports_export_pdf_one)) },
-                    supportingContent = { Text(stringResource(R.string.reports_export_pdf_one_hint)) },
-                    trailingContent = {
-                        if (state.isBusy) {
-                            CircularProgressIndicator(modifier = Modifier.padding(4.dp), strokeWidth = 2.dp)
-                        } else {
-                            TextButton(onClick = { pickingLand = true }, enabled = state.parcelCount > 0) {
-                                Text(stringResource(R.string.action_more))
-                            }
+                // Manual Row (not ListItem) so the headline is never clipped by
+                // Material3 ListItem's fixed vertical padding — on narrow screens
+                // the two-line headline + supporting text + trailing "More"
+                // button would collide and the top of "PDF report of one
+                // parcel" got sliced.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.reports_export_pdf_one),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            stringResource(R.string.reports_export_pdf_one_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (state.isBusy) {
+                        CircularProgressIndicator(modifier = Modifier.padding(4.dp), strokeWidth = 2.dp)
+                    } else {
+                        TextButton(onClick = { pickingLand = true }, enabled = state.parcelCount > 0) {
+                            Text(stringResource(R.string.action_more))
                         }
                     }
-                )
+                }
             }
             item {
-                Column(Modifier.padding(horizontal = 16.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { csvLauncher.launch("landpoint-locations.csv") },
-                            enabled = !state.isBusy && state.parcelCount > 0
-                        ) { Text(stringResource(R.string.settings_export_csv)) }
-                        OutlinedButton(
-                            onClick = { jsonLauncher.launch("landpoint-backup.json") },
-                            enabled = !state.isBusy && state.parcelCount > 0
-                        ) { Text(stringResource(R.string.settings_backup_json)) }
-                    }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { gpxLauncher.launch("landpoint-locations.gpx") },
-                            enabled = !state.isBusy && state.parcelCount > 0
-                        ) { Text(stringResource(R.string.settings_export_gpx)) }
-                        OutlinedButton(
-                            onClick = { kmlLauncher.launch("landpoint-locations.kml") },
-                            enabled = !state.isBusy && state.parcelCount > 0
-                        ) { Text(stringResource(R.string.settings_export_kml)) }
-                    }
+                // FlowRow (not two stacked Rows) so chips wrap to whatever
+                // number of rows the screen width needs — "Export KML
+                // (Google Earth)" is a long label and a plain Row with no
+                // weights squeezes it to a one-character column on narrow
+                // phones, and the label renders letter-per-line.
+                FlowRow(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { csvLauncher.launch("landpoint-locations.csv") },
+                        enabled = !state.isBusy && state.parcelCount > 0
+                    ) { Text(stringResource(R.string.settings_export_csv)) }
+                    OutlinedButton(
+                        onClick = { jsonLauncher.launch("landpoint-backup.json") },
+                        enabled = !state.isBusy && state.parcelCount > 0
+                    ) { Text(stringResource(R.string.settings_backup_json)) }
+                    OutlinedButton(
+                        onClick = { gpxLauncher.launch("landpoint-locations.gpx") },
+                        enabled = !state.isBusy && state.parcelCount > 0
+                    ) { Text(stringResource(R.string.settings_export_gpx)) }
+                    OutlinedButton(
+                        onClick = { kmlLauncher.launch("landpoint-locations.kml") },
+                        enabled = !state.isBusy && state.parcelCount > 0
+                    ) { Text(stringResource(R.string.settings_export_kml)) }
                 }
             }
 

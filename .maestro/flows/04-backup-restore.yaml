@@ -57,6 +57,13 @@ tags:
     visible: '^(Backup saved.*|Cadangan tersimpan.*)$'
     timeout: 20000
 
+# The toast pops while the system save sheet is still closing, so the
+# back press above once closed the sheet instead of Settings. Wait for
+# the Settings screen to have focus again first.
+- extendedWaitUntil:
+    visible: '^(Settings|Pengaturan)$'
+    timeout: 20000
+
 # --- Wipe every record ---------------------------------------------------
 # Settings is a full-screen page without the bottom bar — back to the
 # dashboard first, then across to Lands.

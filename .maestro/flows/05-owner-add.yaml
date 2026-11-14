@@ -47,9 +47,11 @@ tags:
 
 - tapOn: '^(Full name \*|Nama lengkap \*)$'
 - inputText: 'Budi Santoso'
-# The open keyboard covers the NIK field below; put it away first.
+# The open keyboard covers the NIK field below; put it away first. The
+# label is "NIK (identity number)" in English and just "NIK" in
+# Indonesian — a plain tapOn string matches exactly, so use a regex.
 - hideKeyboard
-- tapOn: 'NIK'
+- tapOn: '^NIK.*$'
 - inputText: '3201234567890001'
 - hideKeyboard
 - tapOn: '^(Save|Simpan)$'

@@ -60,19 +60,21 @@ tags:
 # The four mark sources (by numbers, by bearing, from a neighbour, plus
 # "place a mark here" from the FAB) are IconButtons whose labels reach the
 # accessibility tree only as contentDescription — there is no Text node for
-# Maestro's text matcher to see. Use the contentDescription selector instead.
+# Maestro's text matcher to see. Maestro matches accessibility text through
+# its `id` selector (`contentDescription:` is an unknown property that would
+# abort the run at parse time).
 # Allow surrounding whitespace for the same reason as the Mark on the map step:
 # the source string is clean but the surrounding composable or a future
 # formatter could pad it, and an anchored match without tolerance would then
 # silently fail to resolve.
 - extendedWaitUntil:
     visible:
-      contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
+      id: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
     timeout: 20000
 
 # Corner 1
 - tapOn:
-    contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
+    id: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
 - extendedWaitUntil:
     visible: '^(Add a corner|Tambah sudut)$'
     timeout: 10000
@@ -89,10 +91,10 @@ tags:
 # Corner 2
 - extendedWaitUntil:
     visible:
-      contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
+      id: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
     timeout: 10000
 - tapOn:
-    contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
+    id: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
 - tapOn: '^(Latitude|Lintang)$'
 - inputText: '-6.174900'
 - tapOn: '^(Longitude|Bujur)$'
@@ -106,10 +108,10 @@ tags:
 # Corner 3
 - extendedWaitUntil:
     visible:
-      contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
+      id: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
     timeout: 10000
 - tapOn:
-    contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
+    id: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
 - tapOn: '^(Latitude|Lintang)$'
 - inputText: '-6.174800'
 - tapOn: '^(Longitude|Bujur)$'

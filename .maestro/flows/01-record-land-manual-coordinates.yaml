@@ -57,12 +57,22 @@ tags:
     direction: DOWN
     timeout: 20000
 - tapOn: '^\s*(Mark on the map|Tandai di peta)\s*$'
+# The four mark sources (by numbers, by bearing, from a neighbour, plus
+# "place a mark here" from the FAB) are IconButtons whose labels reach the
+# accessibility tree only as contentDescription — there is no Text node for
+# Maestro's text matcher to see. Use the contentDescription selector instead.
+# Allow surrounding whitespace for the same reason as the Mark on the map step:
+# the source string is clean but the surrounding composable or a future
+# formatter could pad it, and an anchored match without tolerance would then
+# silently fail to resolve.
 - extendedWaitUntil:
-    visible: '^(Enter coordinates|Ketik koordinat)$'
+    visible:
+      contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
     timeout: 20000
 
 # Corner 1
-- tapOn: '^(Enter coordinates|Ketik koordinat)$'
+- tapOn:
+    contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
 - extendedWaitUntil:
     visible: '^(Add a corner|Tambah sudut)$'
     timeout: 10000
@@ -78,9 +88,11 @@ tags:
 
 # Corner 2
 - extendedWaitUntil:
-    visible: '^(Enter coordinates|Ketik koordinat)$'
+    visible:
+      contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
     timeout: 10000
-- tapOn: '^(Enter coordinates|Ketik koordinat)$'
+- tapOn:
+    contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
 - tapOn: '^(Latitude|Lintang)$'
 - inputText: '-6.174900'
 - tapOn: '^(Longitude|Bujur)$'
@@ -93,9 +105,11 @@ tags:
 
 # Corner 3
 - extendedWaitUntil:
-    visible: '^(Enter coordinates|Ketik koordinat)$'
+    visible:
+      contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
     timeout: 10000
-- tapOn: '^(Enter coordinates|Ketik koordinat)$'
+- tapOn:
+    contentDescription: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
 - tapOn: '^(Latitude|Lintang)$'
 - inputText: '-6.174800'
 - tapOn: '^(Longitude|Bujur)$'

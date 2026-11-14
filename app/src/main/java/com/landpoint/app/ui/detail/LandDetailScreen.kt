@@ -2,7 +2,6 @@ package com.landpoint.app.ui.detail
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +22,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material.icons.outlined.Directions
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.PhotoCamera
@@ -57,8 +57,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -70,6 +70,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.landpoint.app.R
 import com.landpoint.app.data.model.Land
 import com.landpoint.app.data.model.Photo
@@ -87,6 +88,7 @@ import com.landpoint.app.util.GeoPoint
 import com.landpoint.app.util.GeoUtils
 import com.landpoint.app.util.PolygonMath
 import com.landpoint.app.util.ShareUtils
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -654,14 +656,6 @@ private fun DetailField(label: String, value: String?) {
 @Composable
 private fun DetailPhoto(photo: Photo) {
     val path = photo.filePath
-    val bitmap = remember(path) {
-        runCatching {
-            android.graphics.BitmapFactory.decodeFile(
-                path,
-                android.graphics.BitmapFactory.Options().apply { inSampleSize = 2 }
-            )
-        }.getOrNull()
-    }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -672,16 +666,19 @@ private fun DetailPhoto(photo: Photo) {
                 .size(160.dp)
                 .clip(MaterialTheme.shapes.medium)
         ) {
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = photo.caption.ifBlank {
-                        stringResource(R.string.photo_description)
-                    },
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+            // Coil decodes off the main thread and down-samples to the drawn
+            // size, so a gallery of full-resolution marker photos no longer
+            // stalls the screen while it opens.
+            AsyncImage(
+                model = File(path),
+                contentDescription = photo.caption.ifBlank {
+                    stringResource(R.string.photo_description)
+                },
+                contentScale = ContentScale.Crop,
+                placeholder = rememberVectorPainter(Icons.Outlined.PhotoCamera),
+                error = rememberVectorPainter(Icons.Outlined.BrokenImage),
+                modifier = Modifier.fillMaxSize()
+            )
         }
         if (photo.caption.isNotBlank()) {
             Text(

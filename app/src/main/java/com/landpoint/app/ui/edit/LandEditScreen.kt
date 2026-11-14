@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +35,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Image
@@ -72,7 +72,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
@@ -84,6 +84,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.landpoint.app.R
 import com.landpoint.app.data.SettingsRepository
 import com.landpoint.app.location.FixQuality
@@ -1833,30 +1834,23 @@ private fun CaptionDialog(initial: String, onDismiss: () -> Unit, onConfirm: (St
 
 @Composable
 private fun PhotoThumbnail(path: String, caption: String, onClick: () -> Unit) {
-    val bitmap = remember(path) {
-        runCatching {
-            android.graphics.BitmapFactory.decodeFile(
-                path,
-                android.graphics.BitmapFactory.Options().apply { inSampleSize = 4 }
-            )
-        }.getOrNull()
-    }
-
     Box(
         modifier = Modifier
             .size(110.dp)
             .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
     ) {
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = caption.ifBlank {
-                    stringResource(R.string.photo_description)
-                },
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+        // Coil decodes off the main thread and to the drawn size; a missing or
+        // corrupt capture shows a broken-image glyph instead of an empty tile.
+        AsyncImage(
+            model = File(path),
+            contentDescription = caption.ifBlank {
+                stringResource(R.string.photo_description)
+            },
+            contentScale = ContentScale.Crop,
+            placeholder = rememberVectorPainter(Icons.Outlined.PhotoCamera),
+            error = rememberVectorPainter(Icons.Outlined.BrokenImage),
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }

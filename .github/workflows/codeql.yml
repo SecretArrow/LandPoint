@@ -40,18 +40,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: platform-tools platforms;android-35 build-tools;35.0.0
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
         with:
           # Kotlin is analyzed as part of the `java` language in CodeQL.
           languages: java
-          # build-mode: none lets the autobuild step below compile the project
-          # itself (the default for Java/Kotlin projects that use a build
-          # wrapper like Gradle).
-          build-mode: none
+          # build-mode: none aborted at finalize with "detected code written
+          # in Java/Kotlin but could not process any of it" on every run —
+          # the Kotlin extractor needs to trace a real compiler invocation
+          # for this project (KSP + Compose compiler). Manual build mode is
+          # the documented fallback: we compile, CodeQL watches the trace.
+          build-mode: manual
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
+      # compileDebugKotlin touches every Kotlin source without running the
+      # heavier full assemble pipeline the extractor does not need.
+      - name: Build Kotlin for extraction
+        run: ./gradlew :app:compileDebugKotlin --stacktrace
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@9418214df1f2c4b8128c770156c409013b07d6b9 # v3

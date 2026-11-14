@@ -59,6 +59,8 @@ tags:
 - extendedWaitUntil:
     visible: 'Budi Santoso'
     timeout: 15000
+# The list row renders the NIK as one line: "NIK 3201234567890001" — a
+# plain string must match the whole node, so wrap it in a regex.
 - extendedWaitUntil:
-    visible: '3201234567890001'
+    visible: '^.*3201234567890001.*$'
     timeout: 10000

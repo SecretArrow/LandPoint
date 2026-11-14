@@ -65,9 +65,10 @@ tags:
     timeout: 20000
 
 # --- Wipe every record ---------------------------------------------------
-# Settings is a full-screen page without the bottom bar — back to the
-# dashboard first, then across to Lands.
-- back
+# Settings is a full-screen page without the bottom bar — leave via the
+# top-bar up arrow (the recorded hierarchy shows the adb back press was
+# not leaving this screen), then cross to Lands.
+- tapOn: '^(Back|Kembali)$'
 - tapOn: '^(Lands|Tanah)$'
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'

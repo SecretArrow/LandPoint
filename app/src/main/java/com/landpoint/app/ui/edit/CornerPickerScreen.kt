@@ -36,8 +36,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -133,6 +135,8 @@ fun CornerPickerScreen(
     onMoveCorner: (String, Double, Double) -> Unit,
     onSelectCorner: (String) -> Unit,
     onDeleteSelected: () -> Unit,
+    onDeleteCorner: (String) -> Unit,
+    onUndoDelete: () -> Unit,
     onCornerPhoto: (String) -> Unit = {},
     onUndo: () -> Unit,
     onClear: () -> Unit,
@@ -228,11 +232,28 @@ fun CornerPickerScreen(
     // finished with a mark still hanging — had nowhere to appear until the picker
     // closed. It gets its own host.
     val snackbarHost = remember { SnackbarHostState() }
+    val undoLabel = stringResource(R.string.action_undo)
     LaunchedEffect(state.message) {
-        state.message?.let {
-            snackbarHost.showSnackbar(it)
-            onMessageShown()
-        }
+        val text = state.message ?: return@LaunchedEffect
+        // Whether this particular message is one an Undo can act on. Set by the
+        // ViewModel for a single-corner delete and cleared by anything that would
+        // make the saved deletion stale, so the snackbar only shows the action
+        // button while restoring the corner is still meaningful. Read once, now:
+        // by the time the snackbar is dismissed the window may have moved on, and
+        // offering Undo then would be a button that does nothing.
+        val undoable = state.undoAvailable
+        onMessageShown()
+        val result = snackbarHost.showSnackbar(
+            message = text,
+            actionLabel = if (undoable) undoLabel else null,
+            // Short (~1.5 s by default) is enough for a delete the user meant: the
+            // badge is a deliberate tap, and an Undo offered for much longer would
+            // sit on top of the map the user is now working on. The corner is gone
+            // the moment the badge is tapped; this is only the chance to take it
+            // back, not a delayed delete.
+            duration = SnackbarDuration.Short
+        )
+        if (result == SnackbarResult.ActionPerformed) onUndoDelete()
     }
 
     // Framed once per opening of the picker, and kept across rotation.
@@ -257,6 +278,13 @@ fun CornerPickerScreen(
                     // the middle of a ring used to be removable only by clearing
                     // the lot.
                     is MapTap.Corner -> onSelectCorner(tap.id)
+                    // The "×" badge on a corner. Reported by the map's tap dispatcher
+                    // *before* a corner select would be, and only when the finger
+                    // landed on the badge rather than on the dot — so a delete here is
+                    // the user meaning one, not a tap that drifted off the dot.
+                    // Immediate: undo lives in the snackbar this screen already
+                    // raises for `state.message`, not in a confirmation dialog.
+                    is MapTap.CornerDelete -> onDeleteCorner(tap.id)
                     // Hangs a mark, or moves the one already hanging. Nothing is
                     // written to the draft by touching the map at all.
                     is MapTap.Ground ->

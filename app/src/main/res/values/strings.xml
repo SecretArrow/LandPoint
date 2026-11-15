@@ -232,6 +232,10 @@
     </plurals>
     <string name="corner_picker_select_hint">Tap a corner to select it, then use the delete button. Drag a corner to move it.</string>
     <string name="corner_picker_delete_selected">Delete corner %1$d</string>
+    <!-- The "×" badge drawn at the top-right of each corner on the picker map. -->
+    <string name="corner_picker_delete_a11y">Delete corner %1$s</string>
+    <!-- Snackbar shown after the "×" badge (or the panel delete button) removes a corner. -->
+    <string name="msg_corner_deleted">Corner deleted</string>
 
     <!-- Corner picker mode toolbar (spec §4.5) -->
     <!-- Local, mode-driven messages raised by the picker itself. -->

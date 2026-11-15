@@ -358,6 +358,22 @@
     <string name="settings_section_restore">Restore and import</string>
     <string name="settings_section_about">About</string>
 
+    <!-- Debug-only (BuildConfig.DEBUG) component gallery; developer tooling,
+         never shown to users, so the copy stays plain. -->
+    <string name="settings_gallery">Component gallery (debug)</string>
+    <string name="gallery_title">Component gallery</string>
+    <string name="gallery_section_colors">Colors</string>
+    <string name="gallery_section_spacing">Spacing</string>
+    <string name="gallery_section_elevation">Elevation</string>
+    <string name="gallery_section_motion">Motion</string>
+    <string name="gallery_section_typography">Typography</string>
+    <string name="gallery_section_status">Status chips</string>
+    <string name="gallery_light_value">light %1$s</string>
+    <string name="gallery_dark_value">dark %1$s</string>
+    <string name="gallery_replay">Replay motion</string>
+    <string name="gallery_status_unknown">Unknown</string>
+    <string name="gallery_components_note">Data-bound components (land cards, map overlays) are exercised by the screens that own them.</string>
+
     <plurals name="settings_stored_count">
         <item quantity="one">%1$d location stored on this device.</item>
         <item quantity="other">%1$d locations stored on this device.</item>

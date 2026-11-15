@@ -191,6 +191,17 @@ data class LandEditUiState(
     @StringRes val nameError: Int? = null,
     @StringRes val coordinateError: Int? = null,
     val message: String? = null,
+    /**
+     * Whether the current [message] is one an Undo can act on — specifically, a
+     * single corner removed from the draft while the picker is open.
+     *
+     * The screen's snackbar shows the Undo action label only while this is true, so
+     * an unrelated message (a fix that never arrived, a mark still hanging) is not
+     * given a button that would do nothing. Cleared by [undoDeleteCorner] and by
+     * anything that invalidates the saved deletion — placing a mark, clearing the
+     * draft, using a mark — so the offer never outlives what it would restore.
+     */
+    val undoAvailable: Boolean = false,
     val createdAt: Long? = null
 ) {
     val isEdit: Boolean get() = createdAt != null
@@ -307,6 +318,20 @@ class LandEditViewModel(
      * DataStore read that has already happened.
      */
     private var cornerHintDone: Boolean = false
+
+    /**
+     * The last single corner removed from the draft, kept just long enough to undo.
+     *
+     * Holds the corner's original index alongside the corner itself, because the
+     * draft list is rebuilt on every change and an index captured at delete time is
+     * the only thing that knows where to put it back. Cleared by [undoDeleteCorner]
+     * and by anything that would make the saved index stale — clearing the draft,
+     * committing the picker — so a stale Undo never restores a corner into the
+     * middle of a different ring. Only one level deep: the badge deletes one corner
+     * at a time, and the older "undo last placed" path ([undoDraftCorner]) already
+     * owns the tail.
+     */
+    private var lastDeletedCorner: Pair<Int, DraftCorner>? = null
 
     /** Held so a second tap restarts the capture instead of racing the first. */
     private var captureJob: Job? = null
@@ -814,6 +839,7 @@ class LandEditViewModel(
         if (state.isWalking || state.isCapturingCorner) return
 
         val explain = !cornerHintDone
+        lastDeletedCorner = null
         _uiState.update {
             // Reuse the stable corner ids so photos stay bound while editing on
             // the map; only genuinely new corners (no id yet) get a fresh one.
@@ -828,7 +854,8 @@ class LandEditViewModel(
                 markToleranceM = 0.0,
                 averagingFix = false,
                 showCornerHint = explain,
-                message = null
+                message = null,
+                undoAvailable = false
             )
         }
         if (explain) {
@@ -866,6 +893,7 @@ class LandEditViewModel(
             return
         }
         cornerJob?.cancel()
+        lastDeletedCorner = null
         _uiState.update {
             it.copy(
                 boundary = it.draftPoints,
@@ -876,7 +904,8 @@ class LandEditViewModel(
                 isCapturingCorner = false,
                 cornerSamples = 0,
                 averagingFix = false,
-                showCornerHint = false
+                showCornerHint = false,
+                undoAvailable = false
             )
         }
     }
@@ -886,6 +915,7 @@ class LandEditViewModel(
         // An averaged capture left running would keep the radio on and write
         // into a draft nobody is looking at any more.
         cornerJob?.cancel()
+        lastDeletedCorner = null
         _uiState.update {
             it.copy(
                 draftBoundary = emptyList(),
@@ -895,7 +925,8 @@ class LandEditViewModel(
                 isPickerOpen = false,
                 isCapturingCorner = false,
                 cornerSamples = 0,
-                showCornerHint = false
+                showCornerHint = false,
+                undoAvailable = false
             )
         }
     }
@@ -1115,8 +1146,12 @@ class LandEditViewModel(
      * renumbering that had already happened to a corner they had not agreed to.
      */
     fun commitMark() {
+        val mark = _uiState.value.pendingMark ?: return
+        // Using the mark starts a new corner, so an earlier corner's delete is no
+        // longer the thing to undo — the older "undo last placed" path owns the
+        // tail from here, and an insert would shift the saved deletion's index.
+        lastDeletedCorner = null
         _uiState.update { state ->
-            val mark = state.pendingMark ?: return@update state
             val committed = DraftCorner(newCornerId(), mark.point)
             when (val placement = mark.placementIn(state.draftPoints, state.markToleranceM)) {
                 // Reachable only if the draft changed under the mark, since the
@@ -1132,7 +1167,8 @@ class LandEditViewModel(
                     draftBoundary = state.draftBoundary + committed,
                     pendingMark = null,
                     averagingFix = false,
-                    cornerSamples = 0
+                    cornerSamples = 0,
+                    undoAvailable = false
                 )
 
                 is Placement.Insert -> state.copy(
@@ -1140,7 +1176,8 @@ class LandEditViewModel(
                         .apply { add(placement.at, committed) },
                     pendingMark = null,
                     averagingFix = false,
-                    cornerSamples = 0
+                    cornerSamples = 0,
+                    undoAvailable = false
                 )
             }
         }
@@ -1232,6 +1269,55 @@ class LandEditViewModel(
         }
     }
 
+    /**
+     * Removes a draft corner by id, the path the "×" badge on the map takes.
+     *
+     * Immediate — no confirmation dialog — and undoable: the removed corner and its
+     * original index are stashed in [lastDeletedCorner] so [undoDeleteCorner] can put
+     * it back, and [LandEditUiState.message] is set so the picker's existing
+     * snackbar offers the Undo. Routing the panel delete button through here too (via
+     * [removeSelectedDraftCorner]) means a corner removed either way can be brought
+     * back with the same gesture, which matters because the two are easy to mix up
+     * on a small map.
+     */
+    fun deleteDraftCorner(id: String) {
+        val current = _uiState.value
+        val index = current.draftBoundary.indexOfFirst { it.id == id }
+        if (index < 0) return
+        val removed = current.draftBoundary[index]
+        lastDeletedCorner = index to removed
+        _uiState.update { state ->
+            state.copy(
+                draftBoundary = state.draftBoundary.filterNot { it.id == id },
+                selectedCornerId = state.selectedCornerId?.takeIf { it != id },
+                message = strings.get(R.string.msg_corner_deleted),
+                undoAvailable = true
+            )
+        }
+    }
+
+    /**
+     * Restores the corner most recently removed by [deleteDraftCorner], if any.
+     *
+     * Re-inserts at the original index so the corner numbers do not shuffle:
+     * deleting corner 3 and undoing must give back corner 3, not append a new
+     * corner 6. A no-op (and a no-snackbar) when there is nothing to undo, which is
+     * why the screen can offer the Undo action on every snackbar safely.
+     */
+    fun undoDeleteCorner() {
+        val saved = lastDeletedCorner ?: return
+        lastDeletedCorner = null
+        _uiState.update { state ->
+            val index = saved.first.coerceAtMost(state.draftBoundary.size)
+            val rebuilt = state.draftBoundary.toMutableList().apply { add(index, saved.second) }
+            state.copy(
+                draftBoundary = rebuilt,
+                message = null,
+                undoAvailable = false
+            )
+        }
+    }
+
     fun removeDraftCorner(id: String) {
         _uiState.update { state ->
             if (state.draftBoundary.none { it.id == id }) {
@@ -1245,12 +1331,19 @@ class LandEditViewModel(
         }
     }
 
-    /** What the picker's delete button calls; a no-op when nothing is selected. */
+    /**
+     * What the picker's delete button calls; a no-op when nothing is selected.
+     *
+     * Routed through [deleteDraftCorner] so the panel button gets the same Undo
+     * snackbar the "×" badge does — the two remove the same kind of thing, and a
+     * corner taken off either way should be put back the same way.
+     */
     fun removeSelectedDraftCorner() {
-        _uiState.value.selectedCornerId?.let(::removeDraftCorner)
+        _uiState.value.selectedCornerId?.let(::deleteDraftCorner)
     }
 
     fun undoDraftCorner() {
+        lastDeletedCorner = null
         _uiState.update {
             if (it.draftBoundary.isEmpty()) {
                 it
@@ -1258,7 +1351,8 @@ class LandEditViewModel(
                 val dropped = it.draftBoundary.last().id
                 it.copy(
                     draftBoundary = it.draftBoundary.dropLast(1),
-                    selectedCornerId = it.selectedCornerId?.takeIf { id -> id != dropped }
+                    selectedCornerId = it.selectedCornerId?.takeIf { id -> id != dropped },
+                    undoAvailable = false
                 )
             }
         }
@@ -1266,12 +1360,14 @@ class LandEditViewModel(
 
     fun clearDraftCorners() {
         cornerJob?.cancel()
+        lastDeletedCorner = null
         _uiState.update {
             it.copy(
                 draftBoundary = emptyList(),
                 selectedCornerId = null,
                 isCapturingCorner = false,
-                cornerSamples = 0
+                cornerSamples = 0,
+                undoAvailable = false
             )
         }
     }

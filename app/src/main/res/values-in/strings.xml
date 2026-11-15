@@ -222,6 +222,10 @@
     </plurals>
     <string name="corner_picker_select_hint">Ketuk sebuah sudut untuk memilihnya, lalu pakai tombol hapus. Geser sudut untuk memindahkannya.</string>
     <string name="corner_picker_delete_selected">Hapus sudut %1$d</string>
+    <!-- Tanda "×" yang digambar di kanan-atas setiap sudut pada peta pemilih sudut. -->
+    <string name="corner_picker_delete_a11y">Hapus sudut %1$s</string>
+    <!-- Snackbar setelah tanda "×" (atau tombol hapus panel) menghapus sebuah sudut. -->
+    <string name="msg_corner_deleted">Pojok dihapus</string>
 
     <!-- Toolbar mode pemilih sudut (spec §4.5) -->
     <!-- Pesan lokal, dipicu oleh mode pemilih sudut itu sendiri. -->

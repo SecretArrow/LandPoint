@@ -37,10 +37,12 @@ import com.landpoint.app.R
 import com.landpoint.app.ui.compass.CompassScreen
 import com.landpoint.app.ui.detail.LandDetailScreen
 import com.landpoint.app.ui.edit.LandEditScreen
+import com.landpoint.app.ui.gallery.ComponentGalleryScreen
 import com.landpoint.app.ui.home.HomeScreen
 import com.landpoint.app.ui.lands.LandListDetailPane
 import com.landpoint.app.ui.lands.LandListScreen
 import com.landpoint.app.ui.map.MapScreen
+import com.landpoint.app.ui.navigation.DebugRoutes
 import com.landpoint.app.ui.navigation.Routes
 import com.landpoint.app.ui.offline.OfflineMapsScreen
 import com.landpoint.app.ui.owners.OwnerDetailScreen
@@ -215,12 +217,30 @@ private fun LandPointGraph(navController: NavHostController, listBesideDetail: B
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
-                onOpenOfflineMaps = { navController.navigate(Routes.OFFLINE) }
+                onOpenOfflineMaps = { navController.navigate(Routes.OFFLINE) },
+                // Debug builds only: the gallery entry point rides on the same
+                // gate as the route registration below, so release never gets
+                // either half of the pair.
+                onOpenGallery = if (Routes.GALLERY in DebugRoutes.active) {
+                    { navController.navigate(Routes.GALLERY) }
+                } else {
+                    null
+                }
             )
         }
 
         composable(Routes.OFFLINE) {
             OfflineMapsScreen(onBack = { navController.popBackStack() })
+        }
+
+        // Debug-only developer tooling (docs/IMPLEMENTATION_PLAN.md, Phase 2).
+        // The destination is registered only when the build exposes it, so the
+        // release navigation graph never contains the gallery at all — there is
+        // nothing to reach and nothing to deep-link into.
+        if (Routes.GALLERY in DebugRoutes.active) {
+            composable(Routes.GALLERY) {
+                ComponentGalleryScreen(onBack = { navController.popBackStack() })
+            }
         }
 
         composable(Routes.OWNER_DETAIL, arguments = ownerIdArg) {

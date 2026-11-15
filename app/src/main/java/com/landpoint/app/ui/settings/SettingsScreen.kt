@@ -80,6 +80,9 @@ import com.landpoint.app.util.formatBytes
 fun SettingsScreen(
     onBack: (() -> Unit)? = null,
     onOpenOfflineMaps: () -> Unit,
+    // Debug builds only (see DebugRoutes): null in a release build, so no row
+    // is drawn even if a release caller wired something up by mistake.
+    onOpenGallery: (() -> Unit)? = null,
     viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -504,6 +507,18 @@ fun SettingsScreen(
                     enabled = true,
                     onClick = viewModel::replayOnboarding
                 )
+                // Debug-only developer tooling: the component gallery. Gated on
+                // the build flag itself (not just the callback) so the row can
+                // never appear in a release APK.
+                if (BuildConfig.DEBUG) {
+                    onOpenGallery?.let { openGallery ->
+                        ActionRow(
+                            label = stringResource(R.string.settings_gallery),
+                            enabled = true,
+                            onClick = openGallery
+                        )
+                    }
+                }
             }
         }
     }

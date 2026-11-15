@@ -43,13 +43,24 @@ object ShareUtils {
         }.trim()
     }
 
-    fun shareLand(context: Context, land: Land, dms: Boolean = false) {
+    /**
+     * Shares a plain-text body with a subject.
+     *
+     * The generic form behind [shareLand]: records that are not saved lands
+     * yet (the preview draft) share the same way, without a [Land] to build
+     * the body from.
+     */
+    fun shareText(context: Context, subject: String, body: String) {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, land.name)
-            putExtra(Intent.EXTRA_TEXT, landAsText(context, land, dms))
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(Intent.EXTRA_TEXT, body)
         }
         startChooserOrToast(context, intent)
+    }
+
+    fun shareLand(context: Context, land: Land, dms: Boolean = false) {
+        shareText(context, land.name, landAsText(context, land, dms))
     }
 
     fun shareFile(context: Context, uri: Uri, mimeType: String, subject: String) {
@@ -80,15 +91,16 @@ object ShareUtils {
     }
 
     /**
-     * Hands off to whatever maps app the user has. Falls back to a browser link
-     * when no geo: handler is installed.
+     * Hands off to whatever maps app the user has, for a position that is not
+     * a saved land yet — a preview draft's centroid. Falls back to a browser
+     * link when no geo: handler is installed.
      */
-    fun navigateTo(context: Context, land: Land) {
-        val geo = Intent(Intent.ACTION_VIEW, Uri.parse(GeoUtils.geoUri(land.latitude, land.longitude, land.name)))
+    fun navigateTo(context: Context, latitude: Double, longitude: Double, label: String?) {
+        val geo = Intent(Intent.ACTION_VIEW, Uri.parse(GeoUtils.geoUri(latitude, longitude, label)))
         try {
             context.startActivity(geo)
         } catch (e: ActivityNotFoundException) {
-            val web = Intent(Intent.ACTION_VIEW, Uri.parse(GeoUtils.googleMapsLink(land.latitude, land.longitude)))
+            val web = Intent(Intent.ACTION_VIEW, Uri.parse(GeoUtils.googleMapsLink(latitude, longitude)))
             try {
                 context.startActivity(web)
             } catch (e2: ActivityNotFoundException) {
@@ -99,6 +111,10 @@ object ShareUtils {
                 ).show()
             }
         }
+    }
+
+    fun navigateTo(context: Context, land: Land) {
+        navigateTo(context, land.latitude, land.longitude, land.name)
     }
 
     fun openFile(context: Context, uri: Uri, mimeType: String) {

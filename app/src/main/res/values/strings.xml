@@ -19,6 +19,7 @@
     <string name="action_navigate">Navigate</string>
     <string name="action_compass">Compass</string>
     <string name="action_export_pdf">Export PDF</string>
+    <string name="action_export">Export</string>
     <string name="action_more">More</string>
     <string name="action_undo">Undo</string>
 
@@ -651,6 +652,8 @@
     <string name="preview_back_edit">Back to editing</string>
     <string name="preview_empty">Add at least one corner, then preview the shape here.</string>
     <string name="preview_auto_line">Lines connect the corners in order automatically.</string>
+    <string name="preview_status_draft">Draft</string>
+    <string name="preview_corner_title">Corner %1$d</string>
     <string name="corner_photo">Corner photo</string>
     <string name="corner_photo_take">Camera</string>
     <string name="corner_photo_pick">Gallery</string>

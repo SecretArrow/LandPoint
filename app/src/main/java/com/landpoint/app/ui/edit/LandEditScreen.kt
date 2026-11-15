@@ -88,6 +88,7 @@ import coil.compose.AsyncImage
 import com.landpoint.app.R
 import com.landpoint.app.data.SettingsRepository
 import com.landpoint.app.location.FixQuality
+import com.landpoint.app.ui.components.rememberCameraPermission
 import com.landpoint.app.ui.components.rememberLocationPermission
 import com.landpoint.app.ui.components.rememberNotificationPermission
 import com.landpoint.app.util.AreaFormat
@@ -145,6 +146,31 @@ fun LandEditScreen(
             else -> {
                 pendingLocationAction = action
                 permission.request()
+            }
+        }
+    }
+
+    // Camera intent on stock Android does not need CAMERA, but a number of
+    // manufacturer camera apps (Samsung, Xiaomi, OPPO) refuse to start for a
+    // caller that does not hold it, throwing from launch — which surfaced as
+    // "no camera app is available". Ask for it the same way location is asked,
+    // so the photo is taken the moment the permission lands instead of being
+    // lost when the user grants it somewhere else.
+    val cameraPermissionBlockedBody = stringResource(R.string.permission_camera_blocked_body)
+    var pendingCameraAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val cameraPermission = rememberCameraPermission(
+        onGranted = {
+            pendingCameraAction?.invoke()
+            pendingCameraAction = null
+        }
+    )
+    val withCamera: (() -> Unit) -> Unit = { action ->
+        when {
+            cameraPermission.isGranted -> action()
+            cameraPermission.isBlocked -> viewModel.showMessage(cameraPermissionBlockedBody)
+            else -> {
+                pendingCameraAction = action
+                cameraPermission.request()
             }
         }
     }
@@ -239,10 +265,15 @@ fun LandEditScreen(
     var pickerPhotoId by remember { mutableStateOf<String?>(null) }
     val takeGeneralPhoto: () -> Unit = {
         viewModel.requestPhotoForCorner(null)
-        val (file, uri) = viewModel.newCameraTarget()
-        val launched = runCatching { cameraLauncher.launch(uri) }.isSuccess
-        pendingCapture = if (launched) file else null
-        if (!launched) viewModel.showMessage(noCameraMessage)
+        // The camera target is created inside withCamera so the URI is fresh
+        // when the permission resolves: a deferred capture that waits on the
+        // permission dialog would otherwise hand the camera a stale temp file.
+        withCamera {
+            val (file, uri) = viewModel.newCameraTarget()
+            val launched = runCatching { cameraLauncher.launch(uri) }.isSuccess
+            pendingCapture = if (launched) file else null
+            if (!launched) viewModel.showMessage(noCameraMessage)
+        }
     }
     val pickGeneralPhoto: () -> Unit = {
         viewModel.requestPhotoForCorner(null)
@@ -293,12 +324,14 @@ fun LandEditScreen(
                     onTake = {
                         pickerPhotoId = null
                         viewModel.requestPhotoForCorner(draftId)
-                        val (file, uri) = viewModel.newCameraTarget()
-                        val launched = runCatching {
-                            cameraLauncher.launch(uri)
-                        }.isSuccess
-                        pendingCapture = if (launched) file else null
-                        if (!launched) viewModel.showMessage(noCameraMessage)
+                        withCamera {
+                            val (file, uri) = viewModel.newCameraTarget()
+                            val launched = runCatching {
+                                cameraLauncher.launch(uri)
+                            }.isSuccess
+                            pendingCapture = if (launched) file else null
+                            if (!launched) viewModel.showMessage(noCameraMessage)
+                        }
                     },
                     onPick = {
                         pickerPhotoId = null
@@ -480,12 +513,14 @@ fun LandEditScreen(
                         onTake = {
                             photoCornerIndex = null
                             viewModel.requestPhotoForCorner(cornerId)
-                            val (file, uri) = viewModel.newCameraTarget()
-                            val launched = runCatching {
-                                cameraLauncher.launch(uri)
-                            }.isSuccess
-                            pendingCapture = if (launched) file else null
-                            if (!launched) viewModel.showMessage(noCameraMessage)
+                            withCamera {
+                                val (file, uri) = viewModel.newCameraTarget()
+                                val launched = runCatching {
+                                    cameraLauncher.launch(uri)
+                                }.isSuccess
+                                pendingCapture = if (launched) file else null
+                                if (!launched) viewModel.showMessage(noCameraMessage)
+                            }
                         },
                         onPick = {
                             photoCornerIndex = null

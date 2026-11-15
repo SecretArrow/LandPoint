@@ -284,6 +284,8 @@
     <string name="msg_photo_save_failed">Could not save photo</string>
     <string name="msg_photo_import_failed">Could not import photo</string>
     <string name="msg_no_camera_app">No camera app is available on this device</string>
+    <string name="msg_camera_permission_needed">Camera permission is needed to take a photo</string>
+    <string name="permission_camera_blocked_body">Android will not ask again. The camera permission has to be switched on for LandPoint in the system settings.</string>
     <string name="msg_no_browser_app">No browser is available to open that link</string>
 
     <!-- Detail -->

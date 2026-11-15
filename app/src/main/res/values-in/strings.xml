@@ -273,6 +273,8 @@
     <string name="msg_photo_save_failed">Foto gagal disimpan</string>
     <string name="msg_photo_import_failed">Foto gagal dimuat</string>
     <string name="msg_no_camera_app">Tidak ada aplikasi kamera di perangkat ini</string>
+    <string name="msg_camera_permission_needed">Izin kamera diperlukan untuk mengambil foto</string>
+    <string name="permission_camera_blocked_body">Android tidak akan menanyakannya lagi. Izin kamera harus dinyalakan untuk LandPoint di setelan sistem.</string>
     <string name="msg_no_browser_app">Tidak ada peramban untuk membuka tautan itu</string>
 
     <!-- Rincian -->

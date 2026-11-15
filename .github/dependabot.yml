@@ -13,8 +13,19 @@ updates:
         patterns:
           - "*"
 
+  # Gradle version-update PRs are disabled on purpose. The version catalog
+  # (gradle/libs.versions.toml) pins several dependencies deliberately — for
+  # example maplibre 13.0.0 and sqlcipher 4.12.0 are held back because newer
+  # releases ship kotlin-stdlib metadata that Kotlin 2.0.21 cannot read, and
+  # navigation 2.10+ requires compileSdk 37 with an AGP newer than 8.7.3.
+  # Weekly version PRs therefore keep failing CI and get closed by hand.
+  # Upgrades are done as reviewed feature branches that move AGP, Kotlin,
+  # KSP and the pinned libs together in one atomic migration.
+  # Security updates are unaffected by open-pull-requests-limit and still
+  # produce PRs automatically.
   - package-ecosystem: "gradle"
     directory: "/"
+    open-pull-requests-limit: 0
     schedule:
       interval: "weekly"
     groups:

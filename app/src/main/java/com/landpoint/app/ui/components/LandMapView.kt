@@ -87,6 +87,19 @@ private val FIT_PADDING = 48.dp
  */
 private val TAP_RADIUS = 24.dp
 
+/**
+ * How far from a finger the "×" badge on a corner still counts as tapped.
+ *
+ * The same 24 dp as [TAP_RADIUS], but its own constant because the × is a smaller
+ * drawn glyph than the corner dot it sits on and must keep its own tap target
+ * regardless of the caller's edge tolerance — the picker passes 20 dp as
+ * `touchTolerance` for edges, which would otherwise shrink the badge's hit area to
+ * less than the Material minimum. The delete query in [MapLibreMap.dispatchTap] uses
+ * this radius in its own box, before anything else is tried, so a tap on the × is
+ * never swallowed by the corner select/drag path it sits inside.
+ */
+private val DELETE_TAP_RADIUS = 24.dp
+
 /** Breathing room around the stand-in message where a map cannot be drawn. */
 private val MESSAGE_PADDING = 24.dp
 
@@ -153,6 +166,16 @@ sealed interface MapTap {
 
     /** A numbered corner. Also how a corner is *selected* while dragging is enabled. */
     data class Corner(val id: String) : MapTap
+
+    /**
+     * The "×" badge on a corner, asking for that corner to be deleted.
+     *
+     * Distinct from [Corner] rather than a flag on it, because the badge is the
+     * smaller, more specific target and a tap on it must delete rather than
+     * select — collapsing the two into one variant would leave the picker to
+     * guess which the user meant from the same id.
+     */
+    data class CornerDelete(val id: String) : MapTap
 
     /** A land's place marker. */
     data class Pin(val id: String) : MapTap
@@ -500,6 +523,7 @@ fun LandMap(
     val overlay = remember { LandMapOverlay() }
 
     val tapRadiusPx = with(density) { TAP_RADIUS.toPx() }
+    val deleteTapRadiusPx = with(density) { DELETE_TAP_RADIUS.toPx() }
     val tolerancePx = with(density) { touchTolerance.toPx() }
     val slopPx = remember(context) {
         ViewConfiguration.get(context).scaledTouchSlop.toFloat()
@@ -636,6 +660,7 @@ fun LandMap(
                 map.dispatchTap(
                     point = point,
                     radiusPx = tapRadiusPx,
+                    deleteRadiusPx = deleteTapRadiusPx,
                     toleranceM = tolerancePx * controller.metresPerPixel,
                     onTap = handler
                 )
@@ -668,6 +693,7 @@ fun LandMap(
             map = map,
             slopPx = slopPx,
             hitRadiusPx = tapRadiusPx,
+            deleteHitRadiusPx = deleteTapRadiusPx,
             onMove = if (!dragsCorners) {
                 null
             } else {
@@ -729,11 +755,31 @@ private fun MapUnavailable(modifier: Modifier, contentDescription: String?) {
  * Always reports something. A tap that hits nothing is still news — it is how a
  * corner gets added — and a screen with nothing to do with bare ground simply passes
  * a handler that ignores [MapTap.Ground].
+ *
+ * The "×" delete badge is asked about first, and in its own box sized to
+ * [deleteRadiusPx] rather than [radiusPx]. Two reasons it cannot share the corner
+ * query: within one `queryRenderedFeatures` the answer comes back through
+ * `firstNotNullOfOrNull`, which promises nothing about which layer wins, and the
+ * badge must win over the corner dot it sits on; and the badge needs a steady 24 dp
+ * target that does not shrink with the caller's edge tolerance, which is what
+ * `touchTolerance` otherwise drives on the corner/pin/shape queries below.
  */
-private fun MapLibreMap.dispatchTap(point: LatLng, radiusPx: Float, toleranceM: Double, onTap: (MapTap) -> Unit) {
+private fun MapLibreMap.dispatchTap(
+    point: LatLng,
+    radiusPx: Float,
+    deleteRadiusPx: Float,
+    toleranceM: Double,
+    onTap: (MapTap) -> Unit
+) {
     val screen = projection.toScreenLocation(point)
-    val box = hitBox(screen.x, screen.y, radiusPx)
 
+    // The × badge first, with its own dedicated hit box. A tap that lands here is a
+    // delete request for that corner, and must not fall through to the corner
+    // select/drag path it is drawn over.
+    val deleteBox = hitBox(screen.x, screen.y, deleteRadiusPx)
+    idAt(deleteBox, LandMapOverlay.CORNER_DELETE_LAYERS)?.let { return onTap(MapTap.CornerDelete(it)) }
+
+    val box = hitBox(screen.x, screen.y, radiusPx)
     idAt(box, LandMapOverlay.CORNER_LAYERS)?.let { return onTap(MapTap.Corner(it)) }
     idAt(box, LandMapOverlay.PIN_LAYERS)?.let { return onTap(MapTap.Pin(it)) }
     clickableShapeAt(box)?.let { return onTap(MapTap.Shape(it)) }
@@ -794,6 +840,7 @@ private class CornerDragger(
     private val map: MapLibreMap,
     private val slopPx: Float,
     private val hitRadiusPx: Float,
+    private val deleteHitRadiusPx: Float,
     private val onMove: ((String, Double, Double) -> Unit)?,
     private val onMovePending: ((Double, Double) -> Unit)?,
     private val onSelect: (String) -> Unit
@@ -872,8 +919,21 @@ private class CornerDragger(
      * `firstNotNullOfOrNull`, which promises nothing about which layer wins. The mark
      * is drawn over the corner it is being lined up against, so it has to win — a
      * finger on a mark that sits on top of corner 3 must move the mark, not corner 3.
+     *
+     * The "×" delete badge is checked before either, and on its own — returning null
+     * when it is hit so this dragger does *not* claim the gesture. Claiming it would
+     * turn a tap on the badge into a short-press selection of the corner beneath,
+     * swallowing the delete the badge is meant to offer. Letting the touch fall
+     * through to the map instead lets [MapLibreMap.dispatchTap] query the delete
+     * layer first and report [MapTap.CornerDelete]. The badge's box is sized to its
+     * own [deleteHitRadiusPx] for the same reason the tap dispatcher sizes it that
+     * way: a steady target that does not shrink with the caller's edge tolerance.
      */
     private fun grabAt(x: Float, y: Float): Grab? {
+        val deleteBox = hitBox(x, y, deleteHitRadiusPx)
+        if (map.idAt(deleteBox, LandMapOverlay.CORNER_DELETE_LAYERS) != null) {
+            return null
+        }
         val box = hitBox(x, y, hitRadiusPx)
         if (onMovePending != null && map.idAt(box, LandMapOverlay.PENDING_LAYERS) != null) {
             return Grab.Mark

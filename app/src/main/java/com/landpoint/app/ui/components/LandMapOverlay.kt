@@ -196,6 +196,34 @@ internal class LandMapOverlay {
                 PropertyFactory.textIgnorePlacement(true)
             )
         )
+        // A "×" badge drawn at the top-right of each corner, so a corner can be
+        // removed by tapping it directly rather than by selecting it first. It is
+        // drawn from the same corner source as the dot and its label, because the
+        // badge is a property of each corner — there is one whenever the corner
+        // itself is. Anchored top-right and nudged diagonally outward so it sits
+        // clear of the dot (whose radius is CORNER_RADIUS=10 / CORNER_RADIUS_ON=13)
+        // rather than over the corner's own hit area: a tap on the × is a delete,
+        // a tap on the dot is a select, and the two must not share a target.
+        //
+        // Sized to match the corner label so the two glyphs read as one face, and
+        // allowed to overlap everything else for the same reason the label is: a
+        // delete affordance that drops out for want of room is an affordance the
+        // user cannot reach.
+        style.addLayer(
+            SymbolLayer(LAYER_CORNER_DELETE, SRC_CORNERS).withProperties(
+                PropertyFactory.textField(Expression.literal(CORNER_DELETE_GLYPH)),
+                PropertyFactory.textFont(arrayOf(LABEL_FONT)),
+                PropertyFactory.textSize(CORNER_DELETE_TEXT),
+                PropertyFactory.textColor(AndroidColor.WHITE),
+                PropertyFactory.textAnchor(Property.TEXT_ANCHOR_TOP_RIGHT),
+                // Diagonal offset in style units: right and up, so the × clears the
+                // corner dot. Tuned against CORNER_RADIUS so the glyph sits at the
+                // rim of the dot's drawn circle rather than on top of it.
+                PropertyFactory.textOffset(arrayOf(CORNER_DELETE_OFFSET_X, CORNER_DELETE_OFFSET_Y)),
+                PropertyFactory.textAllowOverlap(true),
+                PropertyFactory.textIgnorePlacement(true)
+            )
+        )
         // Last of all, so the mark being positioned is never hidden under the corner
         // it is about to be slotted next to — a mark the user cannot see is a mark
         // they cannot drag, and dragging it is the whole point of it existing.
@@ -304,6 +332,7 @@ internal class LandMapOverlay {
         const val LAYER_PIN = "lp-pin-dot"
         const val LAYER_CORNER = "lp-corner-dot"
         const val LAYER_CORNER_LABEL = "lp-corner-label"
+        const val LAYER_CORNER_DELETE = "lp-corner-delete"
         const val LAYER_PENDING_RING = "lp-pending-ring"
         const val LAYER_PENDING = "lp-pending-dot"
 
@@ -319,6 +348,19 @@ internal class LandMapOverlay {
             LAYER_CORNER,
             LAYER_CORNER_LABEL
         )
+
+        /**
+         * The "×" badge on each corner, asked about *before* [CORNER_LAYERS].
+         *
+         * Its own list rather than a prepended entry on [CORNER_LAYERS] for the
+         * same reason [PENDING_LAYERS] is separate: within a single
+         * `queryRenderedFeatures` the answer comes back through
+         * `firstNotNullOfOrNull`, which promises nothing about which layer wins,
+         * and the × is the smaller, more specific target — a tap on the badge must
+         * delete, not select the corner it sits on.
+         */
+        val CORNER_DELETE_LAYERS = arrayOf(LAYER_CORNER_DELETE)
+
         val PIN_LAYERS = arrayOf(LAYER_PIN, LAYER_PIN_HALO)
 
         /**
@@ -370,6 +412,29 @@ internal class LandMapOverlay {
         private const val CORNER_STROKE_ON = 3f
         private const val CORNER_TEXT = 11f
         private const val CORNER_TEXT_ON = 13f
+
+        /**
+         * The "×" drawn at the top-right of each corner as its delete affordance.
+         *
+         * U+00D7 MULTIPLICATION SIGN, not a lowercase x and not an emoji: it is the
+         * glyph a "close" button conventionally uses, and the bundled Noto Sans Bold
+         * face carries it. A literal character rather than a Unicode escape, because
+         * this is Kotlin source — an escape would only hide what the user sees.
+         */
+        private const val CORNER_DELETE_GLYPH = "×"
+        private const val CORNER_DELETE_TEXT = 11f
+
+        /**
+         * The ×'s offset from the corner point, in style units.
+         *
+         * [textAnchor] TOP_RIGHT already places the glyph's own bounding box at the
+         * top-right of the point; this nudge pushes it further out so the badge
+         * clears the corner dot's drawn circle (radius CORNER_RADIUS=10 / 13 when
+         * selected) rather than sitting on its rim. Positive x is right; in
+         * MapLibre's text-offset a negative y is up.
+         */
+        private const val CORNER_DELETE_OFFSET_X = 0.6f
+        private const val CORNER_DELETE_OFFSET_Y = -0.6f
 
         /**
          * The mark is drawn larger than a corner, and hollow.

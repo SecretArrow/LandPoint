@@ -658,8 +658,11 @@ fun LandMap(
                 false
             } else {
                 map.dispatchTap(
-                    point = point, radiusPx = tapRadiusPx, deleteRadiusPx = deleteTapRadiusPx,
-                    toleranceM = tolerancePx * controller.metresPerPixel, onTap = handler
+                    point = point,
+                    radiusPx = tapRadiusPx,
+                    deleteRadiusPx = deleteTapRadiusPx,
+                    toleranceM = tolerancePx * controller.metresPerPixel,
+                    onTap = handler
                 )
                 true
             }
@@ -761,10 +764,7 @@ private fun MapUnavailable(modifier: Modifier, contentDescription: String?) {
  * target that does not shrink with the caller's edge tolerance, which is what
  * `touchTolerance` otherwise drives on the corner/pin/shape queries below.
  */
-private fun MapLibreMap.dispatchTap(
-    point: LatLng, radiusPx: Float, deleteRadiusPx: Float, toleranceM: Double,
-    onTap: (MapTap) -> Unit
-) {
+private fun MapLibreMap.dispatchTap(point: LatLng, radiusPx: Float, deleteRadiusPx: Float, toleranceM: Double, onTap: (MapTap) -> Unit) {
     val screen = projection.toScreenLocation(point)
 
     // The × badge first, with its own dedicated hit box. A tap that lands here is a

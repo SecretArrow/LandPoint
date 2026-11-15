@@ -216,10 +216,10 @@ jobs:
           set -euo pipefail
           tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
           apksigner="$tools/apksigner"
-          badging=$("$tools/aapt2" dump badging)
+          aapt2="$tools/aapt2"
           for apk in release/*.apk; do
             "$apksigner" verify --verbose "$apk" > /dev/null
-            code=$("$badging" "$apk" | grep -o "versionCode='[0-9]*'" | head -n1 | grep -o '[0-9]*')
+            code=$("$aapt2" dump badging "$apk" | grep -o "versionCode='[0-9]*'" | head -n1 | grep -o '[0-9]*')
             test "$code" = "$VERSION_CODE" || { echo "$apk: versionCode $code != expected $VERSION_CODE"; exit 1; }
             echo "OK: $(basename "$apk") — signature verified, versionCode $code"
           done

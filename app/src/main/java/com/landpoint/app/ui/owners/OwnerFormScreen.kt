@@ -92,12 +92,13 @@ fun OwnerFormScreen(ownerId: String?, onDone: () -> Unit, onCancel: () -> Unit) 
                 pendingCameraAction = null
             }
         )
+        val toast: (String) -> Unit = { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+        }
         val withCamera: (() -> Unit) -> Unit = { action ->
             when {
                 cameraPermission.isGranted -> action()
-                cameraPermission.isBlocked -> Toast.makeText(
-                    context, cameraPermissionBlockedBody, Toast.LENGTH_LONG
-                ).show()
+                cameraPermission.isBlocked -> toast(cameraPermissionBlockedBody)
                 else -> {
                     pendingCameraAction = action
                     cameraPermission.request()
@@ -177,9 +178,7 @@ fun OwnerFormScreen(ownerId: String?, onDone: () -> Unit, onCancel: () -> Unit) 
                                 if (!launched) {
                                     target.first.delete()
                                     cameraTarget = null
-                                    Toast.makeText(
-                                        context, noCameraAppMessage, Toast.LENGTH_LONG
-                                    ).show()
+                                    toast(noCameraAppMessage)
                                 }
                             }
                         }) {

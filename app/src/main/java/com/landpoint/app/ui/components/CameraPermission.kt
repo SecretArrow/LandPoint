@@ -32,7 +32,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
  * "no camera app is available" message, so the permission has to be asked for
  * at runtime the same way location is.
  */
-fun Context.hasCameraPermission(): Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+fun Context.hasCameraPermission(): Boolean {
+    return ContextCompat.checkSelfPermission(
+        this,
+        Manifest.permission.CAMERA
+    ) == PackageManager.PERMISSION_GRANTED
+}
 
 /**
  * Whether the CAMERA permission is granted, whether the system will still ask,

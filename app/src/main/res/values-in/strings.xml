@@ -19,6 +19,7 @@
     <string name="action_navigate">Navigasi</string>
     <string name="action_compass">Kompas</string>
     <string name="action_export_pdf">Ekspor PDF</string>
+    <string name="action_export">Ekspor</string>
     <string name="action_more">Lainnya</string>
     <string name="action_undo">Urungkan</string>
 
@@ -345,6 +346,22 @@
     <string name="settings_section_restore">Pemulihan dan impor</string>
     <string name="settings_section_about">Tentang</string>
 
+    <!-- Galeri komponen hanya untuk build debug (BuildConfig.DEBUG); alat
+         pengembang, tidak pernah tampil ke pengguna. -->
+    <string name="settings_gallery">Galeri komponen (debug)</string>
+    <string name="gallery_title">Galeri komponen</string>
+    <string name="gallery_section_colors">Warna</string>
+    <string name="gallery_section_spacing">Spasi</string>
+    <string name="gallery_section_elevation">Elevasi</string>
+    <string name="gallery_section_motion">Animasi</string>
+    <string name="gallery_section_typography">Tipografi</string>
+    <string name="gallery_section_status">Chip status</string>
+    <string name="gallery_light_value">terang %1$s</string>
+    <string name="gallery_dark_value">gelap %1$s</string>
+    <string name="gallery_replay">Putar ulang animasi</string>
+    <string name="gallery_status_unknown">Tidak diketahui</string>
+    <string name="gallery_components_note">Komponen yang terikat data (kartu tanah, overlay peta) diuji oleh layar yang memilikinya.</string>
+
     <plurals name="settings_stored_count">
         <item quantity="other">%1$d lokasi tersimpan di perangkat ini.</item>
     </plurals>
@@ -630,6 +647,8 @@
     <string name="preview_back_edit">Kembali mengedit</string>
     <string name="preview_empty">Tambahkan minimal satu sudut, lalu pratinjau bentuknya di sini.</string>
     <string name="preview_auto_line">Garis tersambung otomatis mengikuti urutan sudut.</string>
+    <string name="preview_status_draft">Draf</string>
+    <string name="preview_corner_title">Sudut %1$d</string>
     <string name="corner_photo">Foto sudut</string>
     <string name="corner_photo_take">Kamera</string>
     <string name="corner_photo_pick">Galeri</string>

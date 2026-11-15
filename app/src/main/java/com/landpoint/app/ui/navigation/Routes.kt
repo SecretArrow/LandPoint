@@ -12,6 +12,12 @@ object Routes {
     const val SETTINGS = "settings"
     const val OFFLINE = "offline_maps"
 
+    // Debug-only developer tooling (see DebugRoutes): the component gallery.
+    // No release-visible UI navigates to it, and the destination is only
+    // registered when BuildConfig.DEBUG — a release APK carries the string
+    // and nothing else.
+    const val GALLERY = "component_gallery"
+
     const val DETAIL = "land/{landId}"
     const val EDIT = "land/{landId}/edit"
 

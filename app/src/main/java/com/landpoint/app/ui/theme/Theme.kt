@@ -3,13 +3,16 @@ package com.landpoint.app.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -94,6 +97,73 @@ private val DarkColors = darkColorScheme(
     scrim = Color.Black
 )
 
+/**
+ * Roles the Material 3 scheme has no slot for: the semantic feedback triple
+ * and the map-overlay tokens (docs/DESIGN_SYSTEM.md §2.1). Provided alongside
+ * `MaterialTheme.colorScheme` through [LocalLandColors]; components read both.
+ */
+data class LandExtendedColors(
+    val success: Color,
+    val onSuccess: Color,
+    val successContainer: Color,
+    val warning: Color,
+    val onWarning: Color,
+    val warningContainer: Color,
+    val info: Color,
+    val accent: Color,
+    val mapOverlayFill: Color,
+    val mapOverlayLine: Color,
+    val mapOverlayVertex: Color,
+    val mapOverlayVertexRing: Color,
+    val mapOverlayVertexActive: Color,
+    val mapOverlayAccuracy: Color,
+    val mapOverlayCrosshair: Color
+)
+
+/** Light-theme extended colors; [accent] aliases the scheme's primary. */
+fun lightLandExtendedColors(scheme: ColorScheme = LightColors): LandExtendedColors = LandExtendedColors(
+    success = Success,
+    onSuccess = OnSuccess,
+    successContainer = SuccessContainer,
+    warning = Warning,
+    onWarning = OnWarning,
+    warningContainer = WarningContainer,
+    info = Info,
+    accent = scheme.primary,
+    mapOverlayFill = MapOverlayFill,
+    mapOverlayLine = MapOverlayLine,
+    mapOverlayVertex = MapOverlayVertex,
+    mapOverlayVertexRing = MapOverlayVertexRing,
+    mapOverlayVertexActive = MapOverlayVertexActive,
+    mapOverlayAccuracy = MapOverlayAccuracy,
+    mapOverlayCrosshair = MapOverlayCrosshair
+)
+
+/** Dark-theme (OLED) extended colors; same aliasing rule for [accent]. */
+fun darkLandExtendedColors(scheme: ColorScheme = DarkColors): LandExtendedColors = LandExtendedColors(
+    success = SuccessDark,
+    onSuccess = OnSuccessDark,
+    successContainer = SuccessContainerDark,
+    warning = WarningDark,
+    onWarning = OnWarningDark,
+    warningContainer = WarningContainerDark,
+    info = InfoDark,
+    accent = scheme.primary,
+    mapOverlayFill = MapOverlayFillDark,
+    mapOverlayLine = MapOverlayLineDark,
+    mapOverlayVertex = MapOverlayVertexDark,
+    mapOverlayVertexRing = MapOverlayVertexRingDark,
+    mapOverlayVertexActive = MapOverlayVertexActiveDark,
+    mapOverlayAccuracy = MapOverlayAccuracyDark,
+    mapOverlayCrosshair = MapOverlayCrosshairDark
+)
+
+/**
+ * The extended roles, theme-resolved. Defaults to the light set so previews
+ * and tests that never enter [LandPointTheme] still resolve.
+ */
+val LocalLandColors = staticCompositionLocalOf { lightLandExtendedColors() }
+
 @Composable
 fun LandPointTheme(
     darkMode: SettingsRepository.DarkMode = SettingsRepository.DarkMode.SYSTEM,
@@ -127,10 +197,18 @@ fun LandPointTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = LandPointTypography,
-        shapes = LandPointShapes,
-        content = content
-    )
+    val landColors = if (darkTheme) {
+        darkLandExtendedColors(colorScheme)
+    } else {
+        lightLandExtendedColors(colorScheme)
+    }
+
+    CompositionLocalProvider(LocalLandColors provides landColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = LandPointTypography,
+            shapes = LandPointShapes,
+            content = content
+        )
+    }
 }

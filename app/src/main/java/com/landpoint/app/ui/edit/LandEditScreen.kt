@@ -733,6 +733,7 @@ private fun QualityChip(quality: FixQuality) {
  * it. What is left here is *correcting* corners that already stand, which is a
  * different job: it starts from a number in a list, not from a place on the ground.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BoundarySection(
     state: LandEditUiState,
@@ -764,10 +765,13 @@ private fun BoundarySection(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        // FlowRow (not Row) so Undo and Clear flow onto a new line when the
+        // filled button's label already fills the width. A plain Row with no
+        // weights squeezes the last button into a one-character column, and
+        // its label renders letter-per-line as a tall empty pill — "Clear"
+        // drew itself as a capsule taller than the rest of the controls row
+        // on narrow phones.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             FilledTonalButton(onClick = onMarkAtFix, enabled = !busy) {
                 if (state.isCapturingCorner) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
@@ -1276,7 +1280,7 @@ private fun SheetAction(
  * — a second measurement of the same corner is what leaves a gap between the two
  * parcels.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun NeighbourSheet(state: LandEditUiState, onDismiss: () -> Unit, onTake: (String, Set<Int>) -> Unit) {
     var chosenId by remember { mutableStateOf<String?>(null) }
@@ -1346,7 +1350,10 @@ internal fun NeighbourSheet(state: LandEditUiState, onDismiss: () -> Unit, onTak
                     }
                 }
             } else {
-                Row(
+                // FlowRow: two text buttons inside a sheet can outgrow the
+                // sheet's width in Indonesian or at large font scales, and a
+                // plain unweighted Row squeezes the last one letter-per-line.
+                FlowRow(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -1720,6 +1727,7 @@ private fun WalkControls(state: LandEditUiState, onStartWalk: () -> Unit, onStop
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PhotoSection(
     photos: List<EditPhoto>,
@@ -1776,7 +1784,11 @@ private fun PhotoSection(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // FlowRow for the same reason as the boundary controls above: the
+        // camera and gallery buttons each carry an icon and a label, and an
+        // unweighted Row would squeeze the second one letter-per-line rather
+        // than let it wrap to the next line.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(onClick = onTakePhoto) {
                 Icon(Icons.Outlined.PhotoCamera, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text("  " + stringResource(R.string.photo_camera))

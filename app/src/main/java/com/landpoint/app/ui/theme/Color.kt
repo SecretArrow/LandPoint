@@ -67,3 +67,60 @@ val ErrorContainer = Color(0xFFFFDAD6)
 val ErrorContainerDark = Color(0xFF93000A)
 val OnErrorContainer = Color(0xFF410002)
 val OnErrorContainerDark = Color(0xFFFFDAD6)
+
+// ---- Semantic ----
+// Feedback colors the M3 role set has no slot for. They are deliberately NOT
+// derived from tertiary (the Sand scale): Sand reads as a warning yellow-green
+// at low luminance, which collides with both success and warning. Dark
+// variants follow the same `Xxx` / `XxxDark` convention as Error above.
+val Success = Color(0xFF2E7D32)
+val SuccessDark = Color(0xFFA5D6A7)
+val OnSuccess = Color(0xFFFFFFFF)
+val OnSuccessDark = Color(0xFF003300)
+val SuccessContainer = Color(0xFFD7F4D9)
+val SuccessContainerDark = Color(0xFF1B4A1F)
+
+val Warning = Color(0xFFB26A00)
+val WarningDark = Color(0xFFFFCB80)
+val OnWarning = Color(0xFFFFFFFF)
+val OnWarningDark = Color(0xFF3A2400)
+val WarningContainer = Color(0xFFFFE5B0)
+val WarningContainerDark = Color(0xFF4A3000)
+
+val Info = Color(0xFF0277BD)
+val InfoDark = Color(0xFF7EC8E3)
+
+// Single highlight color for the *next* action. An alias of primary, kept
+// separate so a redesign can move it independently of the brand green.
+val AccentLight = Green40
+val AccentDark = Green80
+
+// ---- Map overlays ----
+// §2.1 roles Material does not define. They switch with the theme so a polygon
+// outline is Green80 on the dark map and Green40 on the light map, regardless
+// of basemap (docs/DESIGN_SYSTEM.md §3.1). Fill and accuracy are primary at a
+// fixed alpha so satellite imagery stays readable underneath.
+val MapOverlayFill = Green40.copy(alpha = 0.30f)
+val MapOverlayFillDark = Green80.copy(alpha = 0.35f)
+
+val MapOverlayLine = Green40
+val MapOverlayLineDark = Green80
+
+// Numbered corner markers: a ring (light on light maps, near-black on dark)
+// around the line color core, so a marker reads on any basemap.
+val MapOverlayVertexRing = Color.White
+val MapOverlayVertexRingDark = Neutral12
+val MapOverlayVertex = Green40
+val MapOverlayVertexDark = Green80
+
+// The corner being dragged / stepped.
+val MapOverlayVertexActive = Brown40
+val MapOverlayVertexActiveDark = Brown80
+
+// Accuracy circle around the position marker.
+val MapOverlayAccuracy = Green40.copy(alpha = 0.18f)
+val MapOverlayAccuracyDark = Green80.copy(alpha = 0.22f)
+
+// Drop-corner crosshair: onSurface at 70% in both themes.
+val MapOverlayCrosshair = Neutral10.copy(alpha = 0.70f)
+val MapOverlayCrosshairDark = Neutral90.copy(alpha = 0.70f)

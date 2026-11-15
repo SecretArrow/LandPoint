@@ -658,11 +658,8 @@ fun LandMap(
                 false
             } else {
                 map.dispatchTap(
-                    point = point,
-                    radiusPx = tapRadiusPx,
-                    deleteRadiusPx = deleteTapRadiusPx,
-                    toleranceM = tolerancePx * controller.metresPerPixel,
-                    onTap = handler
+                    point = point, radiusPx = tapRadiusPx, deleteRadiusPx = deleteTapRadiusPx,
+                    toleranceM = tolerancePx * controller.metresPerPixel, onTap = handler
                 )
                 true
             }
@@ -765,10 +762,7 @@ private fun MapUnavailable(modifier: Modifier, contentDescription: String?) {
  * `touchTolerance` otherwise drives on the corner/pin/shape queries below.
  */
 private fun MapLibreMap.dispatchTap(
-    point: LatLng,
-    radiusPx: Float,
-    deleteRadiusPx: Float,
-    toleranceM: Double,
+    point: LatLng, radiusPx: Float, deleteRadiusPx: Float, toleranceM: Double,
     onTap: (MapTap) -> Unit
 ) {
     val screen = projection.toScreenLocation(point)

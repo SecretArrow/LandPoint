@@ -1,6 +1,7 @@
 package com.landpoint.app.ui.owners
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,12 +37,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.landpoint.app.R
+import com.landpoint.app.ui.components.rememberCameraPermission
 import java.io.File
 
 /**
@@ -57,9 +60,11 @@ fun OwnerFormScreen(ownerId: String?, onDone: () -> Unit, onCancel: () -> Unit) 
         var unsavedChanges by remember { mutableStateOf(false) }
         var confirmExit by remember { mutableStateOf(false) }
 
-        // Camera capture goes through the system camera app, same as the land
-        // editor: no CAMERA permission of our own to ask for, and the user
-        // keeps whatever camera app they prefer.
+        // Camera capture goes through the system camera app, but a number of
+        // manufacturer camera apps (Samsung, Xiaomi, OPPO) refuse to start for a
+        // caller that does not hold CAMERA, throwing from launch — which used
+        // to look like "no camera app available". Ask for the permission the
+        // same way the land editor does.
         var cameraTarget by remember { mutableStateOf<Pair<File, Uri>?>(null) }
         val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
             val target = cameraTarget
@@ -74,6 +79,29 @@ fun OwnerFormScreen(ownerId: String?, onDone: () -> Unit, onCancel: () -> Unit) 
             if (uri != null) {
                 unsavedChanges = true
                 viewModel.requestImportFromUri(uri)
+            }
+        }
+
+        val context = LocalContext.current
+        val cameraPermissionBlockedBody = stringResource(R.string.permission_camera_blocked_body)
+        val noCameraAppMessage = stringResource(R.string.msg_no_camera_app)
+        var pendingCameraAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+        val cameraPermission = rememberCameraPermission(
+            onGranted = {
+                pendingCameraAction?.invoke()
+                pendingCameraAction = null
+            }
+        )
+        val withCamera: (() -> Unit) -> Unit = { action ->
+            when {
+                cameraPermission.isGranted -> action()
+                cameraPermission.isBlocked -> Toast.makeText(
+                    context, cameraPermissionBlockedBody, Toast.LENGTH_LONG
+                ).show()
+                else -> {
+                    pendingCameraAction = action
+                    cameraPermission.request()
+                }
             }
         }
 
@@ -140,9 +168,20 @@ fun OwnerFormScreen(ownerId: String?, onDone: () -> Unit, onCancel: () -> Unit) 
                     }
                     Column {
                         OutlinedButton(onClick = {
-                            val target = viewModel.newCameraTarget()
-                            cameraTarget = target
-                            cameraLauncher.launch(target.second)
+                            withCamera {
+                                val target = viewModel.newCameraTarget()
+                                cameraTarget = target
+                                val launched = runCatching {
+                                    cameraLauncher.launch(target.second)
+                                }.isSuccess
+                                if (!launched) {
+                                    target.first.delete()
+                                    cameraTarget = null
+                                    Toast.makeText(
+                                        context, noCameraAppMessage, Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
                         }) {
                             Text(stringResource(R.string.corner_photo_take))
                         }

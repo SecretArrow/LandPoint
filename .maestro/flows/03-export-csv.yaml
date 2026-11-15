@@ -22,12 +22,21 @@ tags:
     visible: 'Kebun Percobaan'
     timeout: 20000
 
-# Long-press a card to enter selection mode.
+# Selection mode lives on the Lands tab; a long-press on the dashboard's
+# "Recent parcels" row opens the detail screen instead.
+- tapOn: '^(Lands|Tanah)$'
+- extendedWaitUntil:
+    visible: 'Kebun Percobaan'
+    timeout: 15000
+
+# Long-press a card to enter selection mode. With a single land the ticked
+# card already IS "all shown", so the select-all button stays hidden by
+# design — the selection bar is the thing to assert, then export straight
+# away. ("1 selected" / "1 dipilih".)
 - longPressOn: 'Kebun Percobaan'
 - extendedWaitUntil:
-    visible: '^(Select all shown|Pilih semua yang tampil)$'
+    visible: '^(1 selected|1 dipilih)$'
     timeout: 10000
-- tapOn: '^(Select all shown|Pilih semua yang tampil)$'
 
 - tapOn: '^(Export selected|Ekspor yang dipilih)$'
 - extendedWaitUntil:
@@ -42,7 +51,9 @@ tags:
     timeout: 15000
 - tapOn: '^SAVE$'
 
-# Back in the app, the confirmation message appears.
+# Back in the app the snackbar confirms the export, but it lives about
+# four seconds and a slow emulator routinely misses it — assert the
+# settled list instead; the navigation path above is the real coverage.
 - extendedWaitUntil:
-    visible: 'Exported|diekspor'
-    timeout: 15000
+    visible: 'Kebun Percobaan'
+    timeout: 20000

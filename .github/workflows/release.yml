@@ -1,11 +1,20 @@
 name: Build & Release
 
-# Release builds run only from a signed tag (v1.0.0, v1.1.0-beta.1, ...). The
-# signing key never lives in the repository: it arrives as the base64 of a
-# password-protected zip held in GitHub Secrets, is unpacked into the workspace,
-# and is gone when the runner is.
+# A release is produced two ways:
+#   1. Every push to main. The workflow computes the next patch version
+#      above the latest stable tag, pushes that tag with GITHUB_TOKEN, and
+#      builds and publishes from it. Tags pushed by GITHUB_TOKEN do not
+#      re-trigger workflows, so this never loops.
+#   2. An explicit tag push (v1.0.0, v1.1.0-beta.1, ...). This is the path
+#      for pre-releases and for pinning a version by hand; the version IS
+#      the tag.
+# The signing key never lives in the repository: it arrives as the base64 of
+# a password-protected zip held in GitHub Secrets, is unpacked into the
+# workspace, and is gone when the runner is.
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -14,6 +23,10 @@ permissions:
   contents: write
 
 concurrency:
+  # Per-ref so a tag build and a main build never cancel each other. Two
+  # rapid main pushes do cancel the earlier one, which is fine: only the
+  # latest commit on main needs a release, and the cancelled run's tag is
+  # simply skipped over by the next one.
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
@@ -28,18 +41,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read app version
+      # The version is decided here, once, so every later step agrees:
+      #   - a tag push uses the tag's own version (v1.6.2-beta.1 -> 1.6.2-beta.1)
+      #   - a main push computes the next patch above the latest STABLE tag
+      #     (v1.6.2 -> v1.6.3) and pushes that tag, so a release appears for
+      #     every merge to main without anyone tagging by hand.
+      - name: Resolve version and create tag
         shell: bash
         run: |
-          # The version comes from the tag name (v1.0.3 → 1.0.3), not from
-          # grepping build.gradle.kts. The build.gradle.kts versionName is an
-          # Elvis-default expression that resolves to the tag via -PlpVersionName
-          # at build time, but grepping the source only sees the default "1.0.0".
-          # Using the tag directly makes the asset filenames match the release.
-          version="${GITHUB_REF_NAME#v}"
-          test -n "$version" || { echo "versionName not found in app/build.gradle.kts"; exit 1; }
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            # Only stable tags (vX.Y.Z) seed the bump — beta/rc tags are left
+            # for explicit hand-pushed releases and never auto-incremented.
+            latest=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+            if [ -n "$latest" ]; then
+              base="${latest#v}"
+              IFS='.' read -r major minor patch <<< "$base"
+              patch=$((patch + 1))
+              version="$major.$minor.$patch"
+            else
+              version="1.0.0"
+            fi
+            tag="v$version"
+            git tag "$tag"
+            git push origin "$tag"
+          fi
           echo "APP_VERSION=$version" >> "$GITHUB_ENV"
-          echo "Building LandPoint $version"
+          echo "RELEASE_TAG=v$version" >> "$GITHUB_ENV"
+          echo "Building LandPoint $version (tag v$version)"
 
       - name: Set up JDK 17
         uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
@@ -96,13 +127,13 @@ jobs:
         run: ./gradlew :app:testDebugUnitTest
 
       - name: Build signed release APK and AAB
-        run: ./gradlew assembleRelease bundleRelease -PlpVersionCode="$VERSION_CODE" -PlpVersionName="${GITHUB_REF_NAME#v}"
+        run: ./gradlew assembleRelease bundleRelease -PlpVersionCode="$VERSION_CODE" -PlpVersionName="$APP_VERSION"
 
       - name: Generate changelog from conventional commits
         shell: bash
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
+          tag="${RELEASE_TAG}"
           # The tag immediately below this one in version order, if any.
           prev=$(git tag --sort=-v:refname | grep -A1 "^${tag}\$" | tail -n 1)
           if [ "$prev" = "$tag" ] || [ -z "$prev" ]; then prev=""; fi
@@ -202,12 +233,14 @@ jobs:
             app/build/outputs/mapping/release/mapping.txt
             app/build/reports/lint-results-release.html
 
+      # tag_name is explicit so a main-push run (whose github.ref is refs/heads/main,
+      # not a tag) still publishes against the tag created in the resolve step.
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
           draft: false
-          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+          prerelease: ${{ contains(env.RELEASE_TAG, 'beta') || contains(env.RELEASE_TAG, 'rc') }}
           body_path: CHANGELOG.md
           files: |
             release/*.apk

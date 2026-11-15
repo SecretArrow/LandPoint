@@ -4,6 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -500,6 +502,7 @@ private fun SavedAreasSheet(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SavedAreaRow(
     region: SavedRegion,
@@ -578,7 +581,11 @@ private fun SavedAreaRow(
             )
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        // FlowRow (not Row) so the per-area actions wrap to a new line rather
+        // than squeeze: with Pause/Resume + Rename + Delete side by side, an
+        // unweighted Row on a narrow screen or a large font scale would render
+        // the last label letter-per-line as a tall empty pill.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             when {
                 status.downloading -> TextButton(onClick = onPause) {
                     Text(stringResource(R.string.offline_pause))

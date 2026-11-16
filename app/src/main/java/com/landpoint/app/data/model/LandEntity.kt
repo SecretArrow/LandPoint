@@ -93,5 +93,19 @@ data class LandEntity(
     val createdAt: Long = System.currentTimeMillis(),
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+
+    /**
+     * When the parcel was moved to the recently-deleted bin, in epoch millis.
+     *
+     * Null is a live parcel; a timestamp is a deleted one that is still
+     * recoverable — nothing about the row, its boundary or its photo files has
+     * been erased, and [com.landpoint.app.data.LandRepository] restores it by
+     * clearing this column again. Thirty days after the timestamp a purge
+     * removes the row and its photos for good, so nothing here is a long-term
+     * home. Queries that feed the live list, detail and backup filter on this
+     * being null; the bin reads the rest.
+     */
+    @ColumnInfo(name = "deleted_at")
+    val deletedAt: Long? = null
 )

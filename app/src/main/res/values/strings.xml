@@ -81,8 +81,32 @@
         <item quantity="one">Delete %1$d location?</item>
         <item quantity="other">Delete %1$d locations?</item>
     </plurals>
-    <string name="delete_selected_dialog_body">These locations and their photos will be removed from this device and cannot be recovered.</string>
+    <string name="delete_selected_dialog_body">These locations will be moved to Recently deleted. You can restore them from there for 30 days.</string>
     <string name="export_selected_dialog_title">Export selected as</string>
+
+    <!-- The recently-deleted bin: what a delete leaves behind, for 30 days -->
+    <string name="recently_deleted_title">Recently deleted</string>
+    <string name="settings_recently_deleted_hint">Deleted parcels are kept for 30 days</string>
+    <plurals name="recently_deleted_count">
+        <item quantity="one">%1$d parcel in the bin</item>
+        <item quantity="other">%1$d parcels in the bin</item>
+    </plurals>
+    <string name="recently_deleted_empty_title">Nothing here</string>
+    <string name="recently_deleted_empty_body">Deleted parcels stay recoverable for 30 days.</string>
+    <string name="bin_deleted_on">Deleted %1$s</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_delete_forever">Delete forever</string>
+    <string name="action_empty_bin">Empty bin</string>
+    <string name="bin_purge_dialog_title">Delete forever?</string>
+    <string name="bin_purge_dialog_body">This parcel and its photos will be deleted from this device for good. This cannot be undone.</string>
+    <string name="bin_empty_dialog_title">Empty the bin?</string>
+    <string name="bin_empty_dialog_body">Every parcel in the bin will be deleted from this device for good. This cannot be undone.</string>
+    <string name="msg_restored">Parcel restored</string>
+    <string name="msg_purged_forever_one">Parcel deleted forever</string>
+    <plurals name="msg_purged_forever">
+        <item quantity="one">%1$d parcel deleted forever</item>
+        <item quantity="other">%1$d parcels deleted forever</item>
+    </plurals>
 
     <!-- Location permission -->
     <string name="permission_title">Location permission needed</string>
@@ -293,7 +317,7 @@
     <string name="detail_missing">This land no longer exists.</string>
     <string name="detail_distance_away">%1$s away</string>
     <string name="delete_dialog_title">Delete %1$s?</string>
-    <string name="delete_dialog_body">This removes the location and its photos from this device. It cannot be undone.</string>
+    <string name="delete_dialog_body">This parcel will be moved to Recently deleted. You can restore it from there for 30 days.</string>
 
     <string name="label_coordinates">Coordinates</string>
     <string name="label_description">Description</string>
@@ -354,6 +378,7 @@
     <string name="settings_dynamic_color_hint">Takes the colours from your wallpaper instead of the LandPoint green. Android 12 and newer.</string>
     <string name="settings_section_coordinate_format">Coordinate format</string>
     <string name="settings_section_units">Distance units</string>
+    <string name="settings_section_data">Data</string>
     <string name="settings_section_backup">Backup and export</string>
     <string name="settings_section_restore">Restore and import</string>
     <string name="settings_section_about">About</string>

@@ -1,0 +1,150 @@
+# E2E 6 — the recently-deleted bin: a delete lands there, a restore comes back.
+#
+# Covers: the detail screen's delete (its dialog copy now promises a 30-day bin),
+# riding out the Undo window without tapping it, the Settings "Recently deleted"
+# entry, the bin listing the parcel, restoring it, and the parcel reappearing in
+# the list. Best-effort in CI (continue-on-error), like the other flows.
+appId: com.landpoint.app.debug
+name: 06-recently-deleted
+tags:
+- core
+---
+- stopApp
+- launchApp
+
+# A slow CI emulator sometimes raises a system "isn't responding" dialog over
+# whatever is on screen; dismiss it when present so the flow can proceed.
+- runFlow:
+    when:
+      visible: '^Wait$'
+    commands:
+      - tapOn: '^Wait$'
+
+# First run shows the introduction; skip it when it is there (later flows on
+# the same install have already dismissed it).
+- runFlow:
+    when:
+      visible: '^(Skip|Lewati)$'
+    commands:
+      - tapOn: '^(Skip|Lewati)$'
+
+# --- Record one parcel, typed coordinates only (no corners needed) --------
+- tapOn: '^(Lands|Tanah)$'
+- extendedWaitUntil:
+    visible: '^(Save land|Simpan tanah)$'
+    timeout: 15000
+- tapOn: '^(Save land|Simpan tanah)$'
+
+- extendedWaitUntil:
+    visible: '^(Land details|Rincian tanah)$'
+    timeout: 20000
+
+# The name field (label "Name *"; "*" must be regex-escaped).
+- tapOn: '^(Name|Nama) \*$'
+- inputText: 'Kebun Hapus'
+- hideKeyboard
+
+# The coordinate fields sit below the fold on a phone; scroll to them first.
+- scrollUntilVisible:
+    element:
+      text: '^(Latitude|Lintang) \*$'
+    direction: DOWN
+    timeout: 30000
+- tapOn: '^(Latitude|Lintang) \*$'
+- inputText: '-6.175000'
+- tapOn: '^(Longitude|Bujur) \*$'
+- inputText: '106.827000'
+- hideKeyboard
+
+# The Save button sits at the bottom of the form.
+- scrollUntilVisible:
+    element:
+      text: '^(Save|Simpan)$'
+    direction: DOWN
+    timeout: 60000
+- tapOn: '^(Save|Simpan)$'
+
+# The editor hands over to the detail screen.
+- extendedWaitUntil:
+    visible: 'Kebun Hapus'
+    timeout: 20000
+
+# --- Delete it ------------------------------------------------------------
+# Delete lives behind the overflow menu on the detail screen.
+- tapOn: '^(More|Lainnya)$'
+- extendedWaitUntil:
+    visible: '^(Delete|Hapus)$'
+    timeout: 10000
+- tapOn: '^(Delete|Hapus)$'
+# The confirm dialog: its title names the parcel, the confirm button is Delete.
+- extendedWaitUntil:
+    visible: '^(Delete Kebun Hapus\?|Hapus Kebun Hapus\?)$'
+    timeout: 10000
+- tapOn: '^(Delete|Hapus)$'
+
+# Back on the list the Undo snackbar offers itself. Leave it alone — that is
+# the whole point of this flow — and wait it out instead: the list dismisses
+# the offer at the same ~8-second mark the deferred delete commits at, so a
+# vanished snackbar is what proves the parcel is now sitting in the bin.
+- extendedWaitUntil:
+    visible: '^(Parcel deleted|Bidang tanah dihapus)$'
+    timeout: 15000
+- extendedWaitUntil:
+    notVisible:
+      text: '^(Parcel deleted|Bidang tanah dihapus)$'
+    timeout: 20000
+- assertNotVisible: 'Kebun Hapus'
+
+# --- Find it in the bin ---------------------------------------------------
+# Settings lives behind the gear on the Home dashboard; the Lands tab has no
+# settings entry of its own.
+- tapOn: '^(Home|Beranda)$'
+- extendedWaitUntil:
+    visible: '^(Settings|Pengaturan)$'
+    timeout: 15000
+- tapOn: '^(Settings|Pengaturan)$'
+- scrollUntilVisible:
+    element:
+      text: '^(Recently deleted|Baru dihapus)$'
+    direction: DOWN
+    timeout: 30000
+- tapOn: '^(Recently deleted|Baru dihapus)$'
+
+# The bin holds the parcel, with a Restore button beside it.
+- extendedWaitUntil:
+    visible: 'Kebun Hapus'
+    timeout: 15000
+- extendedWaitUntil:
+    visible: '^(Restore|Pulihkan)$'
+    timeout: 10000
+
+# --- Restore it -----------------------------------------------------------
+- tapOn: '^(Restore|Pulihkan)$'
+- extendedWaitUntil:
+    visible: '^(Parcel restored|Bidang tanah dipulihkan)$'
+    timeout: 15000
+# The bin is empty again, and says so.
+- extendedWaitUntil:
+    visible: '^(Nothing here|Tidak ada apa-apa)$'
+    timeout: 15000
+
+# --- And it is back --------------------------------------------------------
+- tapOn: '^(Back|Kembali)$'
+- extendedWaitUntil:
+    visible: '^(Settings|Pengaturan)$'
+    timeout: 15000
+# Settings is a full-screen page without the bottom bar — leave with the
+# system back, then cross to Lands. The keyboard is down; a raised one would
+# eat this press. If the first press was swallowed (the recorded hierarchy in
+# flow 04 saw that once), the conditional presses again while still there.
+- hideKeyboard
+- pressKey: BACK
+- runFlow:
+    when:
+      visible: '^(Settings|Pengaturan)$'
+    commands:
+      - pressKey: BACK
+- tapOn: '^(Lands|Tanah)$'
+- extendedWaitUntil:
+    visible: 'Kebun Hapus'
+    timeout: 15000

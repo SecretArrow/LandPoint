@@ -3,6 +3,7 @@ package com.landpoint.app.ui.settings
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.Visibility
@@ -80,6 +82,8 @@ import com.landpoint.app.util.formatBytes
 fun SettingsScreen(
     onBack: (() -> Unit)? = null,
     onOpenOfflineMaps: () -> Unit,
+    /** Opens the recently-deleted bin; always offered, empty or not. */
+    onOpenRecentlyDeleted: () -> Unit,
     // Debug builds only (see DebugRoutes): null in a release build, so no row
     // is drawn even if a release caller wired something up by mistake.
     onOpenGallery: (() -> Unit)? = null,
@@ -277,6 +281,17 @@ fun SettingsScreen(
                     hint = stringResource(R.string.settings_secure_screen_hint),
                     checked = state.privacy.secureScreen,
                     onCheckedChange = viewModel::setSecureScreen
+                )
+            }
+
+            SettingsSection(stringResource(R.string.settings_section_data)) {
+                NavigationRow(
+                    label = stringResource(R.string.recently_deleted_title),
+                    hint = stringResource(R.string.settings_recently_deleted_hint),
+                    // The count is the reason to open the bin at all: a number
+                    // on the row says there is something waiting in there.
+                    count = state.binCount,
+                    onClick = onOpenRecentlyDeleted
                 )
             }
 
@@ -795,6 +810,49 @@ private fun ActionRow(label: String, enabled: Boolean, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(label)
+    }
+}
+
+/**
+ * A setting that opens another screen: a label, the sentence under it, and how
+ * much is waiting behind the door when there is any.
+ *
+ * The whole row is the hit target and the chevron is decoration, the same deal
+ * [SwitchRow] offers — one control for a screen reader, not two that agree.
+ */
+@Composable
+private fun NavigationRow(label: String, hint: String, count: Int, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick, role = Role.Button)
+            .padding(vertical = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(label, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                hint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (count > 0) {
+            Text(
+                pluralStringResource(R.plurals.recently_deleted_count, count, count),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

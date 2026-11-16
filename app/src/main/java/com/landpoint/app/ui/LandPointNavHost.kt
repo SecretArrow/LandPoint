@@ -50,6 +50,7 @@ import com.landpoint.app.ui.owners.OwnerFormScreen
 import com.landpoint.app.ui.owners.OwnerListScreen
 import com.landpoint.app.ui.preview.LandPreviewScreen
 import com.landpoint.app.ui.reports.ReportsScreen
+import com.landpoint.app.ui.settings.RecentlyDeletedScreen
 import com.landpoint.app.ui.settings.SettingsScreen
 import com.landpoint.app.ui.shape.LandShapeScreen
 
@@ -218,6 +219,7 @@ private fun LandPointGraph(navController: NavHostController, listBesideDetail: B
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 onOpenOfflineMaps = { navController.navigate(Routes.OFFLINE) },
+                onOpenRecentlyDeleted = { navController.navigate(Routes.RECENTLY_DELETED) },
                 // Debug builds only: the gallery entry point rides on the same
                 // gate as the route registration below, so release never gets
                 // either half of the pair.
@@ -231,6 +233,10 @@ private fun LandPointGraph(navController: NavHostController, listBesideDetail: B
 
         composable(Routes.OFFLINE) {
             OfflineMapsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.RECENTLY_DELETED) {
+            RecentlyDeletedScreen(onBack = { navController.popBackStack() })
         }
 
         // Debug-only developer tooling (docs/IMPLEMENTATION_PLAN.md, Phase 2).

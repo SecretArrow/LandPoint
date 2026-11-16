@@ -50,6 +50,8 @@ data class SettingsUiState(
     val archiveBytes: Long = 0,
     /** How many areas have been downloaded, for the row that opens their screen. */
     val downloadedAreas: Int = 0,
+    /** How many parcels are sitting in the recently-deleted bin. */
+    val binCount: Int = 0,
     val isBusy: Boolean = false,
     val message: String? = null
 )
@@ -101,7 +103,9 @@ class SettingsViewModel(
         combine(settings.coordFormat, settings.privacy) { format, privacy -> format to privacy },
         combine(settings.units, settings.areaUnit) { units, area -> units to area },
         // Paired to stay inside combine()'s five-flow limit.
-        combine(repository.observeCount(), offline) { count, maps -> count to maps },
+        combine(repository.observeCount(), repository.observeRecentlyDeletedCount(), offline) { count, binCount, maps ->
+            Triple(count, binCount, maps)
+        },
         combine(busy, message, duplicateStrategy, restorePrompt) { b, m, d, prompt ->
             TaskState(b, m, d, prompt)
         }
@@ -109,7 +113,7 @@ class SettingsViewModel(
         val (language, dark, dynamic) = appearance
         val (format, privacy) = formatAndPrivacy
         val (units, areaUnit) = unitsAndArea
-        val (count, maps) = countAndMaps
+        val (count, binCount, maps) = countAndMaps
         SettingsUiState(
             language = language,
             darkMode = dark,
@@ -121,6 +125,7 @@ class SettingsViewModel(
             duplicateStrategy = task.strategy,
             restorePrompt = task.restorePrompt,
             landCount = count,
+            binCount = binCount,
             offlineArchives = maps.archives,
             archiveBytes = maps.archiveBytes,
             downloadedAreas = maps.downloadedAreas,

@@ -12,6 +12,10 @@ object Routes {
     const val SETTINGS = "settings"
     const val OFFLINE = "offline_maps"
 
+    // Reached from settings: the recently-deleted bin, where a delete rests
+    // for thirty days before a purge erases it for good.
+    const val RECENTLY_DELETED = "recently_deleted"
+
     // Debug-only developer tooling (see DebugRoutes): the component gallery.
     // No release-visible UI navigates to it, and the destination is only
     // registered when BuildConfig.DEBUG — a release APK carries the string

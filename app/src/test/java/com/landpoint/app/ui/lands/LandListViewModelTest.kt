@@ -225,6 +225,36 @@ class LandListViewModelTest {
         assertFalse("undo must not leave the list in selection mode", state.isSelecting)
     }
 
+    /**
+     * The swipe gesture shares the single-delete path — [LandListViewModel.delete]
+     * is what a confirmed dismissal calls — so this pins what a swipe actually
+     * does: the row hides at once, the row survives the undo window, and once the
+     * window closes it is in the bin, not erased.
+     */
+    @Test
+    fun `swiping a land away hides it and undo brings it back`() = runTest {
+        val (id) = seed("Sawah utara")
+        collectState()
+        awaitState("the seeded land") { it.lands.size == 1 }
+
+        val land = viewModel.uiState.value.lands.first()
+        viewModel.delete(land)
+        val hidden = awaitState("the swiped land to leave the list") { it.lands.isEmpty() }
+        assertTrue("the swipe must leave Undo on offer", hidden.canUndoDelete)
+        assertEquals("nothing has been erased while the window is open", 1, repository.getAllLands().size)
+
+        viewModel.undoDelete()
+        val back = awaitState("the land to come back") { it.lands.size == 1 }
+        assertEquals(id, back.lands.first().id)
+
+        // And once the window closes, the swipe is a soft delete like any other.
+        viewModel.delete(back.lands.first())
+        awaitState("the land to leave again") { it.lands.isEmpty() }
+        pendingDeletes.flush()
+        assertEquals(0, repository.getAllLands().size)
+        assertEquals(listOf("Sawah utara"), repository.recentlyDeleted().first().map { it.name })
+    }
+
     @Test
     fun `exporting the selection writes only the ticked lands and clears the ticks`() = runTest {
         val ids = seed("Sawah utara", "Sawah selatan", "Kebun kopi")

@@ -89,6 +89,14 @@ android {
         buildConfig = true
     }
 
+    // Room's exported schemas double as migration-test fixtures. Robolectric
+    // reads the app's merged assets for local tests, so the schemas ride along
+    // in the DEBUG variant's assets — the canonical Room migration-test setup —
+    // and MigrationTestHelper can build a real v3 database on the JVM to prove
+    // MIGRATION_3_4 against both endpoints. Release builds stay clean; no
+    // user-facing build carries the schemas.
+    sourceSets.getByName("debug").assets.srcDirs("$projectDir/schemas")
+
     packaging {
         resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}")
         // AGP 8 stores .so files raw so the installer can mmap straight out of the
@@ -113,6 +121,15 @@ android {
                     .also { dir -> dir.mkdirs() }.absolutePath
             )
             it.maxHeapSize = "1024m"
+            // One line per test as it finishes. A silent test task is the worst
+            // thing to debug in CI: when a run is killed at its job timeout there
+            // is no way to tell a genuinely slow suite from a worker that hung on
+            // the first class. With the events logged, the job log itself shows
+            // the last test that ran, which is where the next investigation
+            // begins.
+            it.testLogging {
+                events("passed", "skipped", "failed")
+            }
         }
     }
 
@@ -168,6 +185,13 @@ dependencies {
     // Encrypts the database at rest. Consumer ProGuard rules come with the AAR, so
     // R8 keeps the native entry points without anything added here.
     implementation(libs.sqlcipher.android)
+
+    // Deferred background work: the daily sweep that empties the recently-
+    // deleted bin. Runtime KTX for the CoroutineWorker; nothing else here.
+    implementation(libs.androidx.work.runtime.ktx)
+
+    // Deferred background work: the daily sweep that empties the recently-
+    // deleted bin. Runtime KTX for the CoroutineWorker; nothing else here.
 
     implementation(libs.androidx.datastore.preferences)
     // Back-ports the Android 12 splash screen to Android 7 (Nougat), which is

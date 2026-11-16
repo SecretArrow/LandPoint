@@ -27,7 +27,15 @@ data class Land(
     /** Filled in by the list layer when a current position is known. */
     val distanceMeters: Double? = null,
     /** Filled in by the list layer from the owners table; null when unassigned. */
-    val ownerName: String? = null
+    val ownerName: String? = null,
+    /**
+     * When the parcel was moved to the recently-deleted bin, in epoch millis.
+     *
+     * Only the bin screen reads it — it prints the date the parcel was deleted —
+     * so live surfaces always carry null and the entity-to-domain mapping for
+     * them never bothers to set it.
+     */
+    val deletedAt: Long? = null
 ) {
     /** Status as the typed enum, defaulting to ACTIVE for old rows. */
     val landStatus: LandStatus get() = LandStatus.fromKey(status)
@@ -71,6 +79,40 @@ fun LandWithPhotos.toDomain(): Land = Land(
     createdAt = land.createdAt,
     updatedAt = land.updatedAt,
     photos = photos.map { it.toDomain() }
+)
+
+/**
+ * Maps a bare [LandEntity] — photos not loaded — to the domain model.
+ *
+ * The recently-deleted bin reads entities directly, because a screen whose only
+ * job is to offer restore or purge has no use for the photo files it is about
+ * to make decisions on. Its photos are therefore always empty here; loading
+ * them would mean a join for imagery the bin never shows.
+ */
+fun LandEntity.toDomain(): Land = Land(
+    id = id,
+    name = name,
+    description = description,
+    notes = notes,
+    latitude = latitude,
+    longitude = longitude,
+    altitude = altitude,
+    accuracy = accuracy,
+    address = address,
+    parcelNumber = parcelNumber,
+    areaSqm = areaSqm,
+    geometryType = geometryType,
+    geometryJson = geometryJson,
+    ownerId = ownerId,
+    landRight = landRight,
+    status = status,
+    certificateNumber = certificateNumber,
+    spptNumber = spptNumber,
+    acquisitionDate = acquisitionDate,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    photos = emptyList(),
+    deletedAt = deletedAt
 )
 
 fun PhotoEntity.toDomain(): Photo = Photo(

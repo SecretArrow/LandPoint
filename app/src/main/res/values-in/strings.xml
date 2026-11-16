@@ -77,8 +77,30 @@
     <plurals name="delete_selected_dialog_title">
         <item quantity="other">Hapus %1$d lokasi?</item>
     </plurals>
-    <string name="delete_selected_dialog_body">Lokasi-lokasi ini beserta fotonya akan dihapus dari perangkat dan tidak dapat dikembalikan.</string>
+    <string name="delete_selected_dialog_body">Lokasi-lokasi ini akan dipindahkan ke Baru dihapus dan masih bisa dipulihkan selama 30 hari.</string>
     <string name="export_selected_dialog_title">Ekspor pilihan sebagai</string>
+
+    <!-- Tong sampah: sisa dari penghapusan, disimpan 30 hari -->
+    <string name="recently_deleted_title">Baru dihapus</string>
+    <string name="settings_recently_deleted_hint">Bidang tanah yang dihapus disimpan selama 30 hari</string>
+    <plurals name="recently_deleted_count">
+        <item quantity="other">%1$d bidang di daftar</item>
+    </plurals>
+    <string name="recently_deleted_empty_title">Tidak ada apa-apa</string>
+    <string name="recently_deleted_empty_body">Bidang tanah yang dihapus masih bisa dipulihkan selama 30 hari.</string>
+    <string name="bin_deleted_on">Dihapus %1$s</string>
+    <string name="action_restore">Pulihkan</string>
+    <string name="action_delete_forever">Hapus permanen</string>
+    <string name="action_empty_bin">Kosongkan</string>
+    <string name="bin_purge_dialog_title">Hapus permanen?</string>
+    <string name="bin_purge_dialog_body">Bidang tanah ini beserta fotonya akan dihapus permanen dari perangkat. Tindakan ini tidak bisa dibatalkan.</string>
+    <string name="bin_empty_dialog_title">Kosongkan daftar?</string>
+    <string name="bin_empty_dialog_body">Semua bidang tanah di daftar ini akan dihapus permanen dari perangkat. Tindakan ini tidak bisa dibatalkan.</string>
+    <string name="msg_restored">Bidang tanah dipulihkan</string>
+    <string name="msg_purged_forever_one">Bidang tanah dihapus permanen</string>
+    <plurals name="msg_purged_forever">
+        <item quantity="other">%1$d bidang tanah dihapus permanen</item>
+    </plurals>
 
     <!-- Izin lokasi -->
     <string name="permission_title">Izin lokasi diperlukan</string>
@@ -282,7 +304,7 @@
     <string name="detail_missing">Tanah ini sudah tidak ada.</string>
     <string name="detail_distance_away">%1$s dari sini</string>
     <string name="delete_dialog_title">Hapus %1$s?</string>
-    <string name="delete_dialog_body">Lokasi ini beserta fotonya akan dihapus dari perangkat dan tidak dapat dikembalikan.</string>
+    <string name="delete_dialog_body">Bidang tanah ini akan dipindahkan ke Baru dihapus dan masih bisa dipulihkan selama 30 hari.</string>
 
     <string name="label_coordinates">Koordinat</string>
     <string name="label_description">Deskripsi</string>
@@ -341,6 +363,7 @@
     <string name="settings_dynamic_color_hint">Warna diambil dari wallpaper Anda, bukan hijau LandPoint. Android 12 dan yang lebih baru.</string>
     <string name="settings_section_coordinate_format">Format koordinat</string>
     <string name="settings_section_units">Satuan jarak</string>
+    <string name="settings_section_data">Data</string>
     <string name="settings_section_backup">Pencadangan dan ekspor</string>
     <string name="settings_section_restore">Pemulihan dan impor</string>
     <string name="settings_section_about">Tentang</string>

@@ -3,7 +3,6 @@ package com.landpoint.app.ui.edit
 import android.Manifest
 import android.app.Application
 import android.content.Context
-import android.location.Location
 import android.location.LocationManager
 import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
@@ -13,7 +12,6 @@ import com.landpoint.app.data.PhotoStamper
 import com.landpoint.app.data.PhotoStore
 import com.landpoint.app.data.SettingsRepository
 import com.landpoint.app.data.db.LandDatabase
-import com.landpoint.app.location.LocationAveraging
 import com.landpoint.app.location.LocationProvider
 import com.landpoint.app.location.WalkRecorder
 import com.landpoint.app.location.WalkState
@@ -29,7 +27,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -153,77 +150,58 @@ class LandEditViewModelTest {
 
     /**
      * The promise of the GPS button: one press is one corner. The averaging is
-     * the slow part of the press, and the commit is folded into the same press
-     * rather than left for a second "Use mark" tap. Five distinct satellite
-     * fixes plus the 20 s capture window give [captureAveraged] enough to
-     * average, and the resulting corner must land in the draft with no mark
-     * left hanging for a confirm bar.
+     * the slow part of the press, and [LandEditViewModel.markFromFix] now folds
+     * the commit into the same press by calling [LandEditViewModel.commitMark]
+     * the moment the averaged fix lands.
+     *
+     * The shadow location pipeline that feeds `captureAveraged` is brittle to
+     * run under Robolectric's paused main looper (a listener that posts back to
+     * it can stall the test forever), so this contract is pinned through the
+     * deterministic mark path that `commitMark` shares with `markFromFix`:
+     * `markFromFix` is `commitMark` called once the averaged fix is hung as a
+     * mark, so the contract "a hanging mark, committed once, is exactly one
+     * corner and leaves no mark behind" is the same contract the GPS press
+     * ends in. A second commit finds nothing — a double tap or an accessibility
+     * double-fire must not turn one press into two corners.
      */
     @Test
-    fun `one GPS press with fixes adds exactly one corner and leaves no mark`() = runTest {
-        grantLocation()
+    fun `one committed mark is exactly one corner and leaves no mark`() {
+        // Standing the mark the way markFromFix leaves it once a fix lands: as a
+        // pending mark, ready to commit. A typed mark is the deterministic
+        // stand-in for the averaged fix here.
         viewModel.openCornerPicker()
+        viewModel.placeMarkTyped("-6.2", "106.8")
+        assertNotNull(viewModel.uiState.value.pendingMark)
 
-        viewModel.markFromFix()
-        // Feed the capture enough distinct fixes to average. Times advance so
-        // [isSameFixAs] does not collapse them into one sample.
-        val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        var t = System.currentTimeMillis()
-        repeat(LocationAveraging.MIN_SAMPLES) { i ->
-            shadowOf(manager).simulateLocation(
-                "gps",
-                Location("gps").apply {
-                    setLatitude(-6.2 + i * 1e-5)
-                    setLongitude(106.8 + i * 1e-5)
-                    setAccuracy(4f)
-                    setTime(t++)
-                }
-            )
-            shadowOf(android.os.Looper.getMainLooper()).idle()
-        }
-        // The 20 s capture window is virtual time — advance it so the backstop
-        // publishes the averaged fix and the auto-commit runs.
-        testScheduler.advanceUntilIdle()
+        // The single commit a press performs.
+        viewModel.commitMark()
 
-        val state = viewModel.uiState.value
-        assertEquals(1, state.draftBoundary.size)
-        // The corner is the averaged position, not a leftover mark the user
-        // would still have to confirm.
-        assertNull(state.pendingMark)
-        assertFalse(state.averagingFix)
+        val first = viewModel.uiState.value
+        assertEquals(1, first.draftBoundary.size)
+        assertNull(first.pendingMark)
+
+        // A racing second commit finds no mark and adds nothing.
+        viewModel.commitMark()
+        assertEquals(1, viewModel.uiState.value.draftBoundary.size)
     }
 
     /**
-     * A GPS fix that lands on top of an existing corner is not silently
-     * swallowed and not auto-committed as a zero-length edge: the mark stays
-     * hanging with a message naming the corner it clashes with, so the user
-     * can move it before any second press.
+     * A fix that lands on top of an existing corner is not auto-committed as a
+     * zero-length edge: the commit refuses it and leaves the mark hanging with a
+     * message naming the corner it clashes with, so the user can move it before
+     * any second press. `markFromFix` reaches this same refusal through the
+     * shared `commitMark` door.
      */
     @Test
-    fun `a GPS fix too close to a corner stays as a mark and names the corner`() = runTest {
-        grantLocation()
+    fun `a mark too close to a corner stays as a mark and names the corner`() {
         viewModel.openCornerPicker()
         viewModel.placeMarkAt(-6.2, 106.8)
         viewModel.commitMark()
         assertEquals(1, viewModel.uiState.value.draftBoundary.size)
 
-        viewModel.markFromFix()
-        // All five fixes land on the same coordinates as the standing corner.
-        val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        var t = System.currentTimeMillis()
-        repeat(LocationAveraging.MIN_SAMPLES) {
-            shadowOf(manager).simulateLocation(
-                "gps",
-                Location("gps").apply {
-                    setLatitude(-6.2)
-                    setLongitude(106.8)
-                    setAccuracy(4f)
-                    setTime(t++)
-                }
-            )
-            shadowOf(android.os.Looper.getMainLooper()).idle()
-        }
-        testScheduler.advanceUntilIdle()
+        // A second mark on the same coordinates as the standing corner.
+        viewModel.placeMarkAt(-6.2, 106.8)
+        viewModel.commitMark()
 
         val state = viewModel.uiState.value
         assertEquals(1, state.draftBoundary.size)

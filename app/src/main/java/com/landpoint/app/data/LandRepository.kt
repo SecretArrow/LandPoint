@@ -18,6 +18,12 @@ import kotlinx.coroutines.flow.map
 
 class LandRepository(private val dao: LandDao, private val photoStore: PhotoStore) {
 
+    /** Thirty days in millis — how long a binned parcel stays recoverable. */
+    private companion object {
+        const val RETENTION_DAYS = 30
+        const val DAY_MS = 24L * 60 * 60 * 1000
+    }
+
     // ------------------------------------------------------------------
     // Lands
     // ------------------------------------------------------------------
@@ -35,6 +41,12 @@ class LandRepository(private val dao: LandDao, private val photoStore: PhotoStor
     }
 
     fun observeCount(): Flow<Int> = dao.observeCount()
+
+    /**
+     * The recently-deleted bin: parcels whose [LandEntity.deletedAt] is set,
+     * most recently deleted first.
+     */
+    fun recentlyDeleted(): Flow<List<Land>> = dao.recentlyDeleted().map { rows -> rows.map { it.toDomain() } }
 
     suspend fun getLand(id: String): Land? = dao.getById(id)?.toDomain()
 
@@ -63,11 +75,18 @@ class LandRepository(private val dao: LandDao, private val photoStore: PhotoStor
         )
     }
 
-    /** Deletes the land row plus every photo file it owned. */
+    /**
+     * Moves the parcel to the recently-deleted bin instead of erasing it.
+     *
+     * Only `deleted_at` is written: the row, its boundary and its photo files
+     * all stay exactly as they were, so [restore] is a one-column update and a
+     * mistaken delete costs nothing. The photo files are deliberately NOT
+     * removed here — they must survive the restore — and go only when a purge
+     * decides the parcel is really gone.
+     */
     suspend fun delete(id: String) {
         val row = dao.getById(id)
-        dao.getPhotosFor(id).forEach { photoStore.delete(it.filePath) }
-        dao.deleteById(id)
+        dao.softDeleteById(id, System.currentTimeMillis())
         audit(
             AuditEntities.LAND,
             id,
@@ -76,18 +95,94 @@ class LandRepository(private val dao: LandDao, private val photoStore: PhotoStor
         )
     }
 
+    /**
+     * Soft-deletes a batch, the bulk path behind the list screen's undo window.
+     *
+     * One timestamp for the whole batch: they were deleted together, so they
+     * age out together. The ids are audited individually to keep the trail
+     * readable per parcel.
+     */
     suspend fun deleteMany(ids: List<String>) {
-        ids.forEach { id ->
-            dao.getPhotosFor(id).forEach { photoStore.delete(it.filePath) }
-            audit(AuditEntities.LAND, id, AuditActions.DELETE, id)
-        }
-        dao.deleteByIds(ids)
+        if (ids.isEmpty()) return
+        val deletedAt = System.currentTimeMillis()
+        dao.softDeleteByIds(ids, deletedAt)
+        ids.forEach { id -> audit(AuditEntities.LAND, id, AuditActions.DELETE, id) }
     }
 
+    /**
+     * Bins every live parcel instead of erasing them.
+     *
+     * Deliberately changed from a hard wipe: "clear all" is the most destructive
+     * tap in the app, and a mistake there deserves the same thirty-day window
+     * every other delete gets. The photo files and the audit log are untouched —
+     * the rows still exist, so their photos must, and history that can be
+     * undone should not be scrubbed. Only a purge empties the bin for good.
+     */
     suspend fun deleteAll() {
-        dao.getAllPhotos().forEach { photoStore.delete(it.filePath) }
-        dao.deleteAll()
-        dao.clearAudit()
+        dao.softDeleteAll(System.currentTimeMillis())
+    }
+
+    /**
+     * Puts a binned parcel back among the live ones.
+     *
+     * Nothing else has to happen: the row was never altered and the photo files
+     * were never touched, so clearing `deleted_at` is the whole restore.
+     */
+    suspend fun restore(id: String) {
+        val row = dao.getDeletedById(id)
+        dao.restoreById(id)
+        audit(
+            AuditEntities.LAND,
+            id,
+            AuditActions.RESTORE,
+            row?.name ?: id
+        )
+    }
+
+    /**
+     * Finishes what a delete started: removes the parcel, its photo rows and
+     * their files for good. This is the only path that deletes photo files.
+     *
+     * Files go before rows, as [delete] used to — a file deleted after a failed
+     * row delete would leave a photo pointing at nothing, and the reverse
+     * failure (rows gone, files left) merely orphans bytes, not records.
+     */
+    suspend fun purge(id: String) {
+        val row = dao.getDeletedById(id) ?: dao.getById(id)?.land
+        dao.getPhotosFor(id).forEach { photoStore.delete(it.filePath) }
+        dao.purgeById(id)
+        audit(
+            AuditEntities.LAND,
+            id,
+            AuditActions.PURGE,
+            row?.name ?: id
+        )
+    }
+
+    /**
+     * Hard-deletes every binned parcel older than the retention window and
+     * their photo files, returning how many parcels went.
+     *
+     * Deterministic and idempotent: the cutoff is `now - retentionDays`, and a
+     * parcel is expired when its `deleted_at` is strictly older than that — a
+     * parcel deleted exactly [retentionDays] ago is still inside its window,
+     * with the last second of grace. Called once at app start and daily by
+     * [com.landpoint.app.data.RecentlyDeletedWorker], so the bin empties itself
+     * whether or not the app gets opened every day.
+     *
+     * @param now the clock reading to expire against; injectable so callers and
+     *   tests can pin it instead of depending on wall-clock drift.
+     * @param retentionDays how long a binned parcel stays recoverable.
+     */
+    suspend fun purgeExpired(now: Long = System.currentTimeMillis(), retentionDays: Int = RETENTION_DAYS): Int {
+        val cutoff = now - retentionDays * DAY_MS
+        val expired = dao.getDeletedOlderThan(cutoff)
+        if (expired.isEmpty()) return 0
+        expired.forEach { row ->
+            dao.getPhotosFor(row.id).forEach { photoStore.delete(it.filePath) }
+            audit(AuditEntities.LAND, row.id, AuditActions.PURGE, row.name)
+        }
+        return dao.purgeExpiredOlderThan(cutoff)
     }
 
     suspend fun addPhoto(landId: String, filePath: String, caption: String = "", cornerId: String? = null) {

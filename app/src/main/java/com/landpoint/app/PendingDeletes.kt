@@ -16,17 +16,19 @@ import kotlinx.coroutines.launch
  * Deletes that have been asked for but not carried out yet, so that Undo has
  * something to undo.
  *
- * [LandRepository.delete] erases the photo files from disk before it removes the
- * row. That is the right order — it cannot leave orphaned images — but it means
- * "delete now, restore if the user objects" is not possible: the row could come
- * back, the photographs could not. So the delete is *deferred* instead. For
- * [WINDOW_MS] the ids sit here, the list filters them out so they look gone, and
- * nothing on disk has been touched. Undo simply cancels the timer.
+ * Since the recently-deleted bin, a carried-out delete is a soft one: [LandRepository.deleteMany]
+ * stamps `deleted_at` and the row, its boundary and its photo files all survive.
+ * The deferral window still earns its keep, for two reasons. First, undo stays
+ * *total* — during the window nothing at all has happened, so Undo is a plain
+ * timer cancel rather than a restore call that can itself fail or be forgotten.
+ * Second, the list hides the ids for those eight seconds, so a delete and its
+ * undo look instantaneous to the user instead of flickering a row through the
+ * bin and back.
  *
  * The scope is the application's, not a ViewModel's, on purpose. Deleting a land
  * from its detail screen closes that screen immediately, and a viewModelScope
- * would be cancelled part-way through — after the photos were unlinked but
- * before the row went. Here the work finishes wherever the user navigates.
+ * would be cancelled part-way through. Here the work finishes wherever the user
+ * navigates.
  *
  * **The failure mode is deliberately one-sided.** If the process is killed
  * inside the window, the delete simply never happens and the land is still
@@ -35,7 +37,8 @@ import kotlinx.coroutines.launch
  */
 class PendingDeletes(
     private val repository: LandRepository,
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    private val windowMs: Long = WINDOW_MS
 ) {
 
     private val _ids = MutableStateFlow<Set<String>>(emptySet())
@@ -57,12 +60,17 @@ class PendingDeletes(
         commitNow()
         _ids.value = batch
         timer = scope.launch {
-            delay(WINDOW_MS)
+            delay(windowMs)
             commit(batch)
         }
     }
 
-    /** Cancels the pending delete. Nothing on disk was touched, so this is total. */
+    /**
+     * Cancels the pending delete.
+     *
+     * The row was never touched — soft or otherwise — so this is total: there
+     * is nothing to restore and no file anywhere that remembers the delete.
+     */
     fun undo() {
         timer?.cancel()
         timer = null
@@ -101,6 +109,8 @@ class PendingDeletes(
 
     private suspend fun commit(batch: Set<String>) {
         try {
+            // A soft delete: the rows keep every column and their photo files,
+            // and age out of the bin thirty days from now.
             repository.deleteMany(batch.toList())
         } finally {
             // Cleared either way: leaving ids hidden after a failed delete would

@@ -17,27 +17,39 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface LandDao {
 
+    /** Live parcels only — the bin's rows must not resurface in the list. */
     @Transaction
-    @Query("SELECT * FROM lands ORDER BY created_at DESC")
+    @Query("SELECT * FROM lands WHERE deleted_at IS NULL ORDER BY created_at DESC")
     fun observeAll(): Flow<List<LandWithPhotos>>
 
     @Transaction
-    @Query("SELECT * FROM lands WHERE id = :id")
+    @Query("SELECT * FROM lands WHERE id = :id AND deleted_at IS NULL")
     fun observeById(id: String): Flow<LandWithPhotos?>
 
+    /**
+     * Live rows only, for the same reason the flows are filtered: a binned
+     * parcel has left the app as far as its user is concerned, so the detail
+     * reads and the save-time existence check must not see it either.
+     * [getDeletedById] is the bin-side counterpart.
+     */
     @Transaction
-    @Query("SELECT * FROM lands WHERE id = :id")
+    @Query("SELECT * FROM lands WHERE id = :id AND deleted_at IS NULL")
     suspend fun getById(id: String): LandWithPhotos?
 
+    /**
+     * Live rows only: backups, exports, reports and the settings statistics all
+     * read through this, and none of them should write a parcel the user has
+     * already deleted back into a file.
+     */
     @Transaction
-    @Query("SELECT * FROM lands")
+    @Query("SELECT * FROM lands WHERE deleted_at IS NULL")
     suspend fun getAllOnce(): List<LandWithPhotos>
 
-    @Query("SELECT COUNT(*) FROM lands")
+    @Query("SELECT COUNT(*) FROM lands WHERE deleted_at IS NULL")
     fun observeCount(): Flow<Int>
 
     /** Used by import to detect duplicates that carry the same stable id. */
-    @Query("SELECT id FROM lands WHERE id IN (:ids)")
+    @Query("SELECT id FROM lands WHERE id IN (:ids) AND deleted_at IS NULL")
     suspend fun findExistingIds(ids: List<String>): List<String>
 
     /**
@@ -47,13 +59,17 @@ interface LandDao {
     @Query(
         """
         SELECT * FROM lands
-        WHERE ABS(latitude - :lat) < 0.00001 AND ABS(longitude - :lon) < 0.00001
+        WHERE deleted_at IS NULL
+            AND ABS(latitude - :lat) < 0.00001 AND ABS(longitude - :lon) < 0.00001
         LIMIT 1
         """
     )
     suspend fun findByCoordinates(lat: Double, lon: Double): LandEntity?
 
-    @Query("SELECT * FROM lands WHERE name = :name AND ABS(latitude - :lat) < 0.00001 AND ABS(longitude - :lon) < 0.00001 LIMIT 1")
+    @Query(
+        "SELECT * FROM lands WHERE deleted_at IS NULL " +
+            "AND name = :name AND ABS(latitude - :lat) < 0.00001 AND ABS(longitude - :lon) < 0.00001 LIMIT 1"
+    )
     suspend fun findByNameAndCoordinates(name: String, lat: Double, lon: Double): LandEntity?
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -79,6 +95,71 @@ interface LandDao {
 
     @Query("DELETE FROM lands")
     suspend fun deleteAll()
+
+    // ------------------------------------------------------------------
+    // Recently deleted (the 30-day bin)
+    // ------------------------------------------------------------------
+
+    /** Binned parcels, the most recently deleted first. */
+    @Query("SELECT * FROM lands WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC")
+    fun recentlyDeleted(): Flow<List<LandEntity>>
+
+    /** The binned parcel with this id, or null if it is live or absent. */
+    @Query("SELECT * FROM lands WHERE id = :id AND deleted_at IS NOT NULL LIMIT 1")
+    suspend fun getDeletedById(id: String): LandEntity?
+
+    /** Moves the parcel into the bin without touching anything else on it. */
+    @Query("UPDATE lands SET deleted_at = :deletedAt WHERE id = :id")
+    suspend fun softDeleteById(id: String, deletedAt: Long)
+
+    @Query("UPDATE lands SET deleted_at = :deletedAt WHERE id IN (:ids)")
+    suspend fun softDeleteByIds(ids: List<String>, deletedAt: Long)
+
+    /** Bins every live parcel; parcels already in the bin keep their older timestamp. */
+    @Query("UPDATE lands SET deleted_at = :deletedAt WHERE deleted_at IS NULL")
+    suspend fun softDeleteAll(deletedAt: Long)
+
+    /** Puts a binned parcel back among the live ones, unchanged in every other column. */
+    @Query("UPDATE lands SET deleted_at = NULL WHERE id = :id")
+    suspend fun restoreById(id: String)
+
+    /**
+     * Hard-deletes one parcel and its photo rows in one transaction.
+     *
+     * The photo FILES are not this method's business — the repository removes
+     * them first, because a file deleted after a failed row delete would leave
+     * a photo row pointing at nothing.
+     */
+    @Transaction
+    suspend fun purgeById(id: String) {
+        deletePhotosFor(id)
+        deleteById(id)
+    }
+
+    /** The binned parcels old enough to be purged at [cutoff] (epoch millis). */
+    @Query("SELECT * FROM lands WHERE deleted_at IS NOT NULL AND deleted_at < :cutoff")
+    suspend fun getDeletedOlderThan(cutoff: Long): List<LandEntity>
+
+    @Query(
+        "DELETE FROM photos WHERE land_id IN " +
+            "(SELECT id FROM lands WHERE deleted_at IS NOT NULL AND deleted_at < :cutoff)"
+    )
+    suspend fun purgePhotosForExpired(cutoff: Long)
+
+    /** Hard-deletes binned parcels older than [cutoff]; returns how many went. */
+    @Query("DELETE FROM lands WHERE deleted_at IS NOT NULL AND deleted_at < :cutoff")
+    suspend fun purgeOlderThan(cutoff: Long): Int
+
+    /**
+     * The expired purge as one unit: parcel rows and their photo rows leave
+     * together, so a crash between the two statements cannot leave photos
+     * pointing at parcels the next sweep is about to erase anyway.
+     */
+    @Transaction
+    suspend fun purgeExpiredOlderThan(cutoff: Long): Int {
+        purgePhotosForExpired(cutoff)
+        return purgeOlderThan(cutoff)
+    }
 
     // ---- photos ----
 

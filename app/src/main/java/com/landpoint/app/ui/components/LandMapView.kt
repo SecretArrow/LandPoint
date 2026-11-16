@@ -504,6 +504,7 @@ fun LandMap(
     interactive: Boolean = true,
     contentDescription: String? = null,
     touchTolerance: Dp = 0.dp,
+    preview: List<GeoPoint> = emptyList(),
     onTap: ((MapTap) -> Unit)? = null,
     onMoveCorner: ((id: String, latitude: Double, longitude: Double) -> Unit)? = null,
     onMovePending: ((latitude: Double, longitude: Double) -> Unit)? = null
@@ -719,7 +720,7 @@ fun LandMap(
         modifier = modifier,
         update = {
             it.describeForAccessibility(contentDescription)
-            overlay.set(shapes, pins, corners, fix, pending, accentColour, selectedColour)
+            overlay.set(shapes, pins, corners, fix, pending, accentColour, selectedColour, preview)
         }
     )
 }

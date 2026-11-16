@@ -1022,8 +1022,15 @@ class LandEditViewModel(
             _uiState.update { it.copy(message = strings.get(R.string.msg_location_off)) }
             return
         }
+        // One press is one new mark. Whatever hung before is superseded, not
+        // left standing while the new average is gathered — its confirm bar
+        // would still be pressable mid-average, and committing it there turns
+        // what the user experiences as one working of the button into two
+        // corners. The capture it may have been feeding is cancelled with it.
+        cornerJob?.cancel()
         _uiState.update {
             it.copy(
+                pendingMark = null,
                 averagingFix = true,
                 isCapturingCorner = true,
                 cornerSamples = 0,
@@ -1146,12 +1153,15 @@ class LandEditViewModel(
      * renumbering that had already happened to a corner they had not agreed to.
      */
     fun commitMark() {
-        val mark = _uiState.value.pendingMark ?: return
-        // Using the mark starts a new corner, so an earlier corner's delete is no
-        // longer the thing to undo — the older "undo last placed" path owns the
-        // tail from here, and an insert would shift the saved deletion's index.
-        lastDeletedCorner = null
+        // The mark is read and cleared inside the one atomic update — not in a
+        // peek before it. A second press that races the first (a double tap, an
+        // accessibility service that fires the click twice) can then only find
+        // the mark already gone, so one working of the button ever adds one
+        // corner, never two.
+        var consumed = false
         _uiState.update { state ->
+            val mark = state.pendingMark ?: return@update state
+            consumed = true
             val committed = DraftCorner(newCornerId(), mark.point)
             when (val placement = mark.placementIn(state.draftPoints, state.markToleranceM)) {
                 // Reachable only if the draft changed under the mark, since the
@@ -1180,6 +1190,14 @@ class LandEditViewModel(
                     undoAvailable = false
                 )
             }
+        }
+        if (consumed) {
+            // Using the mark starts a new corner, so an earlier corner's delete is no
+            // longer the thing to undo — the older "undo last placed" path owns the
+            // tail from here, and an insert would shift the saved deletion's index.
+            // The mark was seen, even if the placement refused it: the intent to
+            // begin a corner happened either way.
+            lastDeletedCorner = null
         }
     }
 

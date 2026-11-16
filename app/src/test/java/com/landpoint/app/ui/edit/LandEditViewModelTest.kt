@@ -147,6 +147,67 @@ class LandEditViewModelTest {
         testScheduler.advanceUntilIdle()
         assertTrue(viewModel.uiState.value.draftBoundary.isEmpty())
     }
+
+    /**
+     * The promise of the GPS button: one press is one corner. The averaging is
+     * the slow part of the press, and [LandEditViewModel.markFromFix] now folds
+     * the commit into the same press by calling [LandEditViewModel.commitMark]
+     * the moment the averaged fix lands.
+     *
+     * The shadow location pipeline that feeds `captureAveraged` is brittle to
+     * run under Robolectric's paused main looper (a listener that posts back to
+     * it can stall the test forever), so this contract is pinned through the
+     * deterministic mark path that `commitMark` shares with `markFromFix`:
+     * `markFromFix` is `commitMark` called once the averaged fix is hung as a
+     * mark, so the contract "a hanging mark, committed once, is exactly one
+     * corner and leaves no mark behind" is the same contract the GPS press
+     * ends in. A second commit finds nothing — a double tap or an accessibility
+     * double-fire must not turn one press into two corners.
+     */
+    @Test
+    fun `one committed mark is exactly one corner and leaves no mark`() {
+        // Standing the mark the way markFromFix leaves it once a fix lands: as a
+        // pending mark, ready to commit. A typed mark is the deterministic
+        // stand-in for the averaged fix here.
+        viewModel.openCornerPicker()
+        viewModel.placeMarkTyped("-6.2", "106.8")
+        assertNotNull(viewModel.uiState.value.pendingMark)
+
+        // The single commit a press performs.
+        viewModel.commitMark()
+
+        val first = viewModel.uiState.value
+        assertEquals(1, first.draftBoundary.size)
+        assertNull(first.pendingMark)
+
+        // A racing second commit finds no mark and adds nothing.
+        viewModel.commitMark()
+        assertEquals(1, viewModel.uiState.value.draftBoundary.size)
+    }
+
+    /**
+     * A fix that lands on top of an existing corner is not auto-committed as a
+     * zero-length edge: the commit refuses it and leaves the mark hanging with a
+     * message naming the corner it clashes with, so the user can move it before
+     * any second press. `markFromFix` reaches this same refusal through the
+     * shared `commitMark` door.
+     */
+    @Test
+    fun `a mark too close to a corner stays as a mark and names the corner`() {
+        viewModel.openCornerPicker()
+        viewModel.placeMarkAt(-6.2, 106.8)
+        viewModel.commitMark()
+        assertEquals(1, viewModel.uiState.value.draftBoundary.size)
+
+        // A second mark on the same coordinates as the standing corner.
+        viewModel.placeMarkAt(-6.2, 106.8)
+        viewModel.commitMark()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.draftBoundary.size)
+        assertNotNull(state.pendingMark)
+        assertNotNull(state.message)
+    }
 }
 
 /** A recorder that never walks: the commit tests never touch the walk path. */

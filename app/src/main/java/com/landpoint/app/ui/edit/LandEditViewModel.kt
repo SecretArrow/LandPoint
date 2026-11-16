@@ -1067,15 +1067,28 @@ class LandEditViewModel(
                     )
                 }
             }
+            // One press is one corner. The averaging above is the slow part of
+            // the press; the commit is the part that turns it into a boundary
+            // vertex. Folding the commit in here means the user never sees a
+            // hanging mark they then have to confirm — the "Use mark" bar was a
+            // second press between them and the corner they asked for, and a
+            // corner averaged from the receiver is already the answer the user
+            // would have confirmed anyway. A mark that lands TooClose is left
+            // hanging by [commitMark] with a message naming the corner it
+            // clashes with, so a bad GPS fix still reads as something to move,
+            // not as a corner quietly swallowed.
+            if (fix != null) commitMark()
         }
     }
 
     /**
      * Opens the map with a mark already being averaged where the user stands.
      *
-     * What the quick GPS button on the form now does. The corner is not saved by
-     * pressing it — it is shown, on the ground it belongs to, and saved by
-     * pressing Use.
+     * What the quick GPS button on the form now does. The corner is saved by
+     * the same press — [markFromFix] commits the averaged fix as soon as it
+     * lands, so the user does not have to confirm it on a second press. The
+     * picker stays open afterwards so the next corner can be added the same
+     * way, and the just-placed corner is visible on the map.
      */
     fun openCornerPickerAtFix() {
         openCornerPicker()

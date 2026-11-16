@@ -73,6 +73,39 @@ fun LandWithPhotos.toDomain(): Land = Land(
     photos = photos.map { it.toDomain() }
 )
 
+/**
+ * Maps a bare [LandEntity] — photos not loaded — to the domain model.
+ *
+ * The recently-deleted bin reads entities directly, because a screen whose only
+ * job is to offer restore or purge has no use for the photo files it is about
+ * to make decisions on. Its photos are therefore always empty here; loading
+ * them would mean a join for imagery the bin never shows.
+ */
+fun LandEntity.toDomain(): Land = Land(
+    id = id,
+    name = name,
+    description = description,
+    notes = notes,
+    latitude = latitude,
+    longitude = longitude,
+    altitude = altitude,
+    accuracy = accuracy,
+    address = address,
+    parcelNumber = parcelNumber,
+    areaSqm = areaSqm,
+    geometryType = geometryType,
+    geometryJson = geometryJson,
+    ownerId = ownerId,
+    landRight = landRight,
+    status = status,
+    certificateNumber = certificateNumber,
+    spptNumber = spptNumber,
+    acquisitionDate = acquisitionDate,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    photos = emptyList()
+)
+
 fun PhotoEntity.toDomain(): Photo = Photo(
     id = id,
     landId = landId,

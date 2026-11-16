@@ -82,9 +82,28 @@ val MIGRATION_2_3: Migration = object : Migration(2, 3) {
     }
 }
 
+/**
+ * 3 → 4: the recently-deleted bin.
+ *
+ * `lands` gains a nullable `deleted_at` (epoch millis): null is a live parcel,
+ * a timestamp is one sitting in the bin until a purge removes it after thirty
+ * days. Nothing else changes — the row, its boundary and its photo rows all
+ * stay exactly where they were, which is what makes a restore a one-column
+ * update instead of a re-import.
+ *
+ * No backfill: every row an old version wrote is live by definition, and a
+ * nullable column added without a default is precisely what Room derives from
+ * [LandEntity.deletedAt], so validation passes on the first migration.
+ */
+val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE lands ADD COLUMN deleted_at INTEGER")
+    }
+}
+
 @Database(
     entities = [LandEntity::class, PhotoEntity::class, OwnerEntity::class, AuditEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class LandDatabase : RoomDatabase() {
@@ -105,7 +124,7 @@ abstract class LandDatabase : RoomDatabase() {
             val app = context.applicationContext
             return Room.databaseBuilder(app, LandDatabase::class.java, NAME)
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .apply {
                     // Null on a phone that cannot manage encryption at all, which
                     // leaves Room on its own opener rather than leaving the user

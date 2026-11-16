@@ -70,4 +70,6 @@ object AuditActions {
     const val CREATE = "create"
     const val UPDATE = "update"
     const val DELETE = "delete"
+    const val RESTORE = "restore"
+    const val PURGE = "purge"
 }

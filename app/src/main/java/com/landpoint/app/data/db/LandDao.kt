@@ -104,6 +104,10 @@ interface LandDao {
     @Query("SELECT * FROM lands WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC")
     fun recentlyDeleted(): Flow<List<LandEntity>>
 
+    /** How many parcels are currently in the bin, for the settings entry's count. */
+    @Query("SELECT COUNT(*) FROM lands WHERE deleted_at IS NOT NULL")
+    fun observeDeletedCount(): Flow<Int>
+
     /** The binned parcel with this id, or null if it is live or absent. */
     @Query("SELECT * FROM lands WHERE id = :id AND deleted_at IS NOT NULL LIMIT 1")
     suspend fun getDeletedById(id: String): LandEntity?

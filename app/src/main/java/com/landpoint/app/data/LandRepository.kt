@@ -48,6 +48,9 @@ class LandRepository(private val dao: LandDao, private val photoStore: PhotoStor
      */
     fun recentlyDeleted(): Flow<List<Land>> = dao.recentlyDeleted().map { rows -> rows.map { it.toDomain() } }
 
+    /** How many parcels are currently in the bin, for the settings entry's count. */
+    fun observeRecentlyDeletedCount(): Flow<Int> = dao.observeDeletedCount()
+
     suspend fun getLand(id: String): Land? = dao.getById(id)?.toDomain()
 
     suspend fun getAllLands(): List<Land> = dao.getAllOnce().map { it.toDomain() }

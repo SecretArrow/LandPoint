@@ -27,7 +27,15 @@ data class Land(
     /** Filled in by the list layer when a current position is known. */
     val distanceMeters: Double? = null,
     /** Filled in by the list layer from the owners table; null when unassigned. */
-    val ownerName: String? = null
+    val ownerName: String? = null,
+    /**
+     * When the parcel was moved to the recently-deleted bin, in epoch millis.
+     *
+     * Only the bin screen reads it — it prints the date the parcel was deleted —
+     * so live surfaces always carry null and the entity-to-domain mapping for
+     * them never bothers to set it.
+     */
+    val deletedAt: Long? = null
 ) {
     /** Status as the typed enum, defaulting to ACTIVE for old rows. */
     val landStatus: LandStatus get() = LandStatus.fromKey(status)
@@ -103,7 +111,8 @@ fun LandEntity.toDomain(): Land = Land(
     acquisitionDate = acquisitionDate,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    photos = emptyList()
+    photos = emptyList(),
+    deletedAt = deletedAt
 )
 
 fun PhotoEntity.toDomain(): Photo = Photo(

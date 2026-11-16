@@ -159,7 +159,11 @@ jobs:
     needs: changes
     if: needs.changes.outputs.src == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Thirty minutes was chosen when the job was always a cache hit; the first
+    # run after a wide change re-executes the whole Robolectric suite for real,
+    # and two such runs were killed at exactly 30:00 with no output to say why.
+    # Headroom, not slack: a clean local run of the full suite is ~3 minutes.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

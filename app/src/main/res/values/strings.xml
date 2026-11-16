@@ -171,7 +171,6 @@
     <string name="corner_picker_title">Mark the corners</string>
     <string name="corner_picker_tap_hint">Line the crosshair up on the corner, then tap Place a mark here. The mark can still be dragged or nudged before you use it.</string>
     <string name="corner_picker_online_map">The background comes from the internet. With no signal it stays blank — corners, area and your position still work.</string>
-    <string name="corner_picker_done">Use this boundary</string>
     <string name="corner_picker_place_mark">Place a mark here</string>
     <string name="corner_picker_use_mark">Use this mark</string>
     <string name="corner_picker_discard_mark">Discard mark</string>

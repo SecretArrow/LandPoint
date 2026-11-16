@@ -121,6 +121,15 @@ android {
                     .also { dir -> dir.mkdirs() }.absolutePath
             )
             it.maxHeapSize = "1024m"
+            // One line per test as it finishes. A silent test task is the worst
+            // thing to debug in CI: when a run is killed at its job timeout there
+            // is no way to tell a genuinely slow suite from a worker that hung on
+            // the first class. With the events logged, the job log itself shows
+            // the last test that ran, which is where the next investigation
+            // begins.
+            it.testLogging {
+                events("passed", "skipped", "failed")
+            }
         }
     }
 

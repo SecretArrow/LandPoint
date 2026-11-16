@@ -31,7 +31,6 @@ import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -152,7 +151,23 @@ fun CornerPickerScreen(
     // One step of undo before the screen closes. Someone who has lined a mark up
     // and then reaches for back nearly always means "not that spot", and closing
     // the whole picker would take the draft with it.
-    val stepBack: () -> Unit = { if (mark != null) onDiscardMark() else onCancel() }
+    //
+    // Once there are corners on the ground, back keeps them: the draft is what
+    // the user came here to draw, so leaving the picker commits it back to the
+    // boundary rather than asking them to find and press a separate "use this
+    // boundary" button. A back press with nothing drawn leaves the boundary as
+    // it was — there is no draft to commit, and closing is the only honest
+    // outcome. This mirrors the rule the explicit Done button used to apply,
+    // so back now does exactly what Done did, with one fewer step.
+    val stepBack: () -> Unit = {
+        if (mark != null) {
+            onDiscardMark()
+        } else if (state.draftBoundary.isNotEmpty()) {
+            onDone()
+        } else {
+            onCancel()
+        }
+    }
     BackHandler(onBack = stepBack)
 
     val prefs = rememberMapPrefs()
@@ -392,8 +407,7 @@ fun CornerPickerScreen(
                     onDeleteSelected = onDeleteSelected,
                     onPhotoSelected = { state.selectedCornerId?.let(onCornerPhoto) },
                     onUndo = onUndo,
-                    onClear = onClear,
-                    onDone = onDone
+                    onClear = onClear
                 )
             } else {
                 MarkControls(
@@ -604,7 +618,9 @@ private fun MarkSourceButtons(actions: List<MarkSourceAction>, columns: Int, mod
  *
  * Undo, clear and delete appear only when there is something to undo, clear or
  * delete. A row of permanently greyed-out buttons was a row of map covered up for
- * nothing.
+ * nothing. There is no "use this boundary" button here any more — closing the
+ * picker (back gesture, back button) commits the drawn shape back to the
+ * boundary, so one step is removed between the user and their corners.
  */
 @Composable
 private fun IdleControls(
@@ -614,8 +630,7 @@ private fun IdleControls(
     onDeleteSelected: () -> Unit,
     onPhotoSelected: () -> Unit,
     onUndo: () -> Unit,
-    onClear: () -> Unit,
-    onDone: () -> Unit
+    onClear: () -> Unit
 ) {
     val corners = state.draftBoundary.size
     val busy = state.isCapturingCorner
@@ -675,18 +690,6 @@ private fun IdleControls(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.corner_picker_place_mark))
-        }
-
-        // Only when there is something to accept — including a boundary the user
-        // has deliberately cleared, which is a change worth being able to keep.
-        if (corners > 0 || state.boundary.isNotEmpty()) {
-            FilledTonalButton(
-                onClick = onDone,
-                enabled = !busy,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.corner_picker_done))
-            }
         }
     }
 }

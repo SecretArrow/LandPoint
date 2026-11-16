@@ -27,6 +27,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -207,6 +208,55 @@ class LandEditViewModelTest {
         assertEquals(1, state.draftBoundary.size)
         assertNotNull(state.pendingMark)
         assertNotNull(state.message)
+    }
+
+    /**
+     * Closing the picker keeps the drawn shape: back is commit when there are
+     * corners on the ground, so the user no longer presses a separate "use this
+     * boundary" button. The committed boundary matches the draft point-for-point
+     * and the picker is left closed with the draft cleared.
+     */
+    @Test
+    fun `closing the picker with corners keeps them as the boundary`() {
+        viewModel.openCornerPicker()
+        listOf(-6.2 to 106.8, -6.21 to 106.81, -6.22 to 106.80).forEach { (lat, lon) ->
+            viewModel.placeMarkAt(lat, lon)
+            viewModel.commitMark()
+        }
+        assertEquals(3, viewModel.uiState.value.draftBoundary.size)
+
+        viewModel.commitCornerPicker()
+
+        val state = viewModel.uiState.value
+        assertEquals(3, state.boundary.size)
+        assertEquals(listOf(-6.2, -6.21, -6.22), state.boundary.map { it.latitude })
+        assertTrue(state.draftBoundary.isEmpty())
+        assertFalse(state.isPickerOpen)
+    }
+
+    /**
+     * Closing the picker with nothing drawn is not a commit of emptiness: an
+     * empty draft leaves the standing boundary untouched, so a back press that
+     * merely looked at the map cannot wipe a parcel someone already drew.
+     */
+    @Test
+    fun `closing the picker with no draft leaves the boundary untouched`() {
+        // A boundary already stood before the picker was opened.
+        viewModel.openCornerPicker()
+        viewModel.placeMarkAt(-6.2, 106.8)
+        viewModel.commitMark()
+        viewModel.commitCornerPicker()
+        assertEquals(1, viewModel.uiState.value.boundary.size)
+
+        // Reopen, draw nothing, close. The earlier boundary survives.
+        viewModel.openCornerPicker()
+        assertTrue(viewModel.uiState.value.draftBoundary.isNotEmpty())
+        viewModel.closeCornerPicker()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.boundary.size)
+        assertTrue(state.draftBoundary.isEmpty())
+        assertFalse(state.isPickerOpen)
     }
 }
 

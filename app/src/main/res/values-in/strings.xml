@@ -162,7 +162,6 @@
     <string name="corner_picker_title">Tandai sudut-sudut</string>
     <string name="corner_picker_tap_hint">Tepatkan silang di tengah pada sudut tanahnya, lalu ketuk Taruh tanda di sini. Tandanya masih bisa digeser atau ditepatkan sebelum dipakai.</string>
     <string name="corner_picker_online_map">Latar peta diambil dari internet. Tanpa sinyal latarnya kosong — sudut, luas, dan posisi Anda tetap berfungsi.</string>
-    <string name="corner_picker_done">Pakai batas ini</string>
     <string name="corner_picker_place_mark">Taruh tanda di sini</string>
     <string name="corner_picker_use_mark">Pakai tanda ini</string>
     <string name="corner_picker_discard_mark">Buang tanda</string>

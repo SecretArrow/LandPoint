@@ -87,6 +87,7 @@ import com.landpoint.app.util.Localization
 import com.landpoint.app.util.MarkSource
 import com.landpoint.app.util.PendingMark
 import com.landpoint.app.util.Placement
+import com.landpoint.app.util.PreviewRing
 
 /**
  * How close a tap has to be to an outline to count as landing *on* it rather
@@ -202,6 +203,15 @@ fun CornerPickerScreen(
             )
         }
     }
+    // The dashed preview: once a corner stands and a mark hangs, the map draws
+    // the side from the last committed corner to the mark, and — past the
+    // second corner — the closing edge back to the first. It is what makes a
+    // new corner read as "this is the shape I am about to make" rather than as
+    // a stray line. Recomputed with the mark and the draft so it follows the
+    // finger and the confirm bar's answer in lockstep.
+    val preview = remember(state.draftPoints, mark?.point) {
+        PreviewRing.segments(state.draftPoints, mark?.point)
+    }
     val fix = currentLocation?.let {
         MapFix(latitude = it.latitude, longitude = it.longitude, accuracyM = it.accuracyM)
     }
@@ -272,6 +282,7 @@ fun CornerPickerScreen(
             selectedColour = highlight,
             contentDescription = mapDescription,
             touchTolerance = EDGE_TOUCH_TARGET,
+            preview = preview,
             onTap = { tap ->
                 when (tap) {
                     // Selects rather than swallowing the tap: a mistaken corner in

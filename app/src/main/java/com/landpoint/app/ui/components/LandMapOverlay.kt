@@ -55,6 +55,13 @@ internal class LandMapOverlay {
     private var fix: FeatureCollection = EMPTY
     private var pending: FeatureCollection = EMPTY
 
+    // The dashed line that follows the hanging mark: from the last committed
+    // corner to where the mark sits, and — once a third point is in — back from
+    // the mark to the first corner, so the user can see the closed shape the
+    // next "use" would commit. Lives in its own source so the solid shape layer
+    // can keep drawing the committed outline underneath without a style swap.
+    private var preview: FeatureCollection = EMPTY
+
     /**
      * Attaches to a freshly loaded style.
      *
@@ -88,15 +95,16 @@ internal class LandMapOverlay {
         fix: MapFix?,
         pending: GeoPoint?,
         accentColour: Int,
-        selectedColour: Int
+        selectedColour: Int,
+        preview: List<GeoPoint> = emptyList()
     ) {
         val recolour = accentColour != accent || selectedColour != selected
         accent = accentColour
         selected = selectedColour
 
         this.shapes = FeatureCollection.fromFeatures(shapes.mapNotNull { it.toFeature() })
-        this.pins = FeatureCollection.fromFeatures(pins.map { it.toFeature() })
-        this.corners = FeatureCollection.fromFeatures(corners.map { it.toFeature() })
+        this.pins = FeatureCollection.fromFeatures(pins.mapNotNull { it.toFeature() })
+        this.corners = FeatureCollection.fromFeatures(corners.mapNotNull { it.toFeature() })
         this.accuracy = FeatureCollection.fromFeatures(
             listOfNotNull(fix?.toAccuracyFeature())
         )
@@ -104,6 +112,7 @@ internal class LandMapOverlay {
         this.pending = FeatureCollection.fromFeatures(
             listOfNotNull(pending?.toPendingFeature())
         )
+        this.preview = preview.toPreviewFeature()
 
         if (recolour) applyColours()
         push()
@@ -124,6 +133,7 @@ internal class LandMapOverlay {
         style.addSource(GeoJsonSource(SRC_PINS, pins))
         style.addSource(GeoJsonSource(SRC_CORNERS, corners))
         style.addSource(GeoJsonSource(SRC_PENDING, pending))
+        style.addSource(GeoJsonSource(SRC_PREVIEW, preview))
 
         style.addLayer(
             FillLayer(LAYER_SHAPE_FILL, SRC_SHAPES).withProperties(
@@ -138,6 +148,22 @@ internal class LandMapOverlay {
                 // Round joins matter more here than on a road: a plot boundary is
                 // full of acute corners, and mitred ones grow long spikes there.
                 PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND)
+            )
+        )
+        // The preview line — last committed corner to the hanging mark, and on
+        // past two corners the closing edge back to the first one. Dashed so it
+        // reads as "what is about to be drawn" rather than as a committed side:
+        // the solid outline underneath stays the contract, and the dashes are
+        // the proposal the confirm bar is asking about. Drawn above the solid
+        // line so the dashes sit on top of any fill rather than being dimmed
+        // by it.
+        style.addLayer(
+            LineLayer(LAYER_PREVIEW, SRC_PREVIEW).withProperties(
+                PropertyFactory.lineColor(selected),
+                PropertyFactory.lineWidth(PREVIEW_LINE_WIDTH),
+                PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
+                PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
+                PropertyFactory.lineDasharray(PREVIEW_DASH)
             )
         )
         style.addLayer(
@@ -260,6 +286,8 @@ internal class LandMapOverlay {
             ?.setProperties(PropertyFactory.fillColor(accent))
         style.getLayerAs<LineLayer>(LAYER_SHAPE_LINE)
             ?.setProperties(PropertyFactory.lineColor(accent))
+        style.getLayerAs<LineLayer>(LAYER_PREVIEW)
+            ?.setProperties(PropertyFactory.lineColor(selected))
         style.getLayerAs<CircleLayer>(LAYER_PIN_HALO)
             ?.setProperties(PropertyFactory.circleColor(accent))
         style.getLayerAs<CircleLayer>(LAYER_PIN)
@@ -283,6 +311,7 @@ internal class LandMapOverlay {
         style.getSourceAs<GeoJsonSource>(SRC_PINS)?.setGeoJson(pins)
         style.getSourceAs<GeoJsonSource>(SRC_CORNERS)?.setGeoJson(corners)
         style.getSourceAs<GeoJsonSource>(SRC_PENDING)?.setGeoJson(pending)
+        style.getSourceAs<GeoJsonSource>(SRC_PREVIEW)?.setGeoJson(preview)
     }
 
     /** Selected corners are bigger, ringed thicker and painted apart. */
@@ -323,6 +352,7 @@ internal class LandMapOverlay {
         const val SRC_ACCURACY = "lp-accuracy"
         const val SRC_FIX = "lp-fix"
         const val SRC_PENDING = "lp-pending"
+        const val SRC_PREVIEW = "lp-preview"
 
         const val LAYER_SHAPE_FILL = "lp-shape-fill"
         const val LAYER_SHAPE_LINE = "lp-shape-line"
@@ -335,6 +365,7 @@ internal class LandMapOverlay {
         const val LAYER_CORNER_DELETE = "lp-corner-delete"
         const val LAYER_PENDING_RING = "lp-pending-ring"
         const val LAYER_PENDING = "lp-pending-dot"
+        const val LAYER_PREVIEW = "lp-preview-line"
 
         /**
          * Tap targets, in the order a tap is offered to them.
@@ -380,6 +411,7 @@ internal class LandMapOverlay {
          * replaces the first rather than adding to it.
          */
         const val PENDING_ID = "lp-pending-mark"
+        const val PREVIEW_ID = "lp-preview-line"
 
         /** Both, so an edge can be tapped where the fill is only a hairline wide. */
         val SHAPE_LAYERS = arrayOf(LAYER_SHAPE_FILL, LAYER_SHAPE_LINE)
@@ -399,6 +431,15 @@ internal class LandMapOverlay {
 
         private const val SHAPE_FILL_OPACITY = 0.22f
         private const val SHAPE_LINE_WIDTH = 3f
+
+        // Thinner than the committed outline: the dashes are a proposal, not a
+        // side, and a heavy dash reads as a side that is already there.
+        private const val PREVIEW_LINE_WIDTH = 2f
+
+        // On/off in style units. A short dash keeps the segments readable at the
+        // zoom a corner is placed at; a longer gap stops them blurring into one
+        // solid line at low zoom.
+        private val PREVIEW_DASH = arrayOf(1.5f, 1.5f)
         private const val ACCURACY_OPACITY = 0.16f
         private const val FIX_RADIUS = 7f
         private const val FIX_STROKE = 2.5f
@@ -529,6 +570,28 @@ internal class LandMapOverlay {
          */
         private fun GeoPoint.toPendingFeature(): Feature = Feature.fromGeometry(Point.fromLngLat(longitude, latitude)).apply {
             addStringProperty(PROP_ID, PENDING_ID)
+        }
+
+        /**
+         * The preview line: a single polyline through the points the caller passed
+         * in. Drawn dashed above the committed outline, so the user reads the segment
+         * from the last corner to the hanging mark — and the closing edge back to
+         * the first corner when there are two already standing — as "what the next
+         * commit would draw", not as sides that already exist.
+         *
+         * Two points make a LineString; fewer draw nothing and the picker falls
+         * back to the corner and mark dots.
+         */
+        private fun List<GeoPoint>.toPreviewFeature(): FeatureCollection {
+            if (size < 2) return EMPTY
+            val pts = map { Point.fromLngLat(it.longitude, it.latitude) }
+            return FeatureCollection.fromFeatures(
+                listOf(
+                    Feature.fromGeometry(LineString.fromLngLats(pts)).apply {
+                        addStringProperty(PROP_ID, PREVIEW_ID)
+                    }
+                )
+            )
         }
     }
 }

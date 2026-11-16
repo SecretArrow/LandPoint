@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,18 +42,23 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -72,6 +78,7 @@ import com.landpoint.app.data.SettingsRepository
 import com.landpoint.app.ui.components.LandCard
 import com.landpoint.app.ui.components.LocationPermissionCard
 import com.landpoint.app.ui.components.rememberLocationPermission
+import com.landpoint.app.ui.theme.Spacing
 import com.landpoint.app.util.AreaFormat
 import com.landpoint.app.util.ShareUtils
 
@@ -360,26 +367,101 @@ fun LandListScreen(
                             when (row) {
                                 is LandRow.Header -> GroupHeader(row)
 
-                                is LandRow.Item -> LandCard(
-                                    land = row.land,
-                                    dms = state.dms,
-                                    imperial = state.imperial,
-                                    areaUnit = state.areaUnit,
-                                    selecting = state.isSelecting,
-                                    selected = row.land.id in state.selectedIds,
-                                    onToggleSelect = { viewModel.toggleSelection(row.land.id) },
-                                    onClick = { onOpenLand(row.land.id) },
-                                    onNavigate = { ShareUtils.navigateTo(context, row.land) },
+                                is LandRow.Item -> SwipeToDeleteRow(
+                                    // Selection is a grid of ticks; a swipe that
+                                    // dismissed one of them mid-tick would be a
+                                    // third thing the finger means at once.
+                                    swipeEnabled = !state.isSelecting,
+                                    onDelete = { viewModel.delete(row.land) },
                                     // Deletes, undos and re-sorts slide instead of
                                     // snapping. Relies on the stable `key` above.
                                     modifier = Modifier.animateItem()
-                                )
+                                ) {
+                                    LandCard(
+                                        land = row.land,
+                                        dms = state.dms,
+                                        imperial = state.imperial,
+                                        areaUnit = state.areaUnit,
+                                        selecting = state.isSelecting,
+                                        selected = row.land.id in state.selectedIds,
+                                        onToggleSelect = { viewModel.toggleSelection(row.land.id) },
+                                        onClick = { onOpenLand(row.land.id) },
+                                        onNavigate = { ShareUtils.navigateTo(context, row.land) }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * The swipe-off-the-list row: dragging the card left deletes the land through
+ * the usual undo window, dragging it right does nothing.
+ *
+ * The wrapper owns the gesture and the background behind the card; the card
+ * itself stays untouched, so tap, long-press and navigation keep meaning exactly
+ * what they mean everywhere else. Once a swipe confirms, the parcel goes through
+ * [LandListViewModel.delete] — the same path as the dialog's delete — so the row
+ * leaves the list the moment the pending-ids flow hides it and Undo brings it
+ * straight back.
+ *
+ * [swipeEnabled] is off while lands are ticked: selection is a grid of ticks,
+ * and a swipe that dismissed one of them mid-tick would be a third thing the
+ * finger means at once.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeToDeleteRow(swipeEnabled: Boolean, onDelete: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    // Read through the state each time the swipe confirms: the lambda below is
+    // captured once when the row is remembered, and a stale capture would delete
+    // whichever parcel sat in this slot when it entered composition.
+    val currentOnDelete by rememberUpdatedState(onDelete)
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            // Only the leftwards gesture is a delete, and it always is: the row
+            // leaves the list on its own the moment the delete is scheduled, so
+            // there is no "spring back and confirm later" dance to manage.
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                currentOnDelete()
+                true
+            } else {
+                false
+            }
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier,
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = swipeEnabled,
+        gesturesEnabled = swipeEnabled,
+        backgroundContent = { DeleteSwipeBackground() }
+    ) {
+        content()
+    }
+}
+
+/** What shows behind the card as it slides away: where this swipe is heading. */
+@Composable
+private fun DeleteSwipeBackground() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.errorContainer),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Icon(
+            Icons.Outlined.Delete,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.padding(horizontal = Spacing.lg)
+        )
     }
 }
 

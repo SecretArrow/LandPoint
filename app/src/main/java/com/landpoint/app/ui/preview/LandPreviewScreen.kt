@@ -51,6 +51,7 @@ import com.landpoint.app.R
 import com.landpoint.app.data.SettingsRepository
 import com.landpoint.app.data.model.CornerPoint
 import com.landpoint.app.data.model.GeometryCodec
+import com.landpoint.app.ui.components.CoachMarkOverlay
 import com.landpoint.app.ui.components.LandMap
 import com.landpoint.app.ui.components.MapAttribution
 import com.landpoint.app.ui.components.MapCorner
@@ -60,6 +61,7 @@ import com.landpoint.app.ui.components.MapSideControls
 import com.landpoint.app.ui.components.MapTopChrome
 import com.landpoint.app.ui.components.PARCEL_ZOOM
 import com.landpoint.app.ui.components.ParcelHero
+import com.landpoint.app.ui.components.rememberCoachMark
 import com.landpoint.app.ui.components.rememberLandMapController
 import com.landpoint.app.ui.components.rememberMapPrefs
 import com.landpoint.app.ui.theme.Elevation
@@ -113,6 +115,11 @@ fun LandPreviewScreen(
     val overlayLine = LocalLandColors.current.mapOverlayLine.toArgb()
 
     var showDiscard by remember { mutableStateOf(false) }
+
+    // The first-visit explanation of the quick-actions bar. It hangs in the top
+    // column directly below the hero that carries the bar, so it points at the
+    // row it describes; it never floats over the Save button (docs/IMPLEMENTATION_PLAN.md, Phase 4).
+    val actionsCoach = rememberCoachMark(SettingsRepository.CoachMark.PREVIEW_ACTIONS)
     BackHandler { onBackToEdit() }
 
     val area = if (points.size >= 3) PolygonMath.areaSqm(points) else null
@@ -232,6 +239,18 @@ fun LandPreviewScreen(
                         )
                     }
                 )
+                if (actionsCoach.visible) {
+                    CoachMarkOverlay(
+                        title = stringResource(R.string.coachmark_preview_actions_title),
+                        body = stringResource(R.string.coachmark_preview_actions_body),
+                        dismissLabel = stringResource(R.string.coachmark_dismiss),
+                        dontShowAgainLabel = stringResource(R.string.coachmark_dont_show_again),
+                        onDismiss = actionsCoach.dismiss,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
+                    )
+                }
             }
         }
 

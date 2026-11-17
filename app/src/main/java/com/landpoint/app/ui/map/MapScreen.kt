@@ -22,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.landpoint.app.R
+import com.landpoint.app.data.SettingsRepository
 import com.landpoint.app.ui.components.BasemapSheet
+import com.landpoint.app.ui.components.CoachMarkOverlay
 import com.landpoint.app.ui.components.LandMap
 import com.landpoint.app.ui.components.LocationAccessChip
 import com.landpoint.app.ui.components.MapAttribution
@@ -38,9 +40,11 @@ import com.landpoint.app.ui.components.MapTap
 import com.landpoint.app.ui.components.MapTopChrome
 import com.landpoint.app.ui.components.TelemetryPanel
 import com.landpoint.app.ui.components.TelemetrySheet
+import com.landpoint.app.ui.components.rememberCoachMark
 import com.landpoint.app.ui.components.rememberLandMapController
 import com.landpoint.app.ui.components.rememberLocationPermission
 import com.landpoint.app.ui.components.rememberMapPrefs
+import com.landpoint.app.ui.theme.Spacing
 import com.landpoint.app.util.GeoPoint
 
 /** Where a single record sits comfortably on screen with its surroundings. */
@@ -77,6 +81,11 @@ fun MapScreen(
     // prompt people refuse for good. The chip below offers it when they want it, and
     // tracking picks the permission up on its own once granted.
     val permission = rememberLocationPermission()
+
+    // The first-visit explanation of the floating controls. The card floats at the
+    // bottom of the screen, clear of the side controls it describes and passable
+    // through — nothing behind it is blocked (docs/IMPLEMENTATION_PLAN.md, Phase 4).
+    val toolbarCoach = rememberCoachMark(SettingsRepository.CoachMark.MAP_TOOLBAR)
 
     // Everything worth having on screen: boundary corners where a land has them,
     // its pin where it does not, and failing both, wherever the phone is. Measured
@@ -195,6 +204,19 @@ fun MapScreen(
                 .align(Alignment.BottomEnd)
                 .padding(horizontal = 8.dp, vertical = 6.dp)
         )
+
+        if (toolbarCoach.visible) {
+            CoachMarkOverlay(
+                title = stringResource(R.string.coachmark_map_toolbar_title),
+                body = stringResource(R.string.coachmark_map_toolbar_body),
+                dismissLabel = stringResource(R.string.coachmark_dismiss),
+                dontShowAgainLabel = stringResource(R.string.coachmark_dont_show_again),
+                onDismiss = toolbarCoach.dismiss,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.lg)
+            )
+        }
 
         if (readoutOpen) {
             TelemetrySheet(

@@ -62,6 +62,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.landpoint.app.R
+import com.landpoint.app.data.SettingsRepository
 import com.landpoint.app.ui.components.BasemapSheet
 import com.landpoint.app.ui.components.LandMap
 import com.landpoint.app.ui.components.MapAttribution
@@ -75,10 +76,13 @@ import com.landpoint.app.ui.components.MapShape
 import com.landpoint.app.ui.components.MapSideControls
 import com.landpoint.app.ui.components.MapStyleAction
 import com.landpoint.app.ui.components.MapTap
+import com.landpoint.app.ui.components.CoachMarkOverlay
 import com.landpoint.app.ui.components.MapTopChrome
 import com.landpoint.app.ui.components.PARCEL_ZOOM
+import com.landpoint.app.ui.components.rememberCoachMark
 import com.landpoint.app.ui.components.rememberLandMapController
 import com.landpoint.app.ui.components.rememberMapPrefs
+import com.landpoint.app.ui.theme.Spacing
 import com.landpoint.app.util.AreaFormat
 import com.landpoint.app.util.GeoPoint
 import com.landpoint.app.util.GeoUtils
@@ -172,6 +176,12 @@ fun CornerPickerScreen(
 
     val prefs = rememberMapPrefs()
     val controller = rememberLandMapController()
+
+    // The first-visit explanation of the mark-source buttons. Its card joins the
+    // bottom column as its first child, so it renders directly above the controls
+    // it describes — over the map, never covering a button — and the screen
+    // behind it stays usable (docs/IMPLEMENTATION_PLAN.md, Phase 4).
+    val pickerCoach = rememberCoachMark(SettingsRepository.CoachMark.PICKER_SOURCES)
 
     var dialog by remember { mutableStateOf<PickerDialog?>(null) }
 
@@ -371,6 +381,21 @@ fun CornerPickerScreen(
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            // First child on purpose: the column is bottom-anchored, so the card
+            // hangs above the controls it explains instead of over them, and a
+            // tap meant for a source button can never land on the card.
+            if (pickerCoach.visible) {
+                CoachMarkOverlay(
+                    title = stringResource(R.string.coachmark_picker_title),
+                    body = stringResource(R.string.coachmark_picker_body),
+                    dismissLabel = stringResource(R.string.coachmark_dismiss),
+                    dontShowAgainLabel = stringResource(R.string.coachmark_dont_show_again),
+                    onDismiss = pickerCoach.dismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.md)
+                )
+            }
             SnackbarHost(snackbarHost, modifier = Modifier.fillMaxWidth())
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),

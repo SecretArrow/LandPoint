@@ -124,6 +124,35 @@
     <string name="onboarding_location_body">GPS-lah yang memberi koordinat pada sebuah sudut, dan yang menampilkan posisi Anda sendiri di peta saat mengukur.</string>
     <string name="onboarding_location_granted">Izin lokasi sudah diberikan.</string>
     <string name="onboarding_location_later">Anda boleh menolak dulu: koordinat masih bisa diketik atau ditandai di peta, dan daftar lahan akan menawarkannya lagi saat dibutuhkan.</string>
+    <!-- Tiga nama singkat yang ditampilkan stepper (docs/DESIGN_SYSTEM.md §6.4) untuk langkah pengantar. -->
+    <string name="onboarding_step_welcome">Selamat datang</string>
+    <string name="onboarding_step_measure">Ukur</string>
+    <string name="onboarding_step_private">Privat</string>
+    <!-- Jalur penolakan pada langkah izin: ia mengakhiri pengantar, karena
+         aplikasi tetap berfungsi tanpa izin itu dan memintanya berulang-ulang
+         hanya mengajarkan pengguna untuk mengabaikan dialog tersebut. -->
+    <string name="onboarding_not_now">Nanti</string>
+
+    <!-- Coach mark: kartu pemakaian pertama yang menjelaskan kontrol yang tidak
+         disebutkan namanya di layar (docs/DESIGN_SYSTEM.md §6.4). Menutupnya —
+         lewat salah satu tombol — bersifat final, jadi setiap kartu paling
+         dibaca satu kali. -->
+    <string name="coachmark_dismiss">Mengerti</string>
+    <string name="coachmark_dont_show_again">Jangan tampilkan lagi</string>
+    <string name="coachmark_picker_title">Cara menandai sudut</string>
+    <string name="coachmark_picker_body">Berdiri di titiknya dan ambil sinyal GPS, tandai di peta, ketik koordinatnya, ukur dari sudut lain dengan jarak dan azimut, atau salin sudut yang dipakai bersama tetangga. Tandanya tetap bisa digeser.</string>
+    <string name="coachmark_map_toolbar_title">Kontrol peta tetap di tepi layar</string>
+    <string name="coachmark_map_toolbar_body">Zoom, muat semuanya, dan posisi Anda sendiri berada di sisi peta, dan panel posisi membuka rincian GPS lengkap. Semuanya mengambang, jadi tanah tetap menguasai tengah layar.</string>
+    <string name="coachmark_preview_actions_title">Tindakan cepat pada konsep</string>
+    <string name="coachmark_preview_actions_body">Navigasi, bagikan, ekspor, dan ubah berlaku pada bentuk sebelum ia disimpan — cocokkan dulu batasnya dengan tanahnya; tidak ada yang final sebelum Anda menekan Simpan.</string>
+
+    <!-- Pusat bantuan: halaman markdown yang disertakan dalam APK, ditampilkan
+         di dalam aplikasi. Tanpa jaringan. -->
+    <string name="settings_help_center">Pusat bantuan</string>
+    <string name="settings_help_center_hint">Cara merekam, mengukur, bekerja luring, dan menjaga catatan Anda tetap aman</string>
+    <string name="help_title">Bantuan</string>
+    <string name="help_loading">Memuat…</string>
+    <string name="help_unavailable">Teks bantuan tidak dapat dimuat.</string>
 
     <!-- Editor -->
     <string name="edit_title_new">Simpan tanah</string>

@@ -15,7 +15,12 @@ import kotlinx.coroutines.flow.map
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-class SettingsRepository(private val context: Context) {
+/**
+ * [dataStore] is a constructor parameter rather than a hard reference to
+ * [settingsDataStore] so a test can hand over its own private store; production
+ * callers never pass it and keep sharing the process-wide singleton.
+ */
+class SettingsRepository(private val context: Context, private val dataStore: DataStore<Preferences> = context.settingsDataStore) {
 
     private object Keys {
         val DARK_MODE = stringPreferencesKey("dark_mode") // system | light | dark
@@ -31,6 +36,26 @@ class SettingsRepository(private val context: Context) {
         val STRIP_PHOTO_LOCATION = booleanPreferencesKey("strip_photo_location")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val CORNER_HINT_DONE = booleanPreferencesKey("corner_hint_done")
+    }
+
+    /**
+     * The features that carry a first-time-use explanation ("coach mark",
+     * docs/DESIGN_SYSTEM.md §6.4). Each is shown once and, once dismissed, never
+     * again — a mark that returns after being closed is a nag, not a coach.
+     *
+     * [key] is what gets persisted (as `coachmark_<key>_seen`), so a mark can be
+     * renamed or reordered without the "already seen" record losing its meaning —
+     * the same deal [AreaUnit.key] offers.
+     */
+    enum class CoachMark(val key: String) {
+        /** The corner picker's mark-source buttons (GPS / map / typed / neighbour). */
+        PICKER_SOURCES("picker_sources"),
+
+        /** The floating controls at the edges of the map tab. */
+        MAP_TOOLBAR("map_toolbar"),
+
+        /** The parcel preview's quick-actions bar. */
+        PREVIEW_ACTIONS("preview_actions")
     }
 
     /**
@@ -106,7 +131,7 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val language: Flow<Language> = context.settingsDataStore.data.map {
+    val language: Flow<Language> = dataStore.data.map {
         when (it[Keys.LANGUAGE]) {
             "en" -> Language.ENGLISH
             "in" -> Language.INDONESIAN
@@ -114,7 +139,7 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val darkMode: Flow<DarkMode> = context.settingsDataStore.data.map {
+    val darkMode: Flow<DarkMode> = dataStore.data.map {
         when (it[Keys.DARK_MODE]) {
             "light" -> DarkMode.LIGHT
             "dark" -> DarkMode.DARK
@@ -122,15 +147,15 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val units: Flow<Units> = context.settingsDataStore.data.map {
+    val units: Flow<Units> = dataStore.data.map {
         if (it[Keys.MEASUREMENT_UNITS] == "imperial") Units.IMPERIAL else Units.METRIC
     }
 
-    val coordFormat: Flow<CoordFormat> = context.settingsDataStore.data.map {
+    val coordFormat: Flow<CoordFormat> = dataStore.data.map {
         if (it[Keys.COORD_FORMAT] == "dms") CoordFormat.DMS else CoordFormat.DECIMAL
     }
 
-    val areaUnit: Flow<AreaUnit> = context.settingsDataStore.data.map {
+    val areaUnit: Flow<AreaUnit> = dataStore.data.map {
         AreaUnit.fromKey(it[Keys.AREA_UNIT])
     }
 
@@ -143,7 +168,7 @@ class SettingsRepository(private val context: Context) {
      * been imported, which this repository has no way of knowing.
      * [BasemapMode.resolve] is where that decision lives.
      */
-    val basemap: Flow<BasemapMode?> = context.settingsDataStore.data.map {
+    val basemap: Flow<BasemapMode?> = dataStore.data.map {
         BasemapMode.fromKey(it[Keys.BASEMAP])
     }
 
@@ -157,7 +182,7 @@ class SettingsRepository(private val context: Context) {
      * named has been deleted, so a deleted map cannot leave the setting pointing at
      * nothing.
      */
-    val offlineMap: Flow<String?> = context.settingsDataStore.data.map {
+    val offlineMap: Flow<String?> = dataStore.data.map {
         it[Keys.OFFLINE_MAP]?.takeIf { name -> name.isNotBlank() }
     }
 
@@ -165,7 +190,7 @@ class SettingsRepository(private val context: Context) {
      * Off by default: the green palette is the app's identity, so wallpaper
      * colours are something a user opts into rather than the other way round.
      */
-    val dynamicColor: Flow<Boolean> = context.settingsDataStore.data.map {
+    val dynamicColor: Flow<Boolean> = dataStore.data.map {
         it[Keys.DYNAMIC_COLOR] ?: false
     }
 
@@ -188,7 +213,7 @@ class SettingsRepository(private val context: Context) {
      * they will be surprised by, and screenshots are how people share a plot
      * with family.
      */
-    val privacy: Flow<Privacy> = context.settingsDataStore.data.map {
+    val privacy: Flow<Privacy> = dataStore.data.map {
         Privacy(
             appLock = it[Keys.APP_LOCK] ?: false,
             secureScreen = it[Keys.SECURE_SCREEN] ?: false,
@@ -203,11 +228,11 @@ class SettingsRepository(private val context: Context) {
      * be given a default of true anywhere it is collected, or the one screen that
      * explains where the records are kept is the one nobody sees.
      */
-    val onboardingDone: Flow<Boolean> = context.settingsDataStore.data.map {
+    val onboardingDone: Flow<Boolean> = dataStore.data.map {
         it[Keys.ONBOARDING_DONE] ?: false
     }
 
-    suspend fun setOnboardingDone(done: Boolean) = context.settingsDataStore.edit {
+    suspend fun setOnboardingDone(done: Boolean) = dataStore.edit {
         it[Keys.ONBOARDING_DONE] = done
     }
 
@@ -221,19 +246,41 @@ class SettingsRepository(private val context: Context) {
      * still needs this sentence — and having seen it, should never be shown it
      * again over the ground they are trying to look at.
      */
-    val cornerHintDone: Flow<Boolean> = context.settingsDataStore.data.map {
+    val cornerHintDone: Flow<Boolean> = dataStore.data.map {
         it[Keys.CORNER_HINT_DONE] ?: false
     }
 
-    suspend fun setCornerHintDone(done: Boolean) = context.settingsDataStore.edit {
+    suspend fun setCornerHintDone(done: Boolean) = dataStore.edit {
         it[Keys.CORNER_HINT_DONE] = done
     }
 
-    suspend fun setLanguage(language: Language) = context.settingsDataStore.edit {
+    /**
+     * Whether [mark]'s first-time explanation has been shown and dismissed.
+     *
+     * Absent means not seen, which is what shows it — the same default-as-first-run
+     * deal [onboardingDone] offers, and for the same reason: the one sentence a
+     * control needs has to actually reach someone on their first visit.
+     */
+    fun coachMarkSeen(mark: CoachMark): Flow<Boolean> = dataStore.data.map {
+        it[coachMarkKey(mark)] ?: false
+    }
+
+    /**
+     * Records [mark] as seen. Both of a mark's dismissal actions end here: the
+     * overlay explains once, and "don't show again" exists so that the choice is a
+     * named control a screen reader can find rather than a tap nobody can discover.
+     */
+    suspend fun setCoachMarkSeen(mark: CoachMark, seen: Boolean = true) = dataStore.edit {
+        it[coachMarkKey(mark)] = seen
+    }
+
+    private fun coachMarkKey(mark: CoachMark) = booleanPreferencesKey("coachmark_${mark.key}_seen")
+
+    suspend fun setLanguage(language: Language) = dataStore.edit {
         it[Keys.LANGUAGE] = language.tag ?: "system"
     }
 
-    suspend fun setDarkMode(mode: DarkMode) = context.settingsDataStore.edit {
+    suspend fun setDarkMode(mode: DarkMode) = dataStore.edit {
         it[Keys.DARK_MODE] = when (mode) {
             DarkMode.SYSTEM -> "system"
             DarkMode.LIGHT -> "light"
@@ -241,40 +288,40 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    suspend fun setUnits(units: Units) = context.settingsDataStore.edit {
+    suspend fun setUnits(units: Units) = dataStore.edit {
         it[Keys.MEASUREMENT_UNITS] = if (units == Units.IMPERIAL) "imperial" else "metric"
     }
 
-    suspend fun setCoordFormat(format: CoordFormat) = context.settingsDataStore.edit {
+    suspend fun setCoordFormat(format: CoordFormat) = dataStore.edit {
         it[Keys.COORD_FORMAT] = if (format == CoordFormat.DMS) "dms" else "decimal"
     }
 
-    suspend fun setAreaUnit(unit: AreaUnit) = context.settingsDataStore.edit {
+    suspend fun setAreaUnit(unit: AreaUnit) = dataStore.edit {
         it[Keys.AREA_UNIT] = unit.key
     }
 
-    suspend fun setBasemap(mode: BasemapMode) = context.settingsDataStore.edit {
+    suspend fun setBasemap(mode: BasemapMode) = dataStore.edit {
         it[Keys.BASEMAP] = mode.key
     }
 
     /** [name] null clears the choice, which is what deleting the archive does. */
-    suspend fun setOfflineMap(name: String?) = context.settingsDataStore.edit {
+    suspend fun setOfflineMap(name: String?) = dataStore.edit {
         if (name == null) it.remove(Keys.OFFLINE_MAP) else it[Keys.OFFLINE_MAP] = name
     }
 
-    suspend fun setDynamicColor(enabled: Boolean) = context.settingsDataStore.edit {
+    suspend fun setDynamicColor(enabled: Boolean) = dataStore.edit {
         it[Keys.DYNAMIC_COLOR] = enabled
     }
 
-    suspend fun setAppLock(enabled: Boolean) = context.settingsDataStore.edit {
+    suspend fun setAppLock(enabled: Boolean) = dataStore.edit {
         it[Keys.APP_LOCK] = enabled
     }
 
-    suspend fun setSecureScreen(enabled: Boolean) = context.settingsDataStore.edit {
+    suspend fun setSecureScreen(enabled: Boolean) = dataStore.edit {
         it[Keys.SECURE_SCREEN] = enabled
     }
 
-    suspend fun setStripPhotoLocation(enabled: Boolean) = context.settingsDataStore.edit {
+    suspend fun setStripPhotoLocation(enabled: Boolean) = dataStore.edit {
         it[Keys.STRIP_PHOTO_LOCATION] = enabled
     }
 }

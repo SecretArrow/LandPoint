@@ -38,6 +38,7 @@ import com.landpoint.app.ui.compass.CompassScreen
 import com.landpoint.app.ui.detail.LandDetailScreen
 import com.landpoint.app.ui.edit.LandEditScreen
 import com.landpoint.app.ui.gallery.ComponentGalleryScreen
+import com.landpoint.app.ui.help.HelpCenterScreen
 import com.landpoint.app.ui.home.HomeScreen
 import com.landpoint.app.ui.lands.LandListDetailPane
 import com.landpoint.app.ui.lands.LandListScreen
@@ -220,6 +221,7 @@ private fun LandPointGraph(navController: NavHostController, listBesideDetail: B
             SettingsScreen(
                 onOpenOfflineMaps = { navController.navigate(Routes.OFFLINE) },
                 onOpenRecentlyDeleted = { navController.navigate(Routes.RECENTLY_DELETED) },
+                onOpenHelp = { navController.navigate(Routes.HELP) },
                 // Debug builds only: the gallery entry point rides on the same
                 // gate as the route registration below, so release never gets
                 // either half of the pair.
@@ -237,6 +239,10 @@ private fun LandPointGraph(navController: NavHostController, listBesideDetail: B
 
         composable(Routes.RECENTLY_DELETED) {
             RecentlyDeletedScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.HELP) {
+            HelpCenterScreen(onBack = { navController.popBackStack() })
         }
 
         // Debug-only developer tooling (docs/IMPLEMENTATION_PLAN.md, Phase 2).

@@ -1,0 +1,41 @@
+<!-- Onboarding step 2 (Measure): a three-corner boundary with its corners
+     marked, and the ruler the area and distances are read against.
+     Monochrome by design (docs/DESIGN_SYSTEM.md §7) — the composable tints
+     the whole drawing, so no colour lives here. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- The closed shape three corners give. -->
+    <path
+        android:pathData="M 40,148 L 100,48 L 160,148 Z"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- Each corner, marked where it was measured. -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M 32,148 a 8,8 0 1,1 16,0 a 8,8 0 1,1 -16,0 Z
+            M 92,48 a 8,8 0 1,1 16,0 a 8,8 0 1,1 -16,0 Z
+            M 152,148 a 8,8 0 1,1 16,0 a 8,8 0 1,1 -16,0 Z" />
+
+    <!-- The ruler: distances and area come off it, one tick per reading. -->
+    <path
+        android:pathData="M 26,166 L 174,166 L 174,188 L 26,188 Z"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M 50,166 L 50,176 M 74,166 L 74,176 M 98,166 L 98,176 M 122,166 L 122,176 M 146,166 L 146,176"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+</vector>

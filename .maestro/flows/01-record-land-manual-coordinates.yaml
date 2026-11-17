@@ -1,8 +1,10 @@
 # E2E 1 — record a land and draw its boundary by typing coordinates.
 #
 # Covers: first-run introduction, the Save-land flow, the corner picker's
-# "Enter coordinates" source (the survey-letter path), mark acceptance, and
-# the saved record appearing with its name.
+# "Enter coordinates" source (the survey-letter path), mark acceptance, the
+# back-press commit of the draft boundary (the picker has no explicit
+# "Use this boundary" button since cb6bd4e), and the saved record appearing
+# with its name.
 #
 # Preconditions established by the CI job before the flows run:
 #   - the debug APK is installed,
@@ -127,11 +129,22 @@ tags:
     timeout: 10000
 - tapOn: '^(Use this mark|Pakai tanda ini)$'
 
-# Accept the boundary and save the record.
+# Commit the boundary and save the record.
+# There is no "Use this boundary" step any more: the picker's back handler
+# commits the draft when no mark is hanging (CornerPickerScreen.stepBack ->
+# onDone -> commitCornerPicker), so a system back press is what closes the
+# picker with the boundary it holds. Wait for the idle card's "Place a mark
+# here" button first — it renders only once the third mark has actually been
+# committed to the draft (the mark confirm bar swaps the card for the nudge
+# pad), so a slow "Use this mark" tap cannot race the back press into
+# discarding a mark that is still hanging. That button is a plain Text node
+# (corner_picker_place_mark / "Taruh tanda di sini"), unlike the icon-only
+# source buttons this flow matches elsewhere. After the picker closes, the
+# form's top-bar Save (action_save) saves the record.
 - extendedWaitUntil:
-    visible: '^(Use this boundary|Pakai batas ini)$'
+    visible: '^(Place a mark here|Taruh tanda di sini)$'
     timeout: 10000
-- tapOn: '^(Use this boundary|Pakai batas ini)$'
+- pressKey: BACK
 - extendedWaitUntil:
     visible: '^(Save|Simpan)$'
     timeout: 15000

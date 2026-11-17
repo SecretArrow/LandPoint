@@ -50,13 +50,70 @@ tags:
       text: '^(Latitude|Lintang) \*$'
     direction: DOWN
     timeout: 30000
+# The editor calls captureLocation() the moment it opens for a NEW land
+# (LandEditViewModel: "if (landId != null) load(landId) else
+# captureLocation()"), and the CI job seeds a GPS fix before the flows run —
+# so both coordinate fields arrive already filled and keep being refreshed
+# while the 20-second averaging window (LocationAveraging.WINDOW_MS) runs.
+# First scroll the capture button itself into view: its Text is rendered as
+# "  " + stringResource(...) (two leading spaces prepended in code, like the
+# picker's "Mark on the map" button), and it reads "Getting fix…" /
+# "Mengambil sinyal…" while the capture runs, so match either label.
+- scrollUntilVisible:
+    element:
+      text: '^\s*(Use my location|Getting fix…|Pakai lokasi saya|Mengambil sinyal…)\s*$'
+    direction: DOWN
+    timeout: 30000
+# Then wait for the button's idle label: from that moment no capture update
+# can write into the fields any more, so a typed value cannot be overwritten
+# from under us mid-typing. (If the capture found no fix, the button is
+# already idle and the fields empty — the typing below covers that too.)
+- extendedWaitUntil:
+    visible: '^\s*(Use my location|Pakai lokasi saya)\s*$'
+    timeout: 30000
+# Maestro's inputText types AT THE CARET instead of replacing what is in the
+# field, and a tap on the floated "Latitude *" label is a cursor-PLACEMENT
+# tap: the caret lands at the text offset nearest the tap point — in the
+# MIDDLE of the captured value, not at its end. eraseText deletes only left
+# of the caret, so on the CI device (run 44078833057, failing step 020) it
+# erased the captured "-6.175000" prefix of "-6.17500074998" and the typed
+# "-6.175000" was inserted at the caret, leaving the captured jitter tail
+# "74998" to its right — the pin saw "-6.17500074998" and failed (the logcat
+# shows exactly 50 DEL keycodes then exactly "-6.175000" typed). Walk the
+# caret to the end of the line first (DPAD RIGHT; presses past the end are
+# no-ops on a single-line field), so eraseText then clears the WHOLE field
+# whatever it holds. The capture is idle by the idle-label wait above, so
+# nothing can rewrite the field between the erase and the typing.
 - tapOn: '^(Latitude|Lintang) \*$'
+- repeat:
+    times: 25
+    commands:
+    - pressKey: RIGHT
+- eraseText
 - inputText: '-6.175000'
+# Put the keyboard away before asserting: with the IME open the field row
+# sits behind the number pad (the editor consumes no ime insets — under
+# edge-to-edge, adjustResize never resizes anything), and this pin is meant
+# to guard the erase, not the keyboard's geometry.
+- hideKeyboard
+- extendedWaitUntil:
+    visible: '^-6\.175000$'
+    timeout: 5000
 - tapOn: '^(Longitude|Bujur) \*$'
+- repeat:
+    times: 25
+    commands:
+    - pressKey: RIGHT
+- eraseText
 - inputText: '106.827000'
 - hideKeyboard
+- extendedWaitUntil:
+    visible: '^106\.827000$'
+    timeout: 5000
 
-# The Save button sits at the bottom of the form.
+# The Save button lives in the editor's top bar (action_save), so it is
+# visible the whole time and this scroll resolves without swiping; the step
+# is kept so the tap still waits for the button rather than racing the form.
 - scrollUntilVisible:
     element:
       text: '^(Save|Simpan)$'
@@ -129,21 +186,22 @@ tags:
     timeout: 15000
 
 # --- And it is back --------------------------------------------------------
+# The bin screen DOES have the top-bar up arrow (the NavHost passes onBack
+# for RecentlyDeletedScreen, unlike Settings) — ride it back to Settings.
 - tapOn: '^(Back|Kembali)$'
 - extendedWaitUntil:
     visible: '^(Settings|Pengaturan)$'
     timeout: 15000
-# Settings is a full-screen page without the bottom bar — leave with the
-# system back, then cross to Lands. The keyboard is down; a raised one would
-# eat this press. If the first press was swallowed (the recorded hierarchy in
-# flow 04 saw that once), the conditional presses again while still there.
-- hideKeyboard
+# Settings is a full-screen page without the bottom bar and without an up
+# arrow (see flow 04) — leave with the system back, then cross to Lands on
+# Home's bottom bar. No keyboard can be up here (the editor's keyboard is
+# put away before its Save, and neither the bin screen nor Settings has a
+# text input), so a hideKeyboard guard would only risk a stray press. There
+# is deliberately no "press again while still on Settings" conditional: Home
+# also carries an exactly-matching "Settings" element (the top-bar gear's
+# contentDescription), so such a check would fire ON HOME and push a second
+# back press into the app's root.
 - pressKey: BACK
-- runFlow:
-    when:
-      visible: '^(Settings|Pengaturan)$'
-    commands:
-      - pressKey: BACK
 - tapOn: '^(Lands|Tanah)$'
 - extendedWaitUntil:
     visible: 'Kebun Hapus'

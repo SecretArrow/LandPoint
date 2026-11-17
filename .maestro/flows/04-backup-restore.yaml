@@ -65,10 +65,18 @@ tags:
     timeout: 20000
 
 # --- Wipe every record ---------------------------------------------------
-# Settings is a full-screen page without the bottom bar — leave via the
-# top-bar up arrow (the recorded hierarchy shows the adb back press was
-# not leaving this screen), then cross to Lands.
-- tapOn: '^(Back|Kembali)$'
+# Settings is a full-screen page without the bottom bar, and it has NO up
+# arrow to leave by: the NavHost composes SettingsScreen without onBack, the
+# parameter defaults to null, and the arrow is only drawn when onBack != null
+# (LandPointNavHost, composable(Routes.SETTINGS) — SettingsScreen draws the
+# ArrowBack IconButton only inside `if (onBack != null)`). The failing-step
+# hierarchy from run 44078833057 confirms it: the screen shows the Settings
+# title and every card, but carries no "Back"/"Kembali" node at all. No
+# BackHandler intercepts the system back here either, so a back key press is
+# the only way out. The recorded "back press that did not leave this screen"
+# was the save sheet still swallowing the press, and the wait for the
+# Settings title above now rules that race out.
+- pressKey: BACK
 - tapOn: '^(Lands|Tanah)$'
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'
@@ -131,6 +139,12 @@ tags:
     visible: '^(Imported.*|.*diimpor)$'
     timeout: 20000
 
+# The "Imported 1" snackbar leaves us on Settings — a full-screen page with
+# no bottom bar and no up arrow (see the wipe section above), so the Lands
+# tab cannot be tapped from here and there is no "Back" element to tap
+# either. Leave with the system back key, then cross to Lands on Home's
+# bottom bar.
+- pressKey: BACK
 - tapOn: '^(Lands|Tanah)$'
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'

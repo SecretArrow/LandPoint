@@ -49,9 +49,9 @@ class GeoUtilsReportingTest {
         // close it is to a cardinal: 22.4 is still north, 22.6 already northeast.
         assertEquals(0, GeoUtils.cardinalIndex(22.4))
         assertEquals(1, GeoUtils.cardinalIndex(22.6))
-        assertEquals(0, GeoUtils.cardinalIndex(337.4))
-        // 337.5 exactly is the wedge boundary, and it wraps back to north.
         assertEquals(0, GeoUtils.cardinalIndex(337.5))
+        // Just under it is still the northwest wedge.
+        assertEquals(7, GeoUtils.cardinalIndex(337.4))
         assertEquals(0, GeoUtils.cardinalIndex(359.9))
     }
 

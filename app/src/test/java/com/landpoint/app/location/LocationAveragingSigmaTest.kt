@@ -70,9 +70,10 @@ class LocationAveragingSigmaTest {
         assertEquals(2, fix.used)
         assertEquals(0, fix.rejected)
         assertEquals(setOf(FixSource.GPS), fix.sources)
-        // Equal weights and zero scatter: the textbook figure 1/sqrt(sum of
-        // weights) with each weight 1/3².
-        assertEquals(2.121, fix.accuracy, 1e-3)
+        // Equal weights and zero scatter: the reported 5 m figures are kept
+        // whole (the 3 m GPS floor does not bite), so the textbook figure is
+        // 1/sqrt(sum of weights) with each weight 1/5².
+        assertEquals(3.5355, fix.accuracy, 1e-3)
     }
 
     @Test

@@ -50,13 +50,50 @@ tags:
       text: '^(Latitude|Lintang) \*$'
     direction: DOWN
     timeout: 30000
+# The editor calls captureLocation() the moment it opens for a NEW land
+# (LandEditViewModel: "if (landId != null) load(landId) else
+# captureLocation()"), and the CI job seeds a GPS fix before the flows run —
+# so both coordinate fields arrive already filled and keep being refreshed
+# while the 20-second averaging window (LocationAveraging.WINDOW_MS) runs.
+# First scroll the capture button itself into view: its Text is rendered as
+# "  " + stringResource(...) (two leading spaces prepended in code, like the
+# picker's "Mark on the map" button), and it reads "Getting fix…" /
+# "Mengambil sinyal…" while the capture runs, so match either label.
+- scrollUntilVisible:
+    element:
+      text: '^\s*(Use my location|Getting fix…|Pakai lokasi saya|Mengambil sinyal…)\s*$'
+    direction: DOWN
+    timeout: 30000
+# Then wait for the button's idle label: from that moment no capture update
+# can write into the fields any more, so a typed value cannot be overwritten
+# from under us mid-typing. (If the capture found no fix, the button is
+# already idle and the fields empty — the typing below covers that too.)
+- extendedWaitUntil:
+    visible: '^\s*(Use my location|Pakai lokasi saya)\s*$'
+    timeout: 30000
+# Maestro's inputText types into what is already in the field instead of
+# replacing it. Typing over the captured "-6.175" left "-6.175-6.175000":
+# the save then failed validation, the editor stayed open with the name
+# scrolled off-screen, and the record assertion below timed out. Erase the
+# captured value before typing, and pin the exact typed value afterwards so
+# a partial erase fails here rather than forty seconds later.
 - tapOn: '^(Latitude|Lintang) \*$'
+- eraseText
 - inputText: '-6.175000'
+- extendedWaitUntil:
+    visible: '^-6\.175000$'
+    timeout: 5000
 - tapOn: '^(Longitude|Bujur) \*$'
+- eraseText
 - inputText: '106.827000'
+- extendedWaitUntil:
+    visible: '^106\.827000$'
+    timeout: 5000
 - hideKeyboard
 
-# The Save button sits at the bottom of the form.
+# The Save button lives in the editor's top bar (action_save), so it is
+# visible the whole time and this scroll resolves without swiping; the step
+# is kept so the tap still waits for the button rather than racing the form.
 - scrollUntilVisible:
     element:
       text: '^(Save|Simpan)$'

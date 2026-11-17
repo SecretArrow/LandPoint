@@ -59,23 +59,16 @@ enum class OnboardingStep {
  * wrapping: leaving the introduction is [OnboardingScreen]'s explicit buttons
  * (Start, or Not now), never an overflow of Next past the end.
  */
-fun OnboardingStep.next(): OnboardingStep =
-    OnboardingStep.entries[(ordinal + 1).coerceAtMost(OnboardingStep.LOCATION.ordinal)]
+fun OnboardingStep.next(): OnboardingStep = OnboardingStep.entries[(ordinal + 1).coerceAtMost(OnboardingStep.LOCATION.ordinal)]
 
 /**
  * The previous stop. At the first stop it stays there; the screen hides its
  * Back button on that page instead of relying on this to loop.
  */
-fun OnboardingStep.back(): OnboardingStep =
-    OnboardingStep.entries[(ordinal - 1).coerceAtLeast(OnboardingStep.WELCOME.ordinal)]
+fun OnboardingStep.back(): OnboardingStep = OnboardingStep.entries[(ordinal - 1).coerceAtLeast(OnboardingStep.WELCOME.ordinal)]
 
 /** One of the three read-through steps: its illustration and its copy. */
-private data class Intro(
-    @DrawableRes val illustration: Int,
-    @StringRes val title: Int,
-    @StringRes val body: Int,
-    val step: OnboardingStep
-)
+private data class Intro(@DrawableRes val illustration: Int, @StringRes val title: Int, @StringRes val body: Int)
 
 /**
  * Three things a first-time user cannot work out from the screens themselves:
@@ -87,20 +80,17 @@ private val intros = listOf(
     Intro(
         R.drawable.ill_onboarding_welcome,
         R.string.onboarding_welcome_title,
-        R.string.onboarding_welcome_body,
-        OnboardingStep.WELCOME
+        R.string.onboarding_welcome_body
     ),
     Intro(
         R.drawable.ill_onboarding_measure,
         R.string.onboarding_measure_title,
-        R.string.onboarding_measure_body,
-        OnboardingStep.MEASURE
+        R.string.onboarding_measure_body
     ),
     Intro(
         R.drawable.ill_onboarding_private,
         R.string.onboarding_private_title,
-        R.string.onboarding_private_body,
-        OnboardingStep.PRIVATE
+        R.string.onboarding_private_body
     )
 )
 

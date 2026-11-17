@@ -165,6 +165,28 @@ device, not plain JVM tests: `ShareUtils` (41 missed, all `Context`-bound),
 `LandRepository`'s DAO-bound paths (needs fake DAOs), and every Compose
 screen.
 
+### Measured on this branch
+
+This branch's own CI run re-measured the report with the tests above in place
+([run 44127652084](https://github.com/SecretArrow/LandPoint/actions/runs/44127652084),
+`feature/coverage-refresh-tests` @ `bac246c7ac85d24af18754121dc3818f21f6679e`,
+conclusion success — the e2e job's Maestro flake is `continue-on-error` by
+design):
+
+| Scope      | Before (run 44084228761) | After (run 44127652084) | Delta |
+|------------|--------------------------|-------------------------|-------|
+| Overall LINE | 31.23% (5,046/16,157) | **31.58%** (5,103/16,157) | +0.35 pp |
+| `util` LINE  | 87.10% (405/465)      | **90.32%** (420/465)      | +3.22 pp |
+
+Classes that went to 100% line coverage: `GeoUtils` (98.63% — one line left,
+the `Uri.encode` label branch), `BoundaryEdits`, `GeoBounds` (both classes),
+`MapProvider`, `Routes`, `PreviewDraftStore` (both classes),
+`LocationAveraging`, `StoredGeometryKt`, `Land`, `GeoExporter`, and
+`PmtilesHeader` (its `Companion.read` keeps one missed line: the
+`IOException` guard, unreachable without a device-level read failure).
+`map` moved 84.62% → 92.31%, `data/model` 91.91% → 93.53%,
+`ui/navigation` 25.00% → 100%.
+
 ## How to reproduce locally
 
 ```bash

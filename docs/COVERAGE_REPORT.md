@@ -142,26 +142,22 @@ for anyone picking up coverage work. Compose `*ScreenKt` files dominate.
 
 ## Gaps this branch closes
 
-The new unit tests on `feature/coverage-refresh-tests` cover the pure-JVM
-portion of the shortlist above — the classes whose missed lines are arithmetic
-or state rather than Android framework:
+Ten new JVM test classes on `feature/coverage-refresh-tests` cover the
+pure-JVM portion of the shortlist above — the classes whose missed lines are
+arithmetic or state rather than Android framework:
 
-- `GeoUtils` reporting helpers (`formatAccuracy`, `cardinalIndex`, `geoUri`,
-  the DMS degree-carry branch)
-- `BoundaryEdits.swapStrings`, the id-list twin of the already-tested corner
-  swap
-- `GeoBounds.of()` and the centre/degeneracy helpers (12 missed lines, the
-  largest pure-JVM gap in `map`)
-- `MapProviders`/`MapProvider` — `tileMaxZoom` for all four tile specs, the
-  licence/network pass-through, and `resolved()`'s fallbacks
-- `Routes` route builders
-- `PreviewDraftStore` set/read/clear
-- `FixSource.of` provider names and `LocationAveraging.sigmaOf`'s per-source
-  floors and fallbacks, plus altitude through `average()`
-- `CornerPoint`/`StoredGeometry` extension functions, the malformed-position
-  branch of `GeometryCodec.decodeCorners`, and `Land.landStatus`
-- the negative-offset guard in `PmtilesHeader.read`
-- apostrophe escaping in `GeoExporter`'s GPX/KML output
+| New test | Covers |
+|----------|--------|
+| `util/GeoUtilsReportingTest` | `formatAccuracy`, `cardinalIndex` (incl. staying in step with `bearingToCardinal`), unlabelled `geoUri`, the DMS degree-carry branch |
+| `util/BoundaryEditsSwapTest` | `BoundaryEdits.swapStrings` — the id-list twin of the already-tested corner swap |
+| `map/GeoBoundsTest` | `GeoBounds.of()` (empty, single, degenerate), centre accessors, constructor guards |
+| `map/MapProviderTileZoomTest` | `tileMaxZoom` for all four tile specs, licence/network pass-through, `of()` and `resolved()` fallbacks |
+| `ui/navigation/RoutesTest` | the six route builders, checked against their pattern constants |
+| `ui/preview/PreviewDraftStoreTest` | draft set/read/clear on the editor→preview hand-off |
+| `location/LocationAveragingSigmaTest` | `FixSource.of` provider names, `sigmaOf` per-source floors/fallbacks, altitude through `average()` |
+| `data/model/CornerIdentityTest` | `GeoPoint.toCorner`, `List<CornerPoint>.toGeoPoints`, the malformed-position branch of `GeometryCodec.decodeCorners`, `Land.landStatus` |
+| `map/offline/PmtilesHeaderGuardTest` | the negative-offset refusal in `PmtilesHeader.read` |
+| `data/export/GeoExporterXmlEscapeTest` | apostrophe escaping in the GPX/KML name elements |
 
 Still open and deliberately untouched here — they need Robolectric or a
 device, not plain JVM tests: `ShareUtils` (41 missed, all `Context`-bound),

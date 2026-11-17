@@ -83,6 +83,12 @@ tags:
 - extendedWaitUntil:
     visible: '^-6\.175000$'
     timeout: 5000
+# The keyboard that input raised covers the Longitude field beside it — the
+# same trap flow 05 steps around before its NIK field — so put it away before
+# tapping the second coordinate. A tap that lands on a key instead of the
+# field would type into the wrong box, and the pin below would only move the
+# failure a step later.
+- hideKeyboard
 - tapOn: '^(Longitude|Bujur) \*$'
 - eraseText
 - inputText: '106.827000'

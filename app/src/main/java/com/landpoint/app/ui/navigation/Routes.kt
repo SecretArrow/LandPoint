@@ -16,6 +16,10 @@ object Routes {
     // for thirty days before a purge erases it for good.
     const val RECENTLY_DELETED = "recently_deleted"
 
+    // Reached from settings: the help centre, whose pages are bundled markdown
+    // assets rendered in-app — no network, like everything else it explains.
+    const val HELP = "help"
+
     // Debug-only developer tooling (see DebugRoutes): the component gallery.
     // No release-visible UI navigates to it, and the destination is only
     // registered when BuildConfig.DEBUG — a release APK carries the string

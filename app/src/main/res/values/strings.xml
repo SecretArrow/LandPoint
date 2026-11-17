@@ -130,6 +130,33 @@
     <string name="onboarding_location_body">GPS is what gives a corner its coordinates, and what puts your own position on the map while you measure.</string>
     <string name="onboarding_location_granted">Location permission granted.</string>
     <string name="onboarding_location_later">You can refuse for now: coordinates can still be typed in or tapped on the map, and the land list will offer this again when you need it.</string>
+    <!-- The three short names the stepper (docs/DESIGN_SYSTEM.md §6.4) shows for the introduction's steps. -->
+    <string name="onboarding_step_welcome">Welcome</string>
+    <string name="onboarding_step_measure">Measure</string>
+    <string name="onboarding_step_private">Private</string>
+    <!-- The refusal path on the permission step: it finishes the introduction,
+         because the app keeps working without the permission and re-asking here
+         would only teach the user to ignore the dialog. -->
+    <string name="onboarding_not_now">Not now</string>
+
+    <!-- Coach marks: first-time-use cards that explain a control the screen itself
+         does not name (docs/DESIGN_SYSTEM.md §6.4). Dismissing one — by either
+         action — is final, so these are read once at most. -->
+    <string name="coachmark_dismiss">Got it</string>
+    <string name="coachmark_dont_show_again">Don\'t show again</string>
+    <string name="coachmark_picker_title">Ways to mark a corner</string>
+    <string name="coachmark_picker_body">Stand on it and take a GPS fix, place a mark on the map, type the coordinates, measure from another corner by distance and bearing, or copy the corners you share with a neighbour. The mark stays adjustable either way.</string>
+    <string name="coachmark_map_toolbar_title">The map\'s controls stay at the edges</string>
+    <string name="coachmark_map_toolbar_body">Zoom, fit everything and your own position sit at the sides of the map, and the position readout opens the full GPS detail. They float, so the ground keeps the middle of the screen.</string>
+    <string name="coachmark_preview_actions_title">Quick actions on the draft</string>
+    <string name="coachmark_preview_actions_body">Navigate, share, export and edit work on the shape before it is saved — check the boundary against the ground first; nothing is final until you press Save.</string>
+
+    <!-- Help center: the bundled markdown pages, rendered in-app. No network. -->
+    <string name="settings_help_center">Help center</string>
+    <string name="settings_help_center_hint">How to capture, measure, work offline and keep your records safe</string>
+    <string name="help_title">Help</string>
+    <string name="help_loading">Loading…</string>
+    <string name="help_unavailable">The help text could not be loaded.</string>
 
     <!-- Editor -->
     <string name="edit_title_new">Save land</string>

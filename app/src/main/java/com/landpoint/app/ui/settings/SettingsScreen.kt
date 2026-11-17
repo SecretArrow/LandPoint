@@ -84,6 +84,8 @@ fun SettingsScreen(
     onOpenOfflineMaps: () -> Unit,
     /** Opens the recently-deleted bin; always offered, empty or not. */
     onOpenRecentlyDeleted: () -> Unit,
+    /** Opens the bundled help centre; its pages ship in the APK, no network. */
+    onOpenHelp: () -> Unit,
     // Debug builds only (see DebugRoutes): null in a release build, so no row
     // is drawn even if a release caller wired something up by mistake.
     onOpenGallery: (() -> Unit)? = null,
@@ -490,6 +492,15 @@ fun SettingsScreen(
             }
 
             SettingsSection(stringResource(R.string.settings_section_about)) {
+                // The manual, readable where the features are used — bundled in
+                // the APK, so it needs no signal, exactly like everything it
+                // explains.
+                NavigationRow(
+                    label = stringResource(R.string.settings_help_center),
+                    hint = stringResource(R.string.settings_help_center_hint),
+                    count = 0,
+                    onClick = onOpenHelp
+                )
                 Text(
                     stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
                     style = MaterialTheme.typography.bodyLarge

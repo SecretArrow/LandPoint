@@ -1,0 +1,24 @@
+<!-- Onboarding step 3 (Private): the shield the records sit behind, with the
+     keyhole of the app lock. Monochrome by design (docs/DESIGN_SYSTEM.md §7)
+     — the composable tints the whole drawing, so no colour lives here. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- The shield: nothing inside it leaves the phone. -->
+    <path
+        android:pathData="M 100,22 L 164,46 L 164,102 C 164,142 137,167 100,178 C 63,167 36,142 36,102 L 36,46 Z"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="6"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- The keyhole: the app lock's promise, drawn where the records are. -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M 85,90 a 15,15 0 1,1 30,0 a 15,15 0 1,1 -30,0 Z
+            M 93,100 L 107,100 L 107,136 L 93,136 Z" />
+</vector>

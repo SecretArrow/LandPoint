@@ -1,5 +1,10 @@
 package com.landpoint.app.ui.components
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +34,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -40,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.landpoint.app.R
 import com.landpoint.app.data.BasemapMode
+import com.landpoint.app.ui.theme.Motion
 
 /**
  * A map control: smaller than a button in a form, larger than a fingertip.
@@ -259,9 +266,25 @@ private val CROSSHAIR_HALO = 4.dp
  * would be noise. The button beside it is what carries the meaning.
  */
 @Composable
-fun MapCrosshair(modifier: Modifier = Modifier) {
+fun MapCrosshair(modifier: Modifier = Modifier, pulsing: Boolean = false) {
     val ink = MaterialTheme.colorScheme.tertiary
     val halo = MaterialTheme.colorScheme.surface
+    // A slow alpha breath draws the eye to the centre of the map when no mark
+    // is hung there yet — "this is where a mark will land." It stops the moment
+    // a mark is placed, so it never competes with the placement readout. The
+    // period is long on purpose: a fast pulse reads as an alert, and a
+    // crosshair is not an alert, it is a resting focal point.
+    val transition = rememberInfiniteTransition(label = "crosshairPulse")
+    val pulseAlpha by transition.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = Motion.scaledDuration(800, 1f).coerceAtLeast(1)),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "crosshairAlpha"
+    )
+    val inkAlpha = if (pulsing) pulseAlpha else 1f
     Canvas(
         modifier = modifier
             .size(CROSSHAIR_SIZE)
@@ -279,7 +302,7 @@ fun MapCrosshair(modifier: Modifier = Modifier) {
         )
         // Halo underneath all four arms before any ink goes down, so a wide stroke
         // never paints over the narrow one that was already drawn beside it.
-        listOf(halo to CROSSHAIR_HALO.toPx(), ink to CROSSHAIR_INK.toPx()).forEach { (colour, width) ->
+        listOf(halo to CROSSHAIR_HALO.toPx(), ink.copy(alpha = inkAlpha) to CROSSHAIR_INK.toPx()).forEach { (colour, width) ->
             arms.forEach { (from, to) ->
                 drawLine(
                     color = colour,

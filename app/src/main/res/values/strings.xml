@@ -32,7 +32,8 @@
     <string name="list_search_placeholder">Search name, notes, address</string>
     <string name="list_fab_save_land">Save land</string>
     <string name="list_empty_title">No land saved yet</string>
-    <string name="list_empty_body">Tap Save land to record your first GPS location.</string>
+    <string name="list_empty_body">Record your first parcel by drawing its boundary on the map.</string>
+    <string name="list_empty_cta">Save your first land</string>
     <string name="list_no_matches_title">No matches</string>
     <string name="list_no_matches_body">Try a different search term.</string>
     <string name="card_navigate_to">Navigate to %1$s</string>
@@ -342,6 +343,8 @@
     <!-- Detail -->
     <string name="detail_title_fallback">Land</string>
     <string name="detail_missing">This land no longer exists.</string>
+    <string name="detail_missing_body">It may have been deleted from another device or restored from an older backup. Your list is unchanged.</string>
+    <string name="detail_missing_back">Back to list</string>
     <string name="detail_distance_away">%1$s away</string>
     <string name="delete_dialog_title">Delete %1$s?</string>
     <string name="delete_dialog_body">This parcel will be moved to Recently deleted. You can restore it from there for 30 days.</string>

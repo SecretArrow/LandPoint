@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.outlined.Landscape
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -26,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.landpoint.app.R
 import com.landpoint.app.data.model.LandStatus
+import com.landpoint.app.ui.theme.Spacing
 import com.landpoint.app.util.AreaFormat
 
 /**
@@ -179,13 +183,20 @@ private fun EmptyHome(onNewLand: () -> Unit, onOpenOwners: () -> Unit) {
             )
             Spacer(Modifier.height(4.dp))
             val emptyCtaLabel = stringResource(R.string.list_fab_save_land)
-            ExtendedFloatingActionButton(
+            // A primary Button is the right call to action here, not a FAB: the
+            // FAB is a screen-level floating element with its own elevation and
+            // semantics, and nesting one inside a card reads as a misplaced
+            // control rather than the next step. The OutlinedButton beneath it
+            // demotes "add an owner" to the secondary path it actually is.
+            Button(
                 onClick = onNewLand,
-                modifier = Modifier.semantics { contentDescription = emptyCtaLabel },
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text(emptyCtaLabel) }
-            )
-            androidx.compose.material3.TextButton(onClick = onOpenOwners) {
+                modifier = Modifier.semantics { contentDescription = emptyCtaLabel }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(Spacing.sm))
+                Text(emptyCtaLabel)
+            }
+            OutlinedButton(onClick = onOpenOwners) {
                 Text(stringResource(R.string.home_empty_add_owner))
             }
         }

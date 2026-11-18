@@ -888,30 +888,44 @@ class LandEditViewModel(
      * outcome.
      */
     fun commitCornerPicker() {
-        // No-op when the picker is already closed. A successful commitMark
-        // closes the picker itself, and a stray second call (a double tap on
-        // "Done", or a test that calls both) must not overwrite the standing
-        // boundary with whatever an empty draft has by then become.
-        if (!_uiState.value.isPickerOpen) return
-        if (_uiState.value.pendingMark != null) {
-            _uiState.update { it.copy(message = strings.get(R.string.msg_mark_pending)) }
-            return
-        }
         cornerJob?.cancel()
         lastDeletedCorner = null
-        _uiState.update {
-            it.copy(
-                boundary = it.draftPoints,
-                cornerIds = it.draftBoundary.map { corner -> corner.id },
-                draftBoundary = emptyList(),
-                selectedCornerId = null,
-                isPickerOpen = false,
-                isCapturingCorner = false,
-                cornerSamples = 0,
-                averagingFix = false,
-                showCornerHint = false,
-                undoAvailable = false
-            )
+        _uiState.update { state ->
+            // The guards ride INSIDE the one atomic update. A check-then-act gate
+            // read from _uiState.value before the update (what this used to be)
+            // lets two racing callers both pass it — a double tap on "Done", or
+            // commitMark's automatic close meeting the user's own press — and
+            // the second caller would then overwrite the standing boundary with
+            // whatever the emptied draft held by then. Inside the update, exactly
+            // one caller ever sees an open picker with no mark hanging; every
+            // later caller finds the picker already closed and changes nothing.
+            when {
+                // No-op when the picker is already closed. A successful commitMark
+                // closes the picker itself, and a stray second call must not
+                // rewrite the boundary the first call already stood up.
+                !state.isPickerOpen -> state
+
+                // Refuses while a mark still hangs, and says so. Finishing would
+                // drop that mark on the floor: the user has placed it, lined it
+                // up, and would watch the screen close on a corner that never
+                // arrived — with the draft it belonged to gone as well.
+                state.pendingMark != null -> state.copy(
+                    message = strings.get(R.string.msg_mark_pending)
+                )
+
+                else -> state.copy(
+                    boundary = state.draftPoints,
+                    cornerIds = state.draftBoundary.map { corner -> corner.id },
+                    draftBoundary = emptyList(),
+                    selectedCornerId = null,
+                    isPickerOpen = false,
+                    isCapturingCorner = false,
+                    cornerSamples = 0,
+                    averagingFix = false,
+                    showCornerHint = false,
+                    undoAvailable = false
+                )
+            }
         }
     }
 

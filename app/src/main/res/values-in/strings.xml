@@ -171,6 +171,8 @@
     <string name="edit_looking_up">Mencari…</string>
     <string name="edit_use_my_location">Pakai lokasi saya</string>
     <string name="edit_getting_fix">Mengambil sinyal…</string>
+    <string name="edit_clear_latitude">Hapus lintang</string>
+    <string name="edit_clear_longitude">Hapus bujur</string>
     <string name="edit_accuracy">Akurasi ±%1$d m</string>
     <string name="edit_altitude">Ketinggian %1$d m</string>
     <string name="edit_averaging">Merata-ratakan… tahan jangan bergerak</string>

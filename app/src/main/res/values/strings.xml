@@ -175,6 +175,8 @@
     <string name="edit_looking_up">Looking up…</string>
     <string name="edit_use_my_location">Use my location</string>
     <string name="edit_getting_fix">Getting fix…</string>
+    <string name="edit_clear_latitude">Clear latitude</string>
+    <string name="edit_clear_longitude">Clear longitude</string>
     <string name="edit_accuracy">Accuracy ±%1$d m</string>
     <string name="edit_altitude">Altitude %1$d m</string>
     <string name="edit_averaging">Averaging… hold still</string>

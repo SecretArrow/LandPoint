@@ -21,7 +21,12 @@ tags:
 ---
 - launchApp
 
-# First run shows the introduction; skip it.
+# First run shows the introduction; skip it when it is there. Conditional, not
+# an unconditional wait: whichever flow launches the app FIRST is the one that
+# sees the introduction and dismisses it (and the CI job's warm-up launch may
+# have a user-less view of it too), so by the time this flow runs the Skip
+# button may already be gone. Requiring it here made this flow the only one
+# that could not survive a first launch it did not get to make.
 # A slow CI emulator sometimes raises a system "isn't responding" dialog over
 # whatever is on screen; dismiss it when present so the flow can proceed.
 - runFlow:
@@ -30,10 +35,11 @@ tags:
     commands:
       - tapOn: '^Wait$'
 
-- extendedWaitUntil:
-    visible: '^(Skip|Lewati)$'
-    timeout: 30000
-- tapOn: '^(Skip|Lewati)$'
+- runFlow:
+    when:
+      visible: '^(Skip|Lewati)$'
+    commands:
+      - tapOn: '^(Skip|Lewati)$'
 
 # The list screen's big FAB.
 - extendedWaitUntil:
@@ -149,16 +155,19 @@ tags:
 
 # Save the record. The three corners are already on the boundary — each
 # commit wrote them as the picker closed — so the form's top-bar Save
-# (action_save) writes the record with the boundary as it stands. No back
-# press to commit is needed any more: the picker is already closed after
-# the third mark.
+# writes the record with the boundary as it stands. No back press to commit
+# is needed any more: the picker is already closed after the third mark.
+# Matched by LABEL, not by id: Compose views carry no resource id unless
+# testTagsAsResourceId is switched on, and the app never does — so a step
+# like `id: action_save` can only ever end in "No visible element found"
+# (run 44365945891, flow 01, after all three corners had been committed).
 - scrollUntilVisible:
     element:
-      id: 'action_save'
+      text: '^(Save|Simpan)$'
     direction: UP
     timeout: 30000
 - tapOn:
-    id: 'action_save'
+    text: '^(Save|Simpan)$'
 
 # The saved record shows its name, wherever the editor returns to.
 - extendedWaitUntil:

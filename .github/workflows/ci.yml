@@ -305,7 +305,20 @@ jobs:
             # binary by its absolute path instead.
             "$HOME/.maestro/bin/maestro" --version
             echo "Running flows"
-            "$HOME/.maestro/bin/maestro" test .maestro/flows
+            # Each flow is invoked BY NAME, in the order the suite depends on,
+            # instead of handing Maestro the whole folder. `maestro test
+            # .maestro/flows` runs the files in an undefined order (the 2026-11-18
+            # run went 03, 04, 06, 01, 05, 02), so flow 01 — which records
+            # "Kebun Percobaan", the parcel flows 02-05 search, export, back up
+            # and measure — ran fourth, after its dependents had already failed
+            # on the missing parcel. Flow 01's unconditional first-run Skip tap
+            # also only works while the introduction is still up: whichever flow
+            # launches the app first dismisses it, so every flow handles the
+            # introduction conditionally and the order no longer decides who
+            # sees it. A flow that fails does not stop the ones behind it: every
+            # result still lands in the summary. One line — the runner runs each
+            # script line as its own shell, so a loop may not span lines.
+            set +e; FAILED=0; for flow in 01-record-land-manual-coordinates 02-search-filter 03-export-csv 04-backup-restore 05-owner-add 06-recently-deleted; do echo "=== Flow $flow ==="; "$HOME/.maestro/bin/maestro" test ".maestro/flows/$flow.yaml" || FAILED=1; done; exit $FAILED
 
       - name: Upload Maestro results
         if: failure()

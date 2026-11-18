@@ -620,6 +620,23 @@ private fun CoordinateSection(
                 singleLine = true,
                 isError = state.coordinateError != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                trailingIcon = {
+                    if (state.latitude.isNotEmpty()) {
+                        // One tap empties a captured or mistyped value. Typing
+                        // over a filled field otherwise means caret surgery:
+                        // a tap lands the caret wherever it hits and erase only
+                        // reaches left of it, so half the captured fix would
+                        // survive behind the typed value. Also the door the
+                        // e2e flows clear the auto-captured coordinates with.
+                        IconButton(onClick = { onLatitudeChange("") }) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.edit_clear_latitude),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                },
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
@@ -629,6 +646,17 @@ private fun CoordinateSection(
                 singleLine = true,
                 isError = state.coordinateError != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                trailingIcon = {
+                    if (state.longitude.isNotEmpty()) {
+                        IconButton(onClick = { onLongitudeChange("") }) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.edit_clear_longitude),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                },
                 modifier = Modifier.weight(1f)
             )
         }

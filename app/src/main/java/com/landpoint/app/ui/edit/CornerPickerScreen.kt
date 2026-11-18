@@ -285,7 +285,15 @@ fun CornerPickerScreen(
         // by the time the snackbar is dismissed the window may have moved on, and
         // offering Undo then would be a button that does nothing.
         val undoable = state.undoAvailable
-        onMessageShown()
+        // Shown first, consumed after — the order matters. onMessageShown used to
+        // run before the show: consuming clears state.message, the next frame
+        // re-keys this effect, the re-key cancels the showSnackbar caller
+        // mid-display, and cancelling the caller is what SnackbarHostState.
+        // showSnackbar's finally treats as "take the snackbar away" — so a
+        // refusal like "too close to corner #2" flashed for a single frame and
+        // was gone before anyone could read which corner it named. Holding the
+        // key for the snackbar's whole life keeps the refusal on screen, and the
+        // consume afterwards only re-arms the effect once the offer is done.
         val result = snackbarHost.showSnackbar(
             message = text,
             actionLabel = if (undoable) undoLabel else null,
@@ -296,6 +304,7 @@ fun CornerPickerScreen(
             // back, not a delayed delete.
             duration = SnackbarDuration.Short
         )
+        onMessageShown()
         if (result == SnackbarResult.ActionPerformed) onUndoDelete()
     }
 

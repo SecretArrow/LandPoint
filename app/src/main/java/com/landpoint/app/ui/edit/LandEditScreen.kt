@@ -396,12 +396,27 @@ fun LandEditScreen(
                     }
                 },
                 actions = {
+                    // The Save button is the one place a saving state has to be
+                    // visible: the form's only commit is this press, and a
+                    // disabled button alone leaves the user wondering whether
+                    // anything is happening. A small spinner inside the button
+                    // (replacing the label, since the button cannot be pressed
+                    // again while saving) closes that loop without reserving a
+                    // separate progress strip under the app bar.
                     Button(
                         onClick = { viewModel.save(onDone) },
                         enabled = !state.isSaving,
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Text(stringResource(R.string.action_save))
+                        if (state.isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text(stringResource(R.string.action_save))
+                        }
                     }
                 }
             )

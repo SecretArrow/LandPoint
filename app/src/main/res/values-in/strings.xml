@@ -32,7 +32,8 @@
     <string name="list_search_placeholder">Cari nama, catatan, alamat</string>
     <string name="list_fab_save_land">Simpan tanah</string>
     <string name="list_empty_title">Belum ada tanah tersimpan</string>
-    <string name="list_empty_body">Tekan Simpan tanah untuk merekam koordinat GPS pertama Anda.</string>
+    <string name="list_empty_body">Rekam lahan pertama Anda dengan menggambar batasnya di peta.</string>
+    <string name="list_empty_cta">Simpan tanah pertama Anda</string>
     <string name="list_no_matches_title">Tidak ditemukan</string>
     <string name="list_no_matches_body">Coba kata pencarian lain.</string>
     <string name="card_navigate_to">Navigasi ke %1$s</string>
@@ -331,6 +332,8 @@
     <!-- Rincian -->
     <string name="detail_title_fallback">Tanah</string>
     <string name="detail_missing">Tanah ini sudah tidak ada.</string>
+    <string name="detail_missing_body">Mungkin sudah dihapus dari perangkat lain atau dipulihkan dari cadangan lama. Daftar Anda tidak berubah.</string>
+    <string name="detail_missing_back">Kembali ke daftar</string>
     <string name="detail_distance_away">%1$s dari sini</string>
     <string name="delete_dialog_title">Hapus %1$s?</string>
     <string name="delete_dialog_body">Bidang tanah ini akan dipindahkan ke Baru dihapus dan masih bisa dipulihkan selama 30 hari.</string>

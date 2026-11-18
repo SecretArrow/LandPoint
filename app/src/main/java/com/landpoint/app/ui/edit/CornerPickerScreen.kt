@@ -2,6 +2,13 @@ package com.landpoint.app.ui.edit
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -82,6 +89,7 @@ import com.landpoint.app.ui.components.PARCEL_ZOOM
 import com.landpoint.app.ui.components.rememberCoachMark
 import com.landpoint.app.ui.components.rememberLandMapController
 import com.landpoint.app.ui.components.rememberMapPrefs
+import com.landpoint.app.ui.theme.Motion
 import com.landpoint.app.ui.theme.Spacing
 import com.landpoint.app.util.AreaFormat
 import com.landpoint.app.util.GeoPoint
@@ -339,7 +347,7 @@ fun CornerPickerScreen(
         // The sight the "place a mark here" button aims: gone once there is a mark,
         // because from then on the thing being positioned is the mark itself.
         if (mark == null) {
-            MapCrosshair(modifier = Modifier.align(Alignment.Center))
+            MapCrosshair(modifier = Modifier.align(Alignment.Center), pulsing = true)
         }
 
         Column(modifier = Modifier.align(Alignment.TopStart).fillMaxWidth()) {
@@ -420,30 +428,79 @@ fun CornerPickerScreen(
                 }
             )
 
-            if (mark == null) {
-                IdleControls(
-                    state = state,
-                    sources = sources,
-                    onPlaceMark = {
-                        controller.centerTarget()?.let {
-                            onPlaceMark(it.latitude, it.longitude, reach())
-                        }
-                    },
-                    onDeleteSelected = onDeleteSelected,
-                    onPhotoSelected = { state.selectedCornerId?.let(onCornerPhoto) },
-                    onUndo = onUndo,
-                    onClear = onClear
-                )
-            } else {
-                MarkControls(
-                    state = state,
-                    mark = mark,
-                    sources = sources,
-                    onNudgeMark = onNudgeMark,
-                    onMarkStep = onMarkStep,
-                    onUseMark = onUseMark,
-                    onDiscardMark = onDiscardMark
-                )
+            // The swap between "place a mark" and "use this mark" is the heart of
+            // the picker, and a hard cut made it feel like two screens. A single
+            // short slide + fade — the same clock every sheet uses — turns the
+            // hanging mark into one continuous gesture: the controls rise in as
+            // the mark is hung, and sink back out as it is committed or thrown
+            // away. The mark-absent state slides up from the bottom (it is the
+            // resting state), the mark-present state slides down from the top
+            // (it is the response to the user's placement).
+            AnimatedContent(
+                targetState = mark == null,
+                transitionSpec = {
+                    val enterIdle = slideInVertically(
+                        animationSpec = Motion.tweenStandard(),
+                        initialOffsetY = { it }
+                    ) + fadeIn(animationSpec = Motion.tweenStandard())
+                    val enterMark = slideInVertically(
+                        animationSpec = Motion.tweenStandard(),
+                        initialOffsetY = { -it }
+                    ) + fadeIn(animationSpec = Motion.tweenStandard())
+                    val exitIdle = slideOutVertically(
+                        animationSpec = Motion.tweenStandard(),
+                        targetOffsetY = { -it }
+                    ) + fadeOut(animationSpec = Motion.tweenStandard())
+                    val exitMark = slideOutVertically(
+                        animationSpec = Motion.tweenStandard(),
+                        targetOffsetY = { it }
+                    ) + fadeOut(animationSpec = Motion.tweenStandard())
+                    if (targetState) {
+                        // entering the idle state: rise in from below.
+                        enterIdle togetherWith exitMark
+                    } else {
+                        // entering the mark state: drop in from above.
+                        enterMark togetherWith exitIdle
+                    }.using(
+                        // Size transforms make the card jump as the taller mark
+                        // panel swaps in; a fade across the size change is
+                        // smoother than an animated grow.
+                        SizeTransform(clip = false)
+                    )
+                },
+                label = "pickerControls"
+            ) { idle ->
+                if (idle) {
+                    IdleControls(
+                        state = state,
+                        sources = sources,
+                        onPlaceMark = {
+                            controller.centerTarget()?.let {
+                                onPlaceMark(it.latitude, it.longitude, reach())
+                            }
+                        },
+                        onDeleteSelected = onDeleteSelected,
+                        onPhotoSelected = { state.selectedCornerId?.let(onCornerPhoto) },
+                        onUndo = onUndo,
+                        onClear = onClear
+                    )
+                } else {
+                    // The content runs only when targetState is false, i.e. the
+                    // mark is non-null at this point. The let keeps that
+                    // contract explicit rather than asserting it with !! — the
+                    // picker never renders MarkControls without a mark.
+                    mark?.let { nonNullMark ->
+                        MarkControls(
+                            state = state,
+                            mark = nonNullMark,
+                            sources = sources,
+                            onNudgeMark = onNudgeMark,
+                            onMarkStep = onMarkStep,
+                            onUseMark = onUseMark,
+                            onDiscardMark = onDiscardMark
+                        )
+                    }
+                }
             }
         }
 

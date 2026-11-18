@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -26,6 +29,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -318,6 +322,9 @@ fun LandListScreen(
 
                 state.lands.isEmpty() -> EmptyState(
                     hasQuery = state.query.isNotBlank(),
+                    onSaveLand = {
+                        if (permission.isGranted) onNewLand() else permission.request()
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -647,19 +654,23 @@ private fun ExportFormatDialog(
 }
 
 @Composable
-private fun EmptyState(hasQuery: Boolean, modifier: Modifier = Modifier) {
+private fun EmptyState(hasQuery: Boolean, onSaveLand: () -> Unit, modifier: Modifier = Modifier) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(horizontal = 32.dp, vertical = 40.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            modifier = Modifier.padding(horizontal = Spacing.xxl, vertical = Spacing.xxl)
         ) {
+            // A faint parcel outline stands in for the map the user is about to
+            // draw on: the same icon the FAB carries, at a calmer alpha so the
+            // headline reads first.
             Icon(
                 Icons.Outlined.Map,
                 contentDescription = null,
-                modifier = Modifier.size(64.dp),
+                modifier = Modifier.size(72.dp),
                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
             )
+            Spacer(Modifier.height(Spacing.sm))
             Text(
                 stringResource(
                     if (hasQuery) R.string.list_no_matches_title else R.string.list_empty_title
@@ -675,6 +686,18 @@ private fun EmptyState(hasQuery: Boolean, modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
+            // The empty list is the one place an inline primary action earns its
+            // keep: the FAB is still there, but a centered CTA reads as the next
+            // step rather than a floating afterthought. A filtered "no matches"
+            // state has nothing to save, so the CTA stays out of the way there.
+            if (!hasQuery) {
+                Spacer(Modifier.height(Spacing.sm))
+                Button(onClick = onSaveLand) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(Modifier.width(Spacing.sm))
+                    Text(stringResource(R.string.list_empty_cta))
+                }
+            }
         }
     }
 }

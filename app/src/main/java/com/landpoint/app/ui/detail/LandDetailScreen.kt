@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,6 +69,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -83,6 +86,7 @@ import com.landpoint.app.ui.components.MapShape
 import com.landpoint.app.ui.components.PARCEL_ZOOM
 import com.landpoint.app.ui.components.rememberLandMapController
 import com.landpoint.app.ui.components.rememberMapPrefs
+import com.landpoint.app.ui.theme.Spacing
 import com.landpoint.app.util.AreaFormat
 import com.landpoint.app.util.GeoPoint
 import com.landpoint.app.util.GeoUtils
@@ -206,10 +210,10 @@ fun LandDetailScreen(
                 contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
 
-            land == null -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) { Text(stringResource(R.string.detail_missing)) }
+            land == null -> MissingLandState(
+                onBack = onBack,
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
 
             else -> DetailContent(
                 land = land,
@@ -444,6 +448,46 @@ private fun DetailContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
         )
+    }
+}
+
+/**
+ * The land the user tapped into is gone. A bare "no longer exists" string gave
+ * them no way forward; this is the same friendly shape the list's empty state
+ * uses — an icon, a headline, a calm explanation, and a single primary action
+ * that puts them back on solid ground.
+ */
+@Composable
+private fun MissingLandState(onBack: () -> Unit, modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            modifier = Modifier.padding(horizontal = Spacing.xxl, vertical = Spacing.xxl)
+        ) {
+            Icon(
+                Icons.Outlined.BrokenImage,
+                contentDescription = null,
+                modifier = Modifier.size(72.dp),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            )
+            Spacer(Modifier.height(Spacing.sm))
+            Text(
+                stringResource(R.string.detail_missing),
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                stringResource(R.string.detail_missing_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(Spacing.sm))
+            Button(onClick = onBack) {
+                Text(stringResource(R.string.detail_missing_back))
+            }
+        }
     }
 }
 

@@ -181,7 +181,7 @@ class LandEditViewModelTest {
      * accessibility double-fire must not turn one press into two corners.
      */
     @Test
-    fun `one committed mark is exactly one corner and leaves no mark`() {
+    fun `one committed mark is exactly one corner and leaves no mark`() = runTest {
         // Standing the mark the way markFromFix leaves it once a fix lands: as a
         // pending mark, ready to commit. A typed mark is the deterministic
         // stand-in for the averaged fix here.

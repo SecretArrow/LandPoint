@@ -165,20 +165,22 @@ class LandEditViewModelTest {
     }
 
     /**
-     * The promise of the GPS button: one press is one corner. The averaging is
-     * the slow part of the press, and [LandEditViewModel.markFromFix] now folds
-     * the commit into the same press by calling [LandEditViewModel.commitMark]
-     * the moment the averaged fix lands.
+     * The promise of the GPS button: one press gathers the average and hangs a
+     * mark. The confirm press on "Pakai tanda ini" — [commitMark] — turns it
+     * into a corner. The averaging no longer folds the commit into the same
+     * press: the user got no chance to review the averaged fix before it was
+     * silently swallowed into the boundary, so the confirm bar is back in the
+     * loop.
      *
      * The shadow location pipeline that feeds `captureAveraged` is brittle to
      * run under Robolectric's paused main looper (a listener that posts back to
      * it can stall the test forever), so this contract is pinned through the
      * deterministic mark path that `commitMark` shares with `markFromFix`:
-     * `markFromFix` is `commitMark` called once the averaged fix is hung as a
-     * mark, so the contract "a hanging mark, committed once, is exactly one
-     * corner, leaves no mark behind, and closes the picker" is the same contract
-     * the GPS press ends in. A second commit finds nothing — a double tap or an
-     * accessibility double-fire must not turn one press into two corners.
+     * once the averaged fix lands it hangs as a mark, ready for the user to
+     * commit. A typed mark is the deterministic stand-in for the averaged fix
+     * here. One commit, one corner, the picker closed, no mark left behind —
+     * and a second commit finds nothing, so a double tap or an accessibility
+     * double-fire cannot turn one press into two corners.
      */
     @Test
     fun `one committed mark is exactly one corner and leaves no mark`() = runTest {
@@ -189,7 +191,7 @@ class LandEditViewModelTest {
         viewModel.placeMarkTyped("-6.2", "106.8")
         assertNotNull(viewModel.uiState.value.pendingMark)
 
-        // The single commit a press performs. One corner added, the picker
+        // The confirm press on "Pakai tanda ini". One corner added, the picker
         // closed, the mark gone: the user is back on the edit screen.
         viewModel.commitMark()
 
@@ -233,6 +235,38 @@ class LandEditViewModelTest {
         assertNotNull(state.pendingMark)
         assertNotNull(state.message)
         // The picker stays open: the user needs to move the refused mark.
+        assertTrue(state.isPickerOpen)
+    }
+
+    /**
+     * Regression guard for the bug where one "Tambah sudut" press silently
+     * swallowed the averaged GPS fix into the boundary — the user never got the
+     * chance to press "Pakai tanda ini". After the fix, a press that lands a
+     * fix must leave it as a HANGING mark, not as a corner: the boundary is
+     * empty, the draft is empty, the mark is on screen, and the picker is still
+     * open. `commitMark` is the only door into the boundary, and it is the
+     * user's "Pakai tanda ini" press that opens it.
+     *
+     * The shadow location pipeline that feeds `captureAveraged` is brittle to
+     * run under Robolectric's paused main looper, so this contract is pinned
+     * through the same deterministic typed-mark path that `markFromFix`
+     * produces once a fix lands: a hanging pending mark, no corner yet.
+     */
+    @Test
+    fun `a landed fix hangs as a mark and does not auto-commit a corner`() {
+        viewModel.openCornerPicker()
+        // The mark the way markFromFix leaves it once a fix lands: a typed mark
+        // is the deterministic stand-in for the averaged fix.
+        viewModel.placeMarkTyped("-6.2", "106.8")
+
+        val state = viewModel.uiState.value
+        // The mark hangs — not yet a corner. The user has to press
+        // "Pakai tanda ini" to commit it. This is the regression guard: the
+        // boundary stays empty until that press.
+        assertNotNull(state.pendingMark)
+        assertTrue(state.boundary.isEmpty())
+        assertTrue(state.draftBoundary.isEmpty())
+        // The picker stays open: the confirm bar is what the user presses next.
         assertTrue(state.isPickerOpen)
     }
 

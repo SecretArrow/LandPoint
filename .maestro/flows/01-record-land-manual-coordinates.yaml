@@ -155,16 +155,19 @@ tags:
 
 # Save the record. The three corners are already on the boundary — each
 # commit wrote them as the picker closed — so the form's top-bar Save
-# (action_save) writes the record with the boundary as it stands. No back
-# press to commit is needed any more: the picker is already closed after
-# the third mark.
+# writes the record with the boundary as it stands. No back press to commit
+# is needed any more: the picker is already closed after the third mark.
+# Matched by LABEL, not by id: Compose views carry no resource id unless
+# testTagsAsResourceId is switched on, and the app never does — so a step
+# like `id: action_save` can only ever end in "No visible element found"
+# (run 44365945891, flow 01, after all three corners had been committed).
 - scrollUntilVisible:
     element:
-      id: 'action_save'
+      text: '^(Save|Simpan)$'
     direction: UP
     timeout: 30000
 - tapOn:
-    id: 'action_save'
+    text: '^(Save|Simpan)$'
 
 # The saved record shows its name, wherever the editor returns to.
 - extendedWaitUntil:

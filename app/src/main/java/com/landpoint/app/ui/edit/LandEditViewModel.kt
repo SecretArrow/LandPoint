@@ -888,6 +888,11 @@ class LandEditViewModel(
      * outcome.
      */
     fun commitCornerPicker() {
+        // No-op when the picker is already closed. A successful commitMark
+        // closes the picker itself, and a stray second call (a double tap on
+        // "Done", or a test that calls both) must not overwrite the standing
+        // boundary with whatever an empty draft has by then become.
+        if (!_uiState.value.isPickerOpen) return
         if (_uiState.value.pendingMark != null) {
             _uiState.update { it.copy(message = strings.get(R.string.msg_mark_pending)) }
             return
@@ -1087,8 +1092,8 @@ class LandEditViewModel(
      * What the quick GPS button on the form now does. The corner is saved by
      * the same press — [markFromFix] commits the averaged fix as soon as it
      * lands, so the user does not have to confirm it on a second press. The
-     * picker stays open afterwards so the next corner can be added the same
-     * way, and the just-placed corner is visible on the map.
+     * commit closes the picker, so the user lands back on the edit screen
+     * with the corner just placed saved to the boundary.
      */
     fun openCornerPickerAtFix() {
         openCornerPicker()
@@ -1164,6 +1169,12 @@ class LandEditViewModel(
      * of the three was already on screen above the button, so there is nothing to
      * announce afterwards. The insert snackbar this replaces told the user about a
      * renumbering that had already happened to a corner they had not agreed to.
+     *
+     * One commit is one corner and it is done: a successful append or insert
+     * writes the draft back to the boundary and closes the picker, so the user is
+     * back on the edit screen instead of being offered "place a mark here" again.
+     * A refusal (TooClose) is not a commit — the mark stays hanging for the user
+     * to move, and the picker stays open.
      */
     fun commitMark() {
         // The mark is read and cleared inside the one atomic update — not in a
@@ -1171,14 +1182,14 @@ class LandEditViewModel(
         // accessibility service that fires the click twice) can then only find
         // the mark already gone, so one working of the button ever adds one
         // corner, never two.
-        var consumed = false
+        var committed = false
         _uiState.update { state ->
             val mark = state.pendingMark ?: return@update state
-            consumed = true
-            val committed = DraftCorner(newCornerId(), mark.point)
+            val committedCorner = DraftCorner(newCornerId(), mark.point)
             when (val placement = mark.placementIn(state.draftPoints, state.markToleranceM)) {
                 // Reachable only if the draft changed under the mark, since the
                 // button is disabled on this answer. Says which corner either way.
+                // Not a commit: the mark stays hanging for the user to move.
                 is Placement.TooClose -> state.copy(
                     message = strings.get(
                         R.string.corner_picker_too_close,
@@ -1186,31 +1197,43 @@ class LandEditViewModel(
                     )
                 )
 
-                is Placement.Append -> state.copy(
-                    draftBoundary = state.draftBoundary + committed,
-                    pendingMark = null,
-                    averagingFix = false,
-                    cornerSamples = 0,
-                    undoAvailable = false
-                )
+                is Placement.Append -> {
+                    committed = true
+                    state.copy(
+                        draftBoundary = state.draftBoundary + committedCorner,
+                        pendingMark = null,
+                        averagingFix = false,
+                        cornerSamples = 0,
+                        undoAvailable = false
+                    )
+                }
 
-                is Placement.Insert -> state.copy(
-                    draftBoundary = state.draftBoundary.toMutableList()
-                        .apply { add(placement.at, committed) },
-                    pendingMark = null,
-                    averagingFix = false,
-                    cornerSamples = 0,
-                    undoAvailable = false
-                )
+                is Placement.Insert -> {
+                    committed = true
+                    state.copy(
+                        draftBoundary = state.draftBoundary.toMutableList()
+                            .apply { add(placement.at, committedCorner) },
+                        pendingMark = null,
+                        averagingFix = false,
+                        cornerSamples = 0,
+                        undoAvailable = false
+                    )
+                }
             }
         }
-        if (consumed) {
-            // Using the mark starts a new corner, so an earlier corner's delete is no
-            // longer the thing to undo — the older "undo last placed" path owns the
-            // tail from here, and an insert would shift the saved deletion's index.
-            // The mark was seen, even if the placement refused it: the intent to
-            // begin a corner happened either way.
-            lastDeletedCorner = null
+        // Using the mark starts a new corner, so an earlier corner's delete is no
+        // longer the thing to undo — the older "undo last placed" path owns the
+        // tail from here, and an insert would shift the saved deletion's index.
+        // The mark was seen, even if the placement refused it: the intent to
+        // begin a corner happened either way.
+        lastDeletedCorner = null
+        if (committed) {
+            // One corner added, one corner done: write the draft to the boundary
+            // and close the picker. The user is back on the edit screen, not
+            // being asked to place another mark. commitCornerPicker is a no-op
+            // when the picker is already closed, and the append/insert above has
+            // cleared pendingMark, so this close is unconditional here.
+            commitCornerPicker()
         }
     }
 

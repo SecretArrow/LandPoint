@@ -91,19 +91,28 @@ class LandEditViewModelTest {
 
     @Test
     fun `one committed mark becomes exactly one corner`() {
+        viewModel.openCornerPicker()
         viewModel.placeMarkAt(-6.2, 106.8)
 
         viewModel.commitMark()
-        assertEquals(1, viewModel.uiState.value.draftBoundary.size)
+        // The commit writes the draft to the boundary and closes the picker: one
+        // corner, the picker shut, the mark gone.
+        val first = viewModel.uiState.value
+        assertEquals(1, first.boundary.size)
+        assertTrue(first.draftBoundary.isEmpty())
+        assertNull(first.pendingMark)
+        assertFalse(first.isPickerOpen)
 
-        // The second press — a double tap, a nervous finger — finds no mark and
-        // must not conjure a corner out of nothing.
+        // The second press — a double tap, a nervous finger — finds the picker
+        // already closed and no mark to commit, and must not conjure a corner
+        // out of nothing. The boundary stays at one.
         viewModel.commitMark()
-        assertEquals(1, viewModel.uiState.value.draftBoundary.size)
+        assertEquals(1, viewModel.uiState.value.boundary.size)
     }
 
     @Test
     fun `two commit presses racing each other add exactly one corner`() {
+        viewModel.openCornerPicker()
         viewModel.placeMarkAt(-6.2, 106.8)
 
         val go = CountDownLatch(1)
@@ -121,14 +130,20 @@ class LandEditViewModelTest {
         first.join(5_000)
         second.join(5_000)
 
-        assertEquals(1, viewModel.uiState.value.draftBoundary.size)
+        // The first commit adds the corner and closes the picker; the second
+        // finds the picker closed and the boundary stays at one.
+        val state = viewModel.uiState.value
+        assertEquals(1, state.boundary.size)
+        assertTrue(state.draftBoundary.isEmpty())
+        assertFalse(state.isPickerOpen)
     }
 
     @Test
     fun `committing with no mark hanging changes nothing`() {
+        viewModel.openCornerPicker()
         viewModel.commitMark()
 
-        assertTrue(viewModel.uiState.value.draftBoundary.isEmpty())
+        assertTrue(viewModel.uiState.value.boundary.isEmpty())
         assertNull(viewModel.uiState.value.pendingMark)
     }
 
@@ -161,9 +176,9 @@ class LandEditViewModelTest {
      * deterministic mark path that `commitMark` shares with `markFromFix`:
      * `markFromFix` is `commitMark` called once the averaged fix is hung as a
      * mark, so the contract "a hanging mark, committed once, is exactly one
-     * corner and leaves no mark behind" is the same contract the GPS press
-     * ends in. A second commit finds nothing — a double tap or an accessibility
-     * double-fire must not turn one press into two corners.
+     * corner, leaves no mark behind, and closes the picker" is the same contract
+     * the GPS press ends in. A second commit finds nothing — a double tap or an
+     * accessibility double-fire must not turn one press into two corners.
      */
     @Test
     fun `one committed mark is exactly one corner and leaves no mark`() {
@@ -174,16 +189,19 @@ class LandEditViewModelTest {
         viewModel.placeMarkTyped("-6.2", "106.8")
         assertNotNull(viewModel.uiState.value.pendingMark)
 
-        // The single commit a press performs.
+        // The single commit a press performs. One corner added, the picker
+        // closed, the mark gone: the user is back on the edit screen.
         viewModel.commitMark()
 
         val first = viewModel.uiState.value
-        assertEquals(1, first.draftBoundary.size)
+        assertEquals(1, first.boundary.size)
+        assertTrue(first.draftBoundary.isEmpty())
         assertNull(first.pendingMark)
+        assertFalse(first.isPickerOpen)
 
-        // A racing second commit finds no mark and adds nothing.
+        // A racing second commit finds the picker closed and adds nothing.
         viewModel.commitMark()
-        assertEquals(1, viewModel.uiState.value.draftBoundary.size)
+        assertEquals(1, viewModel.uiState.value.boundary.size)
     }
 
     /**
@@ -191,45 +209,69 @@ class LandEditViewModelTest {
      * zero-length edge: the commit refuses it and leaves the mark hanging with a
      * message naming the corner it clashes with, so the user can move it before
      * any second press. `markFromFix` reaches this same refusal through the
-     * shared `commitMark` door.
+     * shared `commitMark` door. A refusal does not close the picker — the mark
+     * is still on screen, waiting to be moved.
      */
     @Test
     fun `a mark too close to a corner stays as a mark and names the corner`() {
         viewModel.openCornerPicker()
         viewModel.placeMarkAt(-6.2, 106.8)
         viewModel.commitMark()
-        assertEquals(1, viewModel.uiState.value.draftBoundary.size)
+        // The first successful commit writes the corner to the boundary and
+        // closes the picker.
+        assertEquals(1, viewModel.uiState.value.boundary.size)
+        assertFalse(viewModel.uiState.value.isPickerOpen)
 
-        // A second mark on the same coordinates as the standing corner.
+        // Re-open to place a second mark on the same coordinates as the corner
+        // that just landed: the commit must refuse it without closing.
+        viewModel.openCornerPicker()
         viewModel.placeMarkAt(-6.2, 106.8)
         viewModel.commitMark()
 
         val state = viewModel.uiState.value
-        assertEquals(1, state.draftBoundary.size)
+        assertEquals(1, state.boundary.size)
         assertNotNull(state.pendingMark)
         assertNotNull(state.message)
+        // The picker stays open: the user needs to move the refused mark.
+        assertTrue(state.isPickerOpen)
     }
 
     /**
-     * Closing the picker keeps the drawn shape: back is commit when there are
-     * corners on the ground, so the user no longer presses a separate "use this
-     * boundary" button. The committed boundary matches the draft point-for-point
-     * and the picker is left closed with the draft cleared.
+     * The "use this mark" button is one-and-done: the first commit writes the
+     * corner to the boundary and closes the picker, so a second mark placed
+     * afterwards is a fresh session that opens the picker again rather than
+     * piling onto the same draft. Building a multi-corner boundary is now a
+     * series of "add corner" presses on the edit screen, each opening the
+     * picker, placing one mark, and landing back on the edit screen.
+     *
+     * A back press that arrives after the commit is a no-op rather than a
+     * second write: [commitCornerPicker] refuses to run when the picker is
+     * already closed, so the corner that just landed is not overwritten by an
+     * empty draft.
      */
     @Test
-    fun `closing the picker with corners keeps them as the boundary`() {
+    fun `a second commit after the picker closed is a no-op and the boundary stands`() {
         viewModel.openCornerPicker()
-        listOf(-6.2 to 106.8, -6.21 to 106.81, -6.22 to 106.80).forEach { (lat, lon) ->
-            viewModel.placeMarkAt(lat, lon)
-            viewModel.commitMark()
-        }
-        assertEquals(3, viewModel.uiState.value.draftBoundary.size)
+        viewModel.placeMarkAt(-6.2, 106.8)
+        viewModel.commitMark()
+        // The picker is closed with one corner on the boundary.
+        assertEquals(1, viewModel.uiState.value.boundary.size)
+        assertFalse(viewModel.uiState.value.isPickerOpen)
 
+        // A stray back press / "Done" press after the close must not overwrite
+        // the boundary: commitCornerPicker is a no-op when the picker is
+        // already closed.
         viewModel.commitCornerPicker()
+        assertEquals(1, viewModel.uiState.value.boundary.size)
+        assertFalse(viewModel.uiState.value.isPickerOpen)
 
+        // Adding a second corner is a fresh picker session.
+        viewModel.openCornerPicker()
+        viewModel.placeMarkAt(-6.21, 106.81)
+        viewModel.commitMark()
         val state = viewModel.uiState.value
-        assertEquals(3, state.boundary.size)
-        assertEquals(listOf(-6.2, -6.21, -6.22), state.boundary.map { it.latitude })
+        assertEquals(2, state.boundary.size)
+        assertEquals(listOf(-6.2, -6.21), state.boundary.map { it.latitude })
         assertTrue(state.draftBoundary.isEmpty())
         assertFalse(state.isPickerOpen)
     }

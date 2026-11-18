@@ -1,10 +1,14 @@
 # E2E 1 — record a land and draw its boundary by typing coordinates.
 #
 # Covers: first-run introduction, the Save-land flow, the corner picker's
-# "Enter coordinates" source (the survey-letter path), mark acceptance, the
-# back-press commit of the draft boundary (the picker has no explicit
-# "Use this boundary" button since cb6bd4e), and the saved record appearing
-# with its name.
+# "Enter coordinates" source (the survey-letter path), mark acceptance, and
+# the saved record appearing with its name.
+#
+# Since the picker auto-closes after each accepted mark (one commit is one
+# corner and it is done), building a three-corner boundary is three separate
+# picker sessions: open the picker from the edit form, type one corner, use
+# the mark, land back on the edit form, repeat. The form's Save at the end
+# writes the record with the three corners already on the boundary.
 #
 # Preconditions established by the CI job before the flows run:
 #   - the debug APK is installed,
@@ -94,12 +98,20 @@ tags:
     visible: '^(Use this mark|Pakai tanda ini)$'
     timeout: 10000
 - tapOn: '^(Use this mark|Pakai tanda ini)$'
+# The picker closed: one commit is one corner and it is done. The edit form
+# is back. Add corner 2 by opening the picker again from the form.
 
-# Corner 2
+# Corner 2 — reopen the picker from the edit form.
+- scrollUntilVisible:
+    element:
+      text: '^\s*(Mark on the map|Tandai di peta)\s*$'
+    direction: DOWN
+    timeout: 30000
+- tapOn: '^\s*(Mark on the map|Tandai di peta)\s*$'
 - extendedWaitUntil:
     visible:
       text: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
-    timeout: 10000
+    timeout: 20000
 - tapOn:
     text: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
 - tapOn: '^(Latitude|Lintang)$'
@@ -112,11 +124,17 @@ tags:
     timeout: 10000
 - tapOn: '^(Use this mark|Pakai tanda ini)$'
 
-# Corner 3
+# Corner 3 — reopen the picker from the edit form.
+- scrollUntilVisible:
+    element:
+      text: '^\s*(Mark on the map|Tandai di peta)\s*$'
+    direction: DOWN
+    timeout: 30000
+- tapOn: '^\s*(Mark on the map|Tandai di peta)\s*$'
 - extendedWaitUntil:
     visible:
       text: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
-    timeout: 10000
+    timeout: 20000
 - tapOn:
     text: '^\s*(Enter coordinates|Ketik koordinat)\s*$'
 - tapOn: '^(Latitude|Lintang)$'
@@ -129,26 +147,18 @@ tags:
     timeout: 10000
 - tapOn: '^(Use this mark|Pakai tanda ini)$'
 
-# Commit the boundary and save the record.
-# There is no "Use this boundary" step any more: the picker's back handler
-# commits the draft when no mark is hanging (CornerPickerScreen.stepBack ->
-# onDone -> commitCornerPicker), so a system back press is what closes the
-# picker with the boundary it holds. Wait for the idle card's "Place a mark
-# here" button first — it renders only once the third mark has actually been
-# committed to the draft (the mark confirm bar swaps the card for the nudge
-# pad), so a slow "Use this mark" tap cannot race the back press into
-# discarding a mark that is still hanging. That button is a plain Text node
-# (corner_picker_place_mark / "Taruh tanda di sini"), unlike the icon-only
-# source buttons this flow matches elsewhere. After the picker closes, the
-# form's top-bar Save (action_save) saves the record.
-- extendedWaitUntil:
-    visible: '^(Place a mark here|Taruh tanda di sini)$'
-    timeout: 10000
-- pressKey: BACK
-- extendedWaitUntil:
-    visible: '^(Save|Simpan)$'
-    timeout: 15000
-- tapOn: '^(Save|Simpan)$'
+# Save the record. The three corners are already on the boundary — each
+# commit wrote them as the picker closed — so the form's top-bar Save
+# (action_save) writes the record with the boundary as it stands. No back
+# press to commit is needed any more: the picker is already closed after
+# the third mark.
+- scrollUntilVisible:
+    element:
+      id: 'action_save'
+    direction: UP
+    timeout: 30000
+- tapOn:
+    id: 'action_save'
 
 # The saved record shows its name, wherever the editor returns to.
 - extendedWaitUntil:

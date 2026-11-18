@@ -155,7 +155,17 @@ fun LandListScreen(
         // Read once, now: by the time the snackbar is dismissed the window may
         // have closed, and offering Undo then would be a button that does nothing.
         val undoable = state.canUndoDelete
-        viewModel.consumeMessage()
+        // Consume only AFTER the snackbar has been shown and dismissed. This used
+        // to consume first, and the order was the whole bug: consuming clears
+        // state.message, the next frame re-keys this effect, the re-key cancels
+        // the showSnackbar caller mid-display, and cancelling the caller is what
+        // SnackbarHostState.showSnackbar's finally treats as "take the snackbar
+        // away" (it resets currentSnackbarData to null) — so a delete confirmed on
+        // the detail screen announced itself here for a single frame, or never.
+        // The e2e run of 2026-11-18 caught exactly that: the list stood there
+        // with no "Parcel deleted" snackbar at all. With the consume after the
+        // show, the key holds for the snackbar's whole life and the effect only
+        // re-arms once the offer is done.
         val result = snackbarHost.showSnackbar(
             message = text,
             actionLabel = if (undoable) undoLabel else null,
@@ -163,6 +173,7 @@ fun LandListScreen(
             // it at the 8-second spec mark so the offer lines up with §4.7.
             duration = SnackbarDuration.Long
         )
+        viewModel.consumeMessage()
         if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete()
     }
 

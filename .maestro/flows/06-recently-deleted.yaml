@@ -67,44 +67,41 @@ tags:
 # Then wait for the button's idle label: from that moment no capture update
 # can write into the fields any more, so a typed value cannot be overwritten
 # from under us mid-typing. (If the capture found no fix, the button is
-# already idle and the fields empty — the typing below covers that too.)
+# already idle and the fields empty — the conditional clear below covers
+# that too.)
 - extendedWaitUntil:
     visible: '^\s*(Use my location|Pakai lokasi saya)\s*$'
     timeout: 30000
-# Maestro's inputText types AT THE CARET instead of replacing what is in the
-# field, and a tap on the floated "Latitude *" label is a cursor-PLACEMENT
-# tap: the caret lands at the text offset nearest the tap point — in the
-# MIDDLE of the captured value, not at its end. eraseText deletes only left
-# of the caret, so on the CI device (run 44078833057, failing step 020) it
-# erased the captured "-6.175000" prefix of "-6.17500074998" and the typed
-# "-6.175000" was inserted at the caret, leaving the captured jitter tail
-# "74998" to its right — the pin saw "-6.17500074998" and failed (the logcat
-# shows exactly 50 DEL keycodes then exactly "-6.175000" typed). Walk the
-# caret to the end of the line first (DPAD RIGHT; presses past the end are
-# no-ops on a single-line field), so eraseText then clears the WHOLE field
-# whatever it holds. The capture is idle by the idle-label wait above, so
-# nothing can rewrite the field between the erase and the typing.
-- tapOn: '^(Latitude|Lintang) \*$'
-- repeat:
-    times: 25
+# Clear the captured value with the field's own clear button (the X icon in
+# the trailing slot, added for users for the same reason): one tap empties
+# the whole field, so the caret never matters. The old way — tapping the
+# field, walking the caret right, then eraseText — needed Maestro keys
+# Maestro does not parse: pressKey only accepts BACK/HOME/ENTER/TAB/POWER/
+# BACKSPACE/ESCAPE in 2.12.x, so a "pressKey: RIGHT" step failed the whole
+# suite at PARSE time (run 44335832315: "Parsing Failed at 06…:88:3") and
+# blocked every flow with it. When the capture found no fix the fields are
+# empty and carry no clear button; the conditional skips it.
+- runFlow:
+    when:
+      visible: '^(Clear latitude|Hapus lintang)$'
     commands:
-    - pressKey: RIGHT
-- eraseText
+      - tapOn: '^(Clear latitude|Hapus lintang)$'
+- tapOn: '^(Latitude|Lintang) \*$'
 - inputText: '-6.175000'
 # Put the keyboard away before asserting: with the IME open the field row
 # sits behind the number pad (the editor consumes no ime insets — under
 # edge-to-edge, adjustResize never resizes anything), and this pin is meant
-# to guard the erase, not the keyboard's geometry.
+# to guard the clear, not the keyboard's geometry.
 - hideKeyboard
 - extendedWaitUntil:
     visible: '^-6\.175000$'
     timeout: 5000
-- tapOn: '^(Longitude|Bujur) \*$'
-- repeat:
-    times: 25
+- runFlow:
+    when:
+      visible: '^(Clear longitude|Hapus bujur)$'
     commands:
-    - pressKey: RIGHT
-- eraseText
+      - tapOn: '^(Clear longitude|Hapus bujur)$'
+- tapOn: '^(Longitude|Bujur) \*$'
 - inputText: '106.827000'
 - hideKeyboard
 - extendedWaitUntil:

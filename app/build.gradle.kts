@@ -9,6 +9,13 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kover)
+    // Screenshot regression (Phase 7). The plugin adds recordRoborazziDebug,
+    // verifyRoborazziDebug and compareRoborazziDebug on top of the existing
+    // testDebugUnitTest suite; the captures themselves live in
+    // app/src/test/java/com/landpoint/app/ui/screenshot/ and their committed
+    // baselines in app/src/test/screenshots/. CI runs them from
+    // .github/workflows/screenshot.yml.
+    alias(libs.plugins.roborazzi)
 }
 
 val keystorePropsFile = rootProject.file("keystore.properties")
@@ -120,7 +127,11 @@ android {
                 rootProject.layout.buildDirectory.dir("test-tmp").get().asFile
                     .also { dir -> dir.mkdirs() }.absolutePath
             )
-            it.maxHeapSize = "1024m"
+            // 2g, not the 1g the logic-only suite was happy with: the screenshot
+            // tests render full Compose screens through Robolectric Native
+            // Graphics, and a starved heap shows up there as an OOM inside
+            // Robolectric's sandbox rather than as a readable failure.
+            it.maxHeapSize = "2048m"
             // One line per test as it finishes. A silent test task is the worst
             // thing to debug in CI: when a run is killed at its job timeout there
             // is no way to tell a genuinely slow suite from a worker that hung on
@@ -212,6 +223,17 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.room.testing)
+
+    // Screenshot regression (Phase 7). The captures run on the JVM through
+    // Robolectric Native Graphics, so no emulator is needed and the gate can
+    // sit on every relevant PR. ui-test-junit4 provides the Compose test
+    // machinery; ui-test-manifest declares the ComponentActivity the capture
+    // API launches (unit tests build the debug variant, so debugImplementation
+    // is what puts the manifest on the merged test manifest).
+    testImplementation(libs.roborazzi.core)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.espresso.core)

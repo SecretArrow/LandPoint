@@ -1086,28 +1086,34 @@ class LandEditViewModel(
                     )
                 }
             }
-            // One press is one corner. The averaging above is the slow part of
-            // the press; the commit is the part that turns it into a boundary
-            // vertex. Folding the commit in here means the user never sees a
-            // hanging mark they then have to confirm — the "Use mark" bar was a
-            // second press between them and the corner they asked for, and a
-            // corner averaged from the receiver is already the answer the user
-            // would have confirmed anyway. A mark that lands TooClose is left
-            // hanging by [commitMark] with a message naming the corner it
-            // clashes with, so a bad GPS fix still reads as something to move,
-            // not as a corner quietly swallowed.
-            if (fix != null) commitMark()
+            // The averaged fix lands as a hanging mark, not as a corner. The
+            // user reviews it on the confirm bar — accuracy, samples, where it
+            // will sit on the ring — and commits it with "Pakai tanda ini". A
+            // one-tap "Tambah sudut" that silently swallows the averaged fix was
+            // reported as a bug: the user never got the chance to confirm the
+            // mark, so they could not tell whether the GPS fix was the corner
+            // they wanted. Leaving the mark hanging puts the confirm bar back in
+            // the loop — one press opens the picker and gathers the average, one
+            // press on "Pakai tanda ini" turns it into a corner, exactly the two
+            // steps the screen is built for.
+            //
+            // A TooClose refusal is still reached through the shared commitMark
+            // door once the user presses confirm: the mark stays hanging with a
+            // message naming the corner it clashes with, so a bad GPS fix still
+            // reads as something to move, not as a corner quietly swallowed.
         }
     }
 
     /**
      * Opens the map with a mark already being averaged where the user stands.
      *
-     * What the quick GPS button on the form now does. The corner is saved by
-     * the same press — [markFromFix] commits the averaged fix as soon as it
-     * lands, so the user does not have to confirm it on a second press. The
-     * commit closes the picker, so the user lands back on the edit screen
-     * with the corner just placed saved to the boundary.
+     * What the quick GPS button on the form does: open the picker and start the
+     * GPS average in one press. When the average lands the mark hangs on the
+     * map — accuracy, samples and where it will sit on the ring all shown on the
+     * confirm bar — and the user commits it with "Pakai tanda ini". The picker
+     * stays open until then. Two presses, two steps, exactly what the screen is
+     * built for: this press gathers the GPS fix, the confirm press turns it into
+     * a corner.
      */
     fun openCornerPickerAtFix() {
         openCornerPicker()

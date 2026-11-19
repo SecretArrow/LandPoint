@@ -9,10 +9,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.landpoint.app.data.SettingsRepository
+import com.landpoint.app.data.model.GeometryCodec
 import com.landpoint.app.data.model.GeometryType
 import com.landpoint.app.data.model.Land
 import com.landpoint.app.data.model.LandStatus
-import com.landpoint.app.data.model.StoredGeometry
 import com.landpoint.app.ui.components.LandCard
 import com.landpoint.app.ui.components.LandShapeThumb
 import com.landpoint.app.ui.components.ParcelHero
@@ -173,7 +173,7 @@ class ComponentScreenshotsTest {
         geometryType = GeometryType.POLYGON,
         // encode() returns null only below three corners; the elvis keeps the
         // type non-null without asserting.
-        geometryJson = StoredGeometry.encode(shapeCorners()) ?: "",
+        geometryJson = GeometryCodec.encode(shapeCorners()) ?: "",
         status = "aktif",
         ownerName = "Bpk. Sutanto",
         distanceMeters = 250.0,

@@ -205,22 +205,19 @@ jobs:
   # Runs only when the quality and unit-test jobs are green, per the branch
   # protection contract: nothing reaches main with a red check.
   #
-  # continue-on-error is set because the Maestro flows currently depend on a
-  # specific device locale (English "Skip") that the API 30 runner AVD does
-  # not always provide, and on test data created by the first flow landing on
-  # a UI whose Indonesian strings differ from the assertions the flows were
-  # written against. The job still RUNS on every relevant push/PR — its result
-  # is visible on the run page and as a non-required check — but a failure no
-  # longer blocks a merge while the flow assertions are being brought up to
-  # the bilingual UI. Quality gates (ktlint, detekt, Android Lint) and unit
-  # tests remain hard requirements.
+  # continue-on-error lived here while the flow assertions trailed the
+  # bilingual UI (ADR-008); the flows have been green end to end for a while
+  # now, and the screenshot gate (.github/workflows/screenshot.yml) catches
+  # the label-rename regressions the flag used to tolerate. So the flag is
+  # gone and a red e2e is again a real failure that blocks a merge: quality
+  # gates (ktlint, detekt, Android Lint), unit tests and e2e are all hard
+  # requirements.
   e2e:
     name: e2e (emulator)
     needs: [quality-ktlint, quality-detekt, quality-lint, unit-test]
     if: needs.changes.outputs.src == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

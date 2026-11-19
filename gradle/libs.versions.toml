@@ -42,6 +42,11 @@ ktlintPlugin = "12.1.2"
 ktlintCli = "1.3.1"
 detekt = "1.23.7"
 kover = "0.8.3"
+# 1.32.2 deliberately, not the newest: it is the last line built against the
+# same era as this project's stack (Kotlin 2.0.21, Robolectric 4.14.1, Compose
+# BOM 2024.12.01), so the screenshot tool cannot drag any runtime dependency
+# forward with it. Later releases change their robolectric baseline.
+roborazzi = "1.32.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -81,6 +86,14 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+# Screenshot regression (Phase 7): Roborazzi captures Compose UI with
+# Robolectric Native Graphics, so the whole gate runs on the JVM — no emulator
+# in the loop, no GPU flake. ui-test-junit4/manifest back the ComponentActivity
+# the capture API launches.
+roborazzi-core = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { group = "io.github.takahirom.roborazzi", name = "roborazzi-compose", version.ref = "roborazzi" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -91,3 +104,6 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+# Adds recordRoborazziDebug / verifyRoborazziDebug: the same testDebugUnitTest
+# suite with the capture calls switched between "write" and "compare and fail".
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }

@@ -1,6 +1,8 @@
 package com.landpoint.app.ui.screenshot
 
+import androidx.test.core.app.ApplicationProvider
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.landpoint.app.data.SettingsRepository
 import com.landpoint.app.ui.edit.CornerPickerScreen
 import com.landpoint.app.ui.edit.DraftCorner
 import com.landpoint.app.ui.edit.LandEditUiState
@@ -8,6 +10,7 @@ import com.landpoint.app.ui.theme.LandPointTheme
 import com.landpoint.app.util.GeoPoint
 import com.landpoint.app.util.MarkSource
 import com.landpoint.app.util.PendingMark
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -23,6 +26,11 @@ import org.robolectric.annotation.GraphicsMode
  * The map itself draws its JVM fallback (MapLibreInit.isAvailable is false in
  * tests, so LandMap renders the "no renderer" message instead of tiles):
  * tile rendering needs the emulator and stays with the Maestro e2e job.
+ *
+ * The PICKER_SOURCES coach mark reads its "seen" flag from DataStore
+ * asynchronously — like the preview's coach mark, it must be marked seen
+ * before the first frame or the capture could land on either side of the
+ * async read (a verify flake that looks like a UI regression).
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -54,6 +62,10 @@ class CornerPickerScreenshotTest {
 
     private fun capture(fileName: String) {
         settleAnimations()
+        runBlocking {
+            SettingsRepository(ApplicationProvider.getApplicationContext())
+                .setCoachMarkSeen(SettingsRepository.CoachMark.PICKER_SOURCES)
+        }
         captureRoboImage("$SCREENSHOT_DIR$fileName") {
             LandPointTheme {
                 CornerPickerScreen(

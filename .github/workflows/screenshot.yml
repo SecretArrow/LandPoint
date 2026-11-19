@@ -1,0 +1,129 @@
+name: Screenshots
+
+# Visual regression gate (Phase 7 of docs/IMPLEMENTATION_PLAN.md).
+#
+# The screenshot tests render the app's key surfaces on the JVM through
+# Roborazzi + Robolectric Native Graphics and compare against the committed
+# baselines in app/src/test/screenshots/. Two ways to run:
+#   1. verify (the default, on every relevant push and PR): a pixel change to
+#      a gated surface fails the job until its baseline is refreshed.
+#   2. record (workflow_dispatch with mode=record): regenerate the baselines
+#      and upload them as an artifact, for the "this change is intentional"
+#      case; the author copies the artifact over the committed PNGs.
+#
+# Map tiles themselves are NOT gated here: Robolectric cannot run MapLibre's
+# GL renderer, so map-bearing screens capture the app's own fallback message
+# (see app/src/test/screenshots/README.md). Tile rendering stays with the
+# Maestro e2e job in ci.yml.
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+      - "feature/**"
+      - "fix/**"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "record = regenerate the committed baselines and upload them; anything else = verify against them"
+        required: false
+        default: "verify"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # A change that cannot move a pixel — say, a DAO tweak — must not spend
+  # minutes rendering screens.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Filter paths
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'app/src/main/java/com/landpoint/app/ui/**'
+              - 'app/src/main/res/**'
+              - 'app/src/main/java/com/landpoint/app/ui/theme/**'
+              - 'app/src/test/java/com/landpoint/app/ui/screenshot/**'
+              - 'app/src/test/screenshots/**'
+              - 'app/build.gradle.kts'
+              - 'gradle/**'
+              - 'gradle.properties'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - 'config/**'
+              - '.editorconfig'
+              - '.github/workflows/screenshot.yml'
+
+  screenshots:
+    name: screenshot regression (JVM)
+    needs: changes
+    # workflow_dispatch carries no diff to filter on, so it always runs.
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.src == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools platforms;android-35 build-tools;35.0.0
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      # Robolectric fetches the android-all jar for SDK 34 from Maven Central
+      # on first use; it is not part of the Gradle dependency graph, so it is
+      # downloaded per run rather than restored from the setup-gradle cache.
+      - name: Verify screenshots against committed baselines
+        if: inputs.mode != 'record'
+        run: ./gradlew verifyRoborazziDebug
+
+      - name: Record refreshed baselines so the intended look can be reviewed
+        if: failure() && inputs.mode != 'record'
+        run: ./gradlew recordRoborazziDebug
+
+      - name: Record baselines (dispatched with mode=record)
+        if: inputs.mode == 'record'
+        run: ./gradlew recordRoborazziDebug
+
+      # On a verify failure this carries both the refreshed capture of every
+      # surface and the test XML showing which file drifted; on a record run
+      # it is the artifact the author copies over the committed baselines.
+      - name: Upload screenshots and test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots
+          path: |
+            app/src/test/screenshots/
+            app/build/test-results/testDebugUnitTest/
+          if-no-files-found: ignore

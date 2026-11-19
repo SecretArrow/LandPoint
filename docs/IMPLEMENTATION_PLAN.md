@@ -239,6 +239,8 @@ Tablet and foldable support:
 
 ## Phase 7 — v1.3.1
 
+**Status: shipped (first cut, v1.6.23).** The gate is live in `.github/workflows/screenshot.yml` with Roborazzi + Robolectric Native Graphics (chosen over Paprika/Paparazzi because it reuses the project's existing Robolectric dependency and runs entirely on the JVM — no emulator in the loop). Covered surfaces: the component gallery, the onboarding welcome step (both in light + dark, en + in), the parcel preview hero, the parcel list card, the shared row parts (status chips, shape thumbnails, stepper), the corner picker with a pending mark, and the parcel preview screen. Two deliberate v1 deviations, both documented in `app/src/test/screenshots/README.md`: screens backed by a Room/DataStore ViewModel (Parcels list, Settings) are not captured yet — constructing them needs the full app container and is left for a follow-up — and map tiles cannot render on the JVM at all, so map-bearing screens capture the app's own `MapUnavailable` fallback (chrome is gated; tile rendering stays with the Maestro e2e job). The Maestro stabilization below has shipped with it: `continue-on-error` is gone from ci.yml.
+
 ### Scope
 
 Visual regression in CI:

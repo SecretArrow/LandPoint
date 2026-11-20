@@ -51,6 +51,7 @@ internal class LandMapOverlay {
     private var shapes: FeatureCollection = EMPTY
     private var pins: FeatureCollection = EMPTY
     private var corners: FeatureCollection = EMPTY
+    private var edges: FeatureCollection = EMPTY
     private var accuracy: FeatureCollection = EMPTY
     private var fix: FeatureCollection = EMPTY
     private var pending: FeatureCollection = EMPTY
@@ -105,6 +106,11 @@ internal class LandMapOverlay {
         this.shapes = FeatureCollection.fromFeatures(shapes.mapNotNull { it.toFeature() })
         this.pins = FeatureCollection.fromFeatures(pins.mapNotNull { it.toFeature() })
         this.corners = FeatureCollection.fromFeatures(corners.mapNotNull { it.toFeature() })
+        // One label per committed side, plus one for each dashed preview side
+        // (last corner → mark, and mark → first corner once a third point
+        // stands). Computed here so the labels stay in lockstep with the shape
+        // and preview sources that are pushed on the same call.
+        this.edges = FeatureCollection.fromFeatures(buildEdgeFeatures(shapes, preview))
         this.accuracy = FeatureCollection.fromFeatures(
             listOfNotNull(fix?.toAccuracyFeature())
         )
@@ -132,6 +138,7 @@ internal class LandMapOverlay {
         style.addSource(GeoJsonSource(SRC_FIX, fix))
         style.addSource(GeoJsonSource(SRC_PINS, pins))
         style.addSource(GeoJsonSource(SRC_CORNERS, corners))
+        style.addSource(GeoJsonSource(SRC_EDGES, edges))
         style.addSource(GeoJsonSource(SRC_PENDING, pending))
         style.addSource(GeoJsonSource(SRC_PREVIEW, preview))
 
@@ -164,6 +171,28 @@ internal class LandMapOverlay {
                 PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
                 PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
                 PropertyFactory.lineDasharray(PREVIEW_DASH)
+            )
+        )
+        // The length of each side, drawn at its midpoint. A boundary is a
+        // measurement before it is a shape: the area figure under the map is
+        // the headline, but "is this side the 18 m the deed says it is?" is
+        // the question someone pans the map to answer, and the answer has to
+        // be on the side itself rather than buried in a list. Painted with a
+        // halo so the figure stays legible over both pale dry ground and the
+        // dark fill of the outline that runs under it; sized like the corner
+        // labels so the two read as one face. Allowed to overlap because a
+        // label that drops out for want of room is a measurement that vanishes.
+        style.addLayer(
+            SymbolLayer(LAYER_EDGE_LABEL, SRC_EDGES).withProperties(
+                PropertyFactory.textField(Expression.get(PROP_LABEL)),
+                PropertyFactory.textFont(arrayOf(LABEL_FONT)),
+                PropertyFactory.textSize(EDGE_TEXT),
+                PropertyFactory.textColor(AndroidColor.WHITE),
+                PropertyFactory.textHaloColor(colourString(accent)),
+                PropertyFactory.textHaloWidth(EDGE_HALO),
+                PropertyFactory.textAnchor(Property.TEXT_ANCHOR_CENTER),
+                PropertyFactory.textAllowOverlap(true),
+                PropertyFactory.textIgnorePlacement(true)
             )
         )
         style.addLayer(
@@ -288,6 +317,8 @@ internal class LandMapOverlay {
             ?.setProperties(PropertyFactory.lineColor(accent))
         style.getLayerAs<LineLayer>(LAYER_PREVIEW)
             ?.setProperties(PropertyFactory.lineColor(selected))
+        style.getLayerAs<SymbolLayer>(LAYER_EDGE_LABEL)
+            ?.setProperties(PropertyFactory.textHaloColor(colourString(accent)))
         style.getLayerAs<CircleLayer>(LAYER_PIN_HALO)
             ?.setProperties(PropertyFactory.circleColor(accent))
         style.getLayerAs<CircleLayer>(LAYER_PIN)
@@ -310,6 +341,7 @@ internal class LandMapOverlay {
         style.getSourceAs<GeoJsonSource>(SRC_FIX)?.setGeoJson(fix)
         style.getSourceAs<GeoJsonSource>(SRC_PINS)?.setGeoJson(pins)
         style.getSourceAs<GeoJsonSource>(SRC_CORNERS)?.setGeoJson(corners)
+        style.getSourceAs<GeoJsonSource>(SRC_EDGES)?.setGeoJson(edges)
         style.getSourceAs<GeoJsonSource>(SRC_PENDING)?.setGeoJson(pending)
         style.getSourceAs<GeoJsonSource>(SRC_PREVIEW)?.setGeoJson(preview)
     }
@@ -349,6 +381,7 @@ internal class LandMapOverlay {
         const val SRC_SHAPES = "lp-shapes"
         const val SRC_PINS = "lp-pins"
         const val SRC_CORNERS = "lp-corners"
+        const val SRC_EDGES = "lp-edges"
         const val SRC_ACCURACY = "lp-accuracy"
         const val SRC_FIX = "lp-fix"
         const val SRC_PENDING = "lp-pending"
@@ -357,6 +390,7 @@ internal class LandMapOverlay {
         const val LAYER_SHAPE_FILL = "lp-shape-fill"
         const val LAYER_SHAPE_LINE = "lp-shape-line"
         const val LAYER_ACCURACY = "lp-accuracy-fill"
+        const val LAYER_EDGE_LABEL = "lp-edge-label"
         const val LAYER_FIX = "lp-fix-dot"
         const val LAYER_PIN_HALO = "lp-pin-halo"
         const val LAYER_PIN = "lp-pin-dot"
@@ -453,6 +487,17 @@ internal class LandMapOverlay {
         private const val CORNER_STROKE_ON = 3f
         private const val CORNER_TEXT = 11f
         private const val CORNER_TEXT_ON = 13f
+
+        /**
+         * The side-length label's text size and halo width, in style units.
+         *
+         * Sits between the corner label and the corner-label-when-selected so a
+         * length reads as the same face as the corner numbers it sits between,
+         * and the halo is the same 1.5-unit ring every other text overlay uses
+         * to stay legible over fill and imagery alike.
+         */
+        private const val EDGE_TEXT = 12f
+        private const val EDGE_HALO = 1.5f
 
         /**
          * The "×" drawn at the top-right of each corner as its delete affordance.
@@ -593,6 +638,74 @@ internal class LandMapOverlay {
                 )
             )
         }
+
+        /**
+         * One point feature per side, dropped at the side's midpoint and carrying
+         * the side's length as its label, so the map reads each side's metre figure
+         * on the side itself rather than only as a perimeter total at the bottom.
+         *
+         * Committed sides come from every [MapShape] with three or more points
+         * (the same threshold at which the outline becomes a closed ring); the
+         * preview sides come from the dashed preview's own point list — last
+         * corner to the hanging mark, and mark back to the first corner — so the
+         * length of a side that has not been committed yet is shown the same way
+         * as one that has.
+         *
+         * Midpoints are an arithmetic mean of the two endpoints' latitudes and
+         * longitudes. A great-circle midpoint would be a hair more exact on sides
+         * tens of kilometres long, but a parcel side is metres to a few hundred
+         * metres — at that scale the difference is sub-centimetre, and the mean
+         * keeps the label on the visible segment rather than on the geodesic that
+         * bows away from it.
+         */
+        private fun buildEdgeFeatures(shapes: List<MapShape>, preview: List<GeoPoint>): List<Feature> {
+            val features = ArrayList<Feature>()
+            for (shape in shapes) {
+                val ring = shape.points
+                if (ring.size < 2) continue
+                // Closed at three or more: the closing side from the last point
+                // back to the first is a real side and gets a label too. Two
+                // points is an open line — the state a boundary passes through
+                // while it is being tapped out — and that single side is labelled.
+                val close = ring.size >= 3
+                val last = if (close) ring.size else ring.size - 1
+                for (i in 0 until last) {
+                    val a = ring[i]
+                    val b = ring[(i + 1) % ring.size]
+                    features += edgeFeature(a, b)
+                }
+            }
+            // The preview sides: the dashed line's own points already encode the
+            // segments the way the user sees them, so walking it in pairs labels
+            // exactly what is on screen — including the closing edge back to the
+            // first corner once a third point stands. Skipped when there is no
+            // mark yet, because a preview without a mark is an empty list.
+            if (preview.size >= 2) {
+                for (i in 0 until preview.size - 1) {
+                    features += edgeFeature(preview[i], preview[i + 1])
+                }
+            }
+            return features
+        }
+
+        private fun edgeFeature(a: GeoPoint, b: GeoPoint): Feature {
+            val label = edgeLabel(a, b)
+            val midLat = (a.latitude + b.latitude) / 2.0
+            val midLon = (a.longitude + b.longitude) / 2.0
+            return Feature.fromGeometry(Point.fromLngLat(midLon, midLat)).apply {
+                addStringProperty(PROP_LABEL, label)
+            }
+        }
+
+        /**
+         * The length of one side, formatted the way the edge label draws it.
+         *
+         * Public so a unit test can pin the figure a side carries without having
+         * to stand up a MapLibre [Feature] to read it back — the label is what the
+         * user sees, and it is what the test should assert on.
+         */
+        fun edgeLabel(a: GeoPoint, b: GeoPoint): String =
+            GeoUtils.formatDistance(GeoUtils.distance(a.latitude, a.longitude, b.latitude, b.longitude))
     }
 }
 

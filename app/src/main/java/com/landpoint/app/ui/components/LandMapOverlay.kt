@@ -658,10 +658,7 @@ internal class LandMapOverlay {
          * keeps the label on the visible segment rather than on the geodesic that
          * bows away from it.
          */
-        private fun buildEdgeFeatures(
-            shapes: List<MapShape>,
-            preview: List<GeoPoint>
-        ): List<Feature> {
+        private fun buildEdgeFeatures(shapes: List<MapShape>, preview: List<GeoPoint>): List<Feature> {
             val features = ArrayList<Feature>()
             for (shape in shapes) {
                 val ring = shape.points

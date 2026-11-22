@@ -263,7 +263,12 @@ fun LandPreviewScreen(
                 modifier = Modifier.fillMaxSize(),
                 shapes = shapes,
                 corners = corners,
-                contentDescription = stringResource(R.string.preview_title)
+                contentDescription = stringResource(R.string.preview_title),
+                // The preview is a thumbnail of the shape, not a measurement:
+                // the per-side metre figures crowd it, and the shape is the
+                // thing the user came here to read at a glance. The shape
+                // summary screen keeps the labels, where the map is full-size.
+                showEdgeLabels = false
             )
         }
 

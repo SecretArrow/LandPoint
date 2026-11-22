@@ -507,7 +507,12 @@ fun LandMap(
     preview: List<GeoPoint> = emptyList(),
     onTap: ((MapTap) -> Unit)? = null,
     onMoveCorner: ((id: String, latitude: Double, longitude: Double) -> Unit)? = null,
-    onMovePending: ((latitude: Double, longitude: Double) -> Unit)? = null
+    onMovePending: ((latitude: Double, longitude: Double) -> Unit)? = null,
+    // The per-side length labels (the "18 m" figures at each edge's midpoint)
+    // are on by default. A screen that draws the shape small — the preview card
+    // — turns them off, because the figures crowd a thumbnail that is meant to
+    // be read as a whole shape rather than measured side by side.
+    showEdgeLabels: Boolean = true
 ) {
     // Checked before anything else here, because every object remembered below is a
     // native one and the first of them would throw on construction. The answer is
@@ -720,7 +725,17 @@ fun LandMap(
         modifier = modifier,
         update = {
             it.describeForAccessibility(contentDescription)
-            overlay.set(shapes, pins, corners, fix, pending, accentColour, selectedColour, preview)
+            overlay.set(
+                shapes,
+                pins,
+                corners,
+                fix,
+                pending,
+                accentColour,
+                selectedColour,
+                preview,
+                showEdgeLabels
+            )
         }
     )
 }

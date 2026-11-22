@@ -80,6 +80,11 @@ tags:
     visible: '^Kebun Percobaan$'
     timeout: 15000
 
+# Same dial hazard as flow 03: with one parcel the card rests under the
+# central Add dial, and a long-press there opens the dial instead of the
+# selection. Lift the card clear first.
+- swipe:
+    direction: UP
 - longPressOn: '^Kebun Percobaan$'
 - extendedWaitUntil:
     visible: '^(1 selected|1 dipilih)$'

@@ -42,9 +42,12 @@ tags:
     visible: '^(No matches|Tidak ditemukan)$'
     timeout: 10000
 
-# Leave the list clean for the flows that follow.
+# Leave the list clean for the flows that follow. Clearing the query brings
+# the Parcels dashboard header back, which pushes the card down behind the
+# still-open keyboard — the card is on screen but under the IME, so close
+# the keyboard before asserting on it.
 - tapOn: '^(Clear search|Bersihkan pencarian)$'
+- hideKeyboard
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'
     timeout: 10000
-- hideKeyboard

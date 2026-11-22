@@ -44,6 +44,12 @@ tags:
       text: '^Kebun Percobaan$'
     direction: DOWN
     timeout: 30000
+# With a single parcel the card rests at the bottom of the list, right under
+# the central Add dial that floats above the bottom bar — a long-press there
+# opens the dial instead of starting the selection. One upward swipe lifts
+# the card clear of the dial before the press.
+- swipe:
+    direction: UP
 - longPressOn: '^Kebun Percobaan$'
 - extendedWaitUntil:
     visible: '^(1 selected|1 dipilih)$'

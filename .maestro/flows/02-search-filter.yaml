@@ -4,8 +4,9 @@ name: 02-search-filter
 tags:
 - core
 ---
-# A stop/launch pair gives a cold start, which lands on the list tab no
-# matter which screen the previous flow ended on.
+# A stop/launch pair gives a cold start, which lands on the Parcels tab no
+# matter which screen the previous flow ended on (the Parcels tab absorbed the
+# old Home dashboard as its header, ADR-002).
 - stopApp
 - launchApp
 
@@ -21,9 +22,8 @@ tags:
     visible: 'Kebun Percobaan'
     timeout: 20000
 
-# The app cold-starts on the Home dashboard; the search bar lives on the
-# Lands tab's top bar.
-- tapOn: '^(Lands|Tanah)$'
+# The search field lives behind the Parcels tab's top-bar icon.
+- tapOn: '^(Parcels|Bidang)$'
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'
     timeout: 15000

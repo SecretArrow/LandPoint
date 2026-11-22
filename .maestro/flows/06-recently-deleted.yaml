@@ -29,11 +29,18 @@ tags:
       - tapOn: '^(Skip|Lewati)$'
 
 # --- Record one parcel, typed coordinates only (no corners needed) --------
-- tapOn: '^(Lands|Tanah)$'
+# The list's own FAB is gone: the central Add speed-dial above the bottom bar
+# is the one Add entry (ADR-002). Open it, then "Type coordinates" — every
+# dial entry lands in the same editor.
+- tapOn: '^(Parcels|Bidang)$'
 - extendedWaitUntil:
-    visible: '^(Save land|Simpan tanah)$'
+    visible: '^(Add parcel|Tambah bidang)$'
     timeout: 15000
-- tapOn: '^(Save land|Simpan tanah)$'
+- tapOn: '^(Add parcel|Tambah bidang)$'
+- extendedWaitUntil:
+    visible: '^(Type coordinates|Ketik koordinat)$'
+    timeout: 10000
+- tapOn: '^(Type coordinates|Ketik koordinat)$'
 
 - extendedWaitUntil:
     visible: '^(Land details|Rincian tanah)$'
@@ -147,15 +154,14 @@ tags:
     notVisible:
       text: '^(Parcel deleted|Bidang tanah dihapus)$'
     timeout: 20000
-- assertNotVisible: 'Kebun Hapus'
+# The header's recent-activity rows now carry the delete in their headlines
+# ("Deleted: \"Kebun Hapus\""), so the absence check is anchored to the full
+# node text: the CARD must be gone, while the audit line remembering it may
+# well stay.
+- assertNotVisible: '^Kebun Hapus$'
 
 # --- Find it in the bin ---------------------------------------------------
-# Settings lives behind the gear on the Home dashboard; the Lands tab has no
-# settings entry of its own.
-- tapOn: '^(Home|Beranda)$'
-- extendedWaitUntil:
-    visible: '^(Settings|Pengaturan)$'
-    timeout: 15000
+# Settings is its own tab now (ADR-002); the old gear-on-Home detour is gone.
 - tapOn: '^(Settings|Pengaturan)$'
 - scrollUntilVisible:
     element:
@@ -184,22 +190,24 @@ tags:
 
 # --- And it is back --------------------------------------------------------
 # The bin screen DOES have the top-bar up arrow (the NavHost passes onBack
-# for RecentlyDeletedScreen, unlike Settings) — ride it back to Settings.
+# for RecentlyDeletedScreen) — ride it back to Settings, then cross to the
+# Parcels tab on the bar that is always there now that Settings is a tab
+# (ADR-002). No keyboard can be up here (the editor's keyboard is put away
+# before its Save, and neither the bin screen nor Settings has a text input),
+# so a hideKeyboard guard would only risk a stray press.
 - tapOn: '^(Back|Kembali)$'
 - extendedWaitUntil:
     visible: '^(Settings|Pengaturan)$'
     timeout: 15000
-# Settings is a full-screen page without the bottom bar and without an up
-# arrow (see flow 04) — leave with the system back, then cross to Lands on
-# Home's bottom bar. No keyboard can be up here (the editor's keyboard is
-# put away before its Save, and neither the bin screen nor Settings has a
-# text input), so a hideKeyboard guard would only risk a stray press. There
-# is deliberately no "press again while still on Settings" conditional: Home
-# also carries an exactly-matching "Settings" element (the top-bar gear's
-# contentDescription), so such a check would fire ON HOME and push a second
-# back press into the app's root.
-- pressKey: BACK
-- tapOn: '^(Lands|Tanah)$'
+- tapOn: '^(Parcels|Bidang)$'
+# The restored parcel is matched by its full name node (see the delete section
+# above): the header's audit rows read "Created: \"Kebun Hapus\"" and would
+# satisfy an unanchored wait without the card itself ever scrolling into view.
+- scrollUntilVisible:
+    element:
+      text: '^Kebun Hapus$'
+    direction: DOWN
+    timeout: 30000
 - extendedWaitUntil:
-    visible: 'Kebun Hapus'
+    visible: '^Kebun Hapus$'
     timeout: 15000

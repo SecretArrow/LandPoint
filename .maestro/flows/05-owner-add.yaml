@@ -1,7 +1,9 @@
 # E2E 5 — an owner can be recorded and appears in the list.
 #
-# Covers: the Owners tab, the add-owner form, inline validation happening on
-# save (not before), and the saved owner showing up with the NIK summary.
+# Covers: the owners list on its Tools-tab card (the Owners tab stopped being a
+# tab in ADR-002's four-tab structure), the add-owner form, inline validation
+# happening on save (not before), and the saved owner showing up with the NIK
+# summary.
 appId: com.landpoint.app.debug
 name: 05-owner-add
 tags:
@@ -22,6 +24,15 @@ tags:
     visible: 'Kebun Percobaan'
     timeout: 20000
 
+# The Owners tab stopped being a tab in the four-tab restructure (ADR-002);
+# the list now lives one card away on the Tools tab. Scroll to the card so a
+# tall screen of Export/Backup/Restore cards cannot push it under the fold.
+- tapOn: '^(Tools|Alat)$'
+- scrollUntilVisible:
+    element:
+      text: '^(Owners|Pemilik)$'
+    direction: DOWN
+    timeout: 30000
 - tapOn: '^(Owners|Pemilik)$'
 - extendedWaitUntil:
     visible: '^(Add owner|Tambah pemilik)$'

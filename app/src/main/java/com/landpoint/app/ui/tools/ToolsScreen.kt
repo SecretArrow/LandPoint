@@ -43,13 +43,12 @@ import com.landpoint.app.ui.theme.Spacing
  * One card of the Tools grid: an icon, a title and a one-line summary, drawn
  * at the design system's E1 (docs/DESIGN_SYSTEM.md §2.5) — the grid itself is
  * the E0 surface and each card lifts one tonal step off it.
+ *
+ * On one line, not a wrapped parameter list: ktlint's android_studio style
+ * wants a signature on one line whenever it fits the project's 140 columns,
+ * the same rule that collapsed buildEdgeFeatures in its day.
  */
-private data class ToolCard(
-    val icon: ImageVector,
-    val titleRes: Int,
-    val summaryRes: Int,
-    val destination: ToolDestination
-)
+private data class ToolCard(val icon: ImageVector, val titleRes: Int, val summaryRes: Int, val destination: ToolDestination)
 
 /** Where a Tools card leads, resolved by the nav host (see [ToolsScreen]). */
 private enum class ToolDestination {

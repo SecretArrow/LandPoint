@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.landpoint.app.R
 import com.landpoint.app.ui.theme.Elevation
 import com.landpoint.app.ui.theme.Motion
+import com.landpoint.app.ui.theme.Pill
 import com.landpoint.app.ui.theme.Spacing
 
 /**

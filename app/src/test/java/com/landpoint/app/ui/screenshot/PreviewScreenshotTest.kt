@@ -17,8 +17,10 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The parcel preview — the redesign's flagship screen — with a real draft
- * seeded into PreviewDraftStore: hero card, corner cards and the quick
- * actions column over the map.
+ * seeded into PreviewDraftStore: the top chrome with the draft's name in its
+ * title chip, the quick actions column over the map, and the sticky Save bar.
+ * The parcel hero card was removed from this screen on purpose (it covered
+ * the map), so the baselines show the screen without it.
  *
  * The PREVIEW_ACTIONS coach mark reads its "seen" flag from DataStore
  * asynchronously. If the flag were left unset the coach could appear on the

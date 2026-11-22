@@ -97,7 +97,8 @@ internal class LandMapOverlay {
         pending: GeoPoint?,
         accentColour: Int,
         selectedColour: Int,
-        preview: List<GeoPoint> = emptyList()
+        preview: List<GeoPoint> = emptyList(),
+        showEdgeLabels: Boolean = true
     ) {
         val recolour = accentColour != accent || selectedColour != selected
         accent = accentColour
@@ -109,8 +110,14 @@ internal class LandMapOverlay {
         // One label per committed side, plus one for each dashed preview side
         // (last corner → mark, and mark → first corner once a third point
         // stands). Computed here so the labels stay in lockstep with the shape
-        // and preview sources that are pushed on the same call.
-        this.edges = FeatureCollection.fromFeatures(buildEdgeFeatures(shapes, preview))
+        // and preview sources that are pushed on the same call. Skipped on
+        // screens that asked for [showEdgeLabels] = false — the preview card's
+        // shape is drawn small and the per-side figures crowd it.
+        this.edges = if (showEdgeLabels) {
+            FeatureCollection.fromFeatures(buildEdgeFeatures(shapes, preview))
+        } else {
+            EMPTY
+        }
         this.accuracy = FeatureCollection.fromFeatures(
             listOfNotNull(fix?.toAccuracyFeature())
         )

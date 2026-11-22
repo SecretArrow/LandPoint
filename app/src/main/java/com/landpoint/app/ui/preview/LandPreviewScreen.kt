@@ -64,7 +64,6 @@ import com.landpoint.app.ui.components.MapShape
 import com.landpoint.app.ui.components.MapSideControls
 import com.landpoint.app.ui.components.MapTopChrome
 import com.landpoint.app.ui.components.PARCEL_ZOOM
-import com.landpoint.app.ui.components.ParcelHero
 import com.landpoint.app.ui.components.rememberCoachMark
 import com.landpoint.app.ui.components.rememberLandMapController
 import com.landpoint.app.ui.components.rememberMapPrefs
@@ -81,35 +80,28 @@ import com.landpoint.app.util.ShareUtils
 import kotlin.math.roundToInt
 
 /**
- * How far the hero collapses on the preview screen. A preview is short and the
- * shape is the point, but the old fully-expanded hero (112dp polygon plus the
- * actions row beneath) ate the top third of the screen and pushed the map out
- * of thumb-reach. Half-collapsed keeps the name, the area and a 62dp shape
- * outline — enough to recognise the parcel at a glance — while giving the map
- * back roughly 60dp of vertical room.
+ * The quick-action column hangs this far below the top chrome, and the coach
+ * mark that explains the column is inset from the end edge by the same
+ * amount, so both keep clear of the column itself and of the map's own zoom
+ * controls on the right edge.
  */
-private const val HERO_COLLAPSE_FRACTION = 0.55f
-
-/**
- * The quick-action column hangs this far below the top chrome so it never
- * overlaps the hero on a narrow screen, and stays clear of the map's own
- * zoom column on the right edge.
- */
-private val QUICK_ACTIONS_TOP_INSET = 64.dp
+private val QUICK_ACTIONS_CLEARANCE = 64.dp
 
 /**
  * Preview of the unsaved shape on its own screen.
  *
  * The redesign leads with the map: the canvas fills the whole window so the
  * boundary can be judged against the ground, and every chrome element floats
- * over it rather than claiming a slice of the screen. The hero collapses to
- * half height (name + area + a 62dp shape outline) so it announces the parcel
- * without hiding the ground; the quick actions become a vertical column of
- * floating controls under the top chrome, where a thumb reaches; and the
- * corner list lives in a bottom sheet that opens on demand instead of a panel
- * that always claims half the screen. The two actions that matter — Save and
- * Edit — sit in a sticky bar at the bottom with Save taking twice the room,
- * so the primary is dominant and the secondary is unmistakable.
+ * over it rather than claiming a slice of the screen. The parcel hero card is
+ * gone from here on purpose: it repeated the name, the area and a second,
+ * smaller copy of the very shape the map already draws at full size, and the
+ * card covered the ground the user came here to judge. The draft's name now
+ * rides in the chrome's title chip instead; the quick actions stay a vertical
+ * column of floating controls under the top chrome, where a thumb reaches;
+ * and the corner list lives in a bottom sheet that opens on demand instead of
+ * a panel that always claims half the screen. The two actions that matter —
+ * Save and Edit — sit in a sticky bar at the bottom with Save taking twice the
+ * room, so the primary is dominant and the secondary is unmistakable.
  *
  * Lines connect the corners in order automatically (closed when >= 3), so what
  * is seen here is what saving will store. From here the user can save, go back
@@ -279,7 +271,10 @@ fun LandPreviewScreen(
         Column(modifier = Modifier.align(Alignment.TopStart).fillMaxWidth()) {
             MapTopChrome(
                 onBack = onBackToEdit,
-                title = if (points.isEmpty()) stringResource(R.string.preview_title) else null,
+                // With the hero card gone the draft's name lives in the
+                // chrome's title chip — the one line of context a preview
+                // needs, and nothing that covers the map.
+                title = if (points.isEmpty()) stringResource(R.string.preview_title) else title,
                 actions = {
                     if (points.isNotEmpty()) {
                         MapControl(
@@ -290,37 +285,28 @@ fun LandPreviewScreen(
                     }
                 }
             )
-            if (points.isNotEmpty()) {
-                ParcelHero(
-                    title = title,
-                    status = null,
-                    corners = points,
-                    areaText = areaText,
-                    statusLabel = stringResource(R.string.preview_status_draft),
-                    collapseFraction = HERO_COLLAPSE_FRACTION,
+            if (points.isNotEmpty() && actionsCoach.visible) {
+                CoachMarkOverlay(
+                    title = stringResource(R.string.coachmark_preview_actions_title),
+                    body = stringResource(R.string.coachmark_preview_actions_body),
+                    dismissLabel = stringResource(R.string.coachmark_dismiss),
+                    dontShowAgainLabel = stringResource(R.string.coachmark_dont_show_again),
+                    onDismiss = actionsCoach.dismiss,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = Spacing.lg)
+                        .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
+                        // Inset past the quick-action column so the card sits
+                        // beside the column it describes, not underneath its
+                        // buttons.
+                        .padding(end = QUICK_ACTIONS_CLEARANCE)
                 )
-                if (actionsCoach.visible) {
-                    CoachMarkOverlay(
-                        title = stringResource(R.string.coachmark_preview_actions_title),
-                        body = stringResource(R.string.coachmark_preview_actions_body),
-                        dismissLabel = stringResource(R.string.coachmark_dismiss),
-                        dontShowAgainLabel = stringResource(R.string.coachmark_dont_show_again),
-                        onDismiss = actionsCoach.dismiss,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
-                    )
-                }
             }
         }
 
         // The right-hand controls. The map's own zoom column stays at the
         // vertical centre; the quick actions hang below the top chrome on the
         // same edge, so a thumb travelling up the right side meets every
-        // floating control in order without crossing the hero.
+        // floating control in order without crossing the map's title chip.
         if (points.isNotEmpty()) {
             PreviewQuickActions(
                 onNavigate = {
@@ -341,7 +327,7 @@ fun LandPreviewScreen(
                 onEdit = onBackToEdit,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = QUICK_ACTIONS_TOP_INSET, end = Spacing.sm)
+                    .padding(top = QUICK_ACTIONS_CLEARANCE, end = Spacing.sm)
             )
         }
 

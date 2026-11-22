@@ -34,7 +34,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -70,7 +69,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -91,6 +89,15 @@ import com.landpoint.app.util.ShareUtils
 fun LandListScreen(
     onOpenLand: (String) -> Unit,
     onNewLand: () -> Unit,
+    /**
+     * The Parcels tab's summary header (the old Home dashboard), rendered as
+     * the first scrolling row of the list so it leaves with the scroll. Null
+     * keeps the list bare — the two-pane layout does that, where a header
+     * would eat the narrow column the list already shares. Skipped whenever a
+     * search query filters the list: the no-matches and summary rows are the
+     * right words then, not the dashboard.
+     */
+    headerContent: (@Composable () -> Unit)? = null,
     viewModel: LandListViewModel = viewModel(factory = LandListViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -263,26 +270,11 @@ fun LandListScreen(
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHost) },
-        floatingActionButton = {
-            // Hidden during selection: the bar above owns the actions then, and
-            // a "save land" button next to a delete button invites a misfire.
-            if (!state.isSelecting) {
-                val fabLabel = stringResource(R.string.list_fab_save_land)
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        if (permission.isGranted) onNewLand() else permission.request()
-                    },
-                    // The label text is rendered but not always carried into the
-                    // accessibility tree by the FAB's merged semantics, which
-                    // leaves TalkBack users with an unlabelled button and UI
-                    // tests with nothing to tap. State it explicitly.
-                    modifier = Modifier.semantics { contentDescription = fabLabel },
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text(fabLabel) }
-                )
-            }
-        }
+        snackbarHost = { SnackbarHost(snackbarHost) }
+        // No floatingActionButton of its own any more: the central Add
+        // speed-dial above the bottom bar is the one Add entry (ADR-002,
+        // DESIGN_SYSTEM.md §6.1). The empty state below keeps its in-content
+        // call to action, which is where a first-time user is looking.
     ) { padding ->
         if (showExportMenu) {
             ExportFormatDialog(
@@ -351,7 +343,9 @@ fun LandListScreen(
                     }
 
                     LazyColumn(
-                        // The bottom inset clears the FAB. Without it the last
+                        // The bottom inset used to clear the list's own FAB and
+                        // still clears the central Add speed-dial, which sits at
+                        // the same height over the bar. Without it the last
                         // card sits under the button and cannot be scrolled out
                         // from beneath it — the whole record becomes unreachable.
                         contentPadding = PaddingValues(
@@ -362,6 +356,10 @@ fun LandListScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        if (headerContent != null && state.query.isBlank()) {
+                            item(key = "parcels_header") { headerContent() }
+                        }
+
                         item(key = "summary") {
                             SummaryRow(
                                 count = state.lands.size,
@@ -698,9 +696,10 @@ private fun EmptyState(hasQuery: Boolean, onSaveLand: () -> Unit, modifier: Modi
                 textAlign = TextAlign.Center
             )
             // The empty list is the one place an inline primary action earns its
-            // keep: the FAB is still there, but a centered CTA reads as the next
-            // step rather than a floating afterthought. A filtered "no matches"
-            // state has nothing to save, so the CTA stays out of the way there.
+            // keep: the central Add speed-dial is there, but a centered CTA
+            // reads as the next step rather than a floating afterthought. A
+            // filtered "no matches" state has nothing to save, so the CTA
+            // stays out of the way there.
             if (!hasQuery) {
                 Spacer(Modifier.height(Spacing.sm))
                 Button(onClick = onSaveLand) {

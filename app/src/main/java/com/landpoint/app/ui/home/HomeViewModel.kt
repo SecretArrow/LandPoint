@@ -10,7 +10,6 @@ import com.landpoint.app.R
 import com.landpoint.app.data.SettingsRepository
 import com.landpoint.app.data.model.AuditActions
 import com.landpoint.app.data.model.AuditEntry
-import com.landpoint.app.data.model.Land
 import com.landpoint.app.data.model.LandStatus
 import com.landpoint.app.ui.container
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,10 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
-/** One row of the recent-parcels list on the home screen. */
-data class HomeLandRow(val id: String, val name: String, val ownerName: String?, val areaSqm: Double?, val status: LandStatus)
-
-/** One row of the recent-activity list, already shortened for the card. */
+/** One row of the recent-activity list, already shortened for the header. */
 data class HomeAuditRow(val id: Long, @StringRes val actionRes: Int, val detail: String, val timestamp: Long)
 
 data class HomeUiState(
@@ -30,10 +26,21 @@ data class HomeUiState(
     val disputedCount: Int = 0,
     val totalAreaSqm: Double = 0.0,
     val areaUnit: SettingsRepository.AreaUnit = SettingsRepository.AreaUnit.SQM,
-    val recentLands: List<HomeLandRow> = emptyList(),
     val recentActivity: List<HomeAuditRow> = emptyList()
 )
 
+/**
+ * The Parcels tab header's state — the old Home tab's dashboard, repurposed
+ * per the Phase 5 file table (docs/IMPLEMENTATION_PLAN.md) after ADR-002
+ * dropped the Home tab. The class keeps its name and package so the
+ * repurpose is one reviewable diff rather than a rename across three layers.
+ *
+ * What it stopped doing: "recent parcels" is gone, because the Parcels tab is
+ * the full parcel list — repeating five of its rows in the header above them
+ * would show the same information twice on one screen. What it still serves:
+ * the four counts the old Home showed and the audit trail, which has no other
+ * surface in the app.
+ */
 class HomeViewModel(container: AppContainer) : ViewModel() {
 
     private val repository = container.repository
@@ -50,18 +57,9 @@ class HomeViewModel(container: AppContainer) : ViewModel() {
             disputedCount = lands.count { it.landStatus == LandStatus.DISPUTED },
             totalAreaSqm = lands.sumOf { it.areaSqm ?: 0.0 },
             areaUnit = unit,
-            recentLands = lands.take(5).map { it.toRow() },
             recentActivity = audit.map { it.toRow() }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
-
-    private fun Land.toRow() = HomeLandRow(
-        id = id,
-        name = name,
-        ownerName = ownerName,
-        areaSqm = areaSqm,
-        status = landStatus
-    )
 
     private fun AuditEntry.toRow() = HomeAuditRow(
         id = id,

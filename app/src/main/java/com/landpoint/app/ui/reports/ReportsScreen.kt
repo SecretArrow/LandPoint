@@ -12,11 +12,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -47,10 +51,14 @@ import com.landpoint.app.util.AreaFormat
  * The export desk: every way this app's records can leave the phone, on one
  * screen, each through the system file picker so the destination is always the
  * user's own choice. Nothing here uploads anywhere.
+ *
+ * A former tab (ADR-002), now opened from the Tools grid's Export and Reports
+ * cards — so [onBack] draws the up arrow when a way back exists, mirroring the
+ * SettingsScreen convention.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun ReportsScreen(onOpenSettings: () -> Unit) {
+fun ReportsScreen(onOpenSettings: () -> Unit, onBack: (() -> Unit)? = null) {
     val viewModel: ReportsViewModel = viewModel(factory = ReportsViewModel.FACTORY)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
@@ -86,7 +94,21 @@ fun ReportsScreen(onOpenSettings: () -> Unit) {
     ) { uri -> uri?.let(viewModel::exportKml) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_reports)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.nav_reports)) },
+                navigationIcon = {
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back)
+                            )
+                        }
+                    }
+                }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         LazyColumn(

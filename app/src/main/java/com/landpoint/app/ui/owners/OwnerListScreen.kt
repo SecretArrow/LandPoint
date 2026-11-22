@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Close
@@ -51,10 +52,15 @@ import com.landpoint.app.R
  * The owner book: searchable, sortable, one row per person with their parcel
  * count. Everything here is local — there is no directory to sync with and
  * none is pretended at.
+ *
+ * A former tab, demoted by ADR-002 to a full-screen destination reached from
+ * the Tools grid and the Parcels header's owners stat. As a tab it needed no
+ * way out; pushed, it does — so [onBack] draws the up arrow, mirroring the
+ * SettingsScreen convention of drawing it only when a way back exists.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OwnerListScreen(onOpenOwner: (String) -> Unit, onNewOwner: () -> Unit) {
+fun OwnerListScreen(onOpenOwner: (String) -> Unit, onNewOwner: () -> Unit, onBack: (() -> Unit)? = null) {
     val viewModel: OwnerListViewModel = viewModel(factory = OwnerListViewModel.FACTORY)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var searchOpen by remember { mutableStateOf(false) }
@@ -64,6 +70,16 @@ fun OwnerListScreen(onOpenOwner: (String) -> Unit, onNewOwner: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.nav_owners)) },
+                navigationIcon = {
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back)
+                            )
+                        }
+                    }
+                },
                 actions = {
                     if (searchOpen) {
                         OutlinedTextField(

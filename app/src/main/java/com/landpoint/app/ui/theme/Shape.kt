@@ -2,6 +2,7 @@ package com.landpoint.app.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 
 /**
@@ -19,3 +20,11 @@ val LandPointShapes = Shapes(
     large = RoundedCornerShape(20.dp),
     extraLarge = RoundedCornerShape(28.dp)
 )
+
+/**
+ * The half-height pill (docs/DESIGN_SYSTEM.md §2.4) — the shape of the central
+ * Add speed-dial's chips and the floating map toolbar's segmented control.
+ * Radius "50" is percent-of-size in Compose, so the same shape stays a pill at
+ * any height without per-surface arithmetic.
+ */
+val Shapes.Pill: Shape get() = RoundedCornerShape(50)

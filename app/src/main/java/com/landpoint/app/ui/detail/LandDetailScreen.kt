@@ -558,7 +558,11 @@ private fun BoundaryMapCard(land: Land, boundary: List<GeoPoint>, onOpen: () -> 
                 shapes = shapes,
                 pins = pins,
                 corners = corners,
-                interactive = false
+                interactive = false,
+                // A 200dp non-interactive card is a picture of the boundary,
+                // not a measurement: the per-side metre figures crowd it, so
+                // they stay off here. The full-screen shape summary keeps them.
+                showEdgeLabels = false
             )
 
             // Behind the tap target below, so it is readable but not in the way.

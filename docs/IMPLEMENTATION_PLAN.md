@@ -206,6 +206,8 @@ Settings redesign and Tools screen:
 
 ## Phase 6 — v1.3.0
 
+**Status: foldable foundation shipped (first cut).** `androidx.window` 1.3.0 is in; `WindowLayout.toolbarAboveHinge` (unit-tested against the hinge boundary in `WindowLayoutTest`) lifts the map screen's bottom chrome above a half-opened hinge, and a device without a separating fold — every phone and every e2e emulator — draws byte-for-byte what it drew before. The two-pane extension of `LandListDetailPane` to the remaining detail screens and the tablet-emulator Maestro matrix are tracked separately.
+
 ### Scope
 
 Tablet and foldable support:

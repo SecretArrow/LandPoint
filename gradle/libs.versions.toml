@@ -8,6 +8,11 @@ activityCompose = "1.9.3"
 composeBom = "2024.12.01"
 room = "2.6.1"
 navigation = "2.8.5"
+# 1.3.0 deliberately, not the newest: it is the line this stack clears cleanly
+# (compileSdk 35 over its 34 floor) and it already carries everything the
+# foldable work needs — WindowInfoTracker's posture and fold bounds. Nothing in
+# the phase asks for anything later, so nothing later is pulled into the graph.
+window = "1.3.0"
 coroutines = "1.9.0"
 serialization = "1.7.3"
 coil = "2.7.0"
@@ -62,6 +67,9 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+# The fold's posture and bounds, read off the Activity's window and turned into
+# the plain-int FoldState that WindowLayout's tested arithmetic consumes (Phase 6).
+androidx-window = { group = "androidx.window", name = "window", version.ref = "window" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }

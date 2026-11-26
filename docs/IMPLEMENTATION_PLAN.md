@@ -206,7 +206,7 @@ Settings redesign and Tools screen:
 
 ## Phase 6 — v1.3.0
 
-**Status (this round):** the owners two-pane extension has landed — `OwnerListDetailPane.kt` mirrors the land pane (list share, pane-internal NavHost, nothing-chosen placeholder) behind the same 840dp `WindowLayout.listBesideDetail` gate at `Routes.OWNERS`, with owner pane strings in both locales; the insets audit found each screen's own `Scaffold`/`TopAppBar` already applies the status-bar inset exactly once per pane, so no inset change was needed. Foldable support (item 3) is still outstanding.
+**Status: foldable foundation and the owners two-pane shipped (first cut).** `androidx.window` 1.3.0 is in; `WindowLayout.toolbarAboveHinge` (unit-tested against the hinge boundary in `WindowLayoutTest`) lifts the map screen's bottom chrome above a half-opened hinge, and a device without a separating fold — every phone and every e2e emulator — draws byte-for-byte what it drew before. On the two-pane side, `OwnerListDetailPane.kt` mirrors the land pane (list share, pane-internal NavHost, nothing-chosen placeholder) behind the same 840dp `WindowLayout.listBesideDetail` gate at `Routes.OWNERS`, with owner pane strings in both locales; the insets audit found each screen's own `Scaffold`/`TopAppBar` already applies the status-bar inset exactly once per pane, so no inset change was needed. Extending `LandListDetailPane` to the remaining detail screens (edit, shape, compass) and the tablet-emulator Maestro matrix are tracked separately.
 
 ### Scope
 

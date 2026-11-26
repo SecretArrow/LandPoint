@@ -189,6 +189,12 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     implementation(libs.androidx.navigation.compose)
+    // The fold's posture and bounds, read from the Activity's window and fed to
+    // WindowLayout's pure arithmetic as plain ints. The library runs without the
+    // OEM window extensions — a device without them simply reports a window with
+    // no fold — which is why every fold-aware path in the app can degrade to the
+    // flat-phone layout instead of crashing.
+    implementation(libs.androidx.window)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

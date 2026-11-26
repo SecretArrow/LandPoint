@@ -16,6 +16,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -23,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.landpoint.app.R
 import com.landpoint.app.data.SettingsRepository
+import com.landpoint.app.ui.WindowLayout
 import com.landpoint.app.ui.components.BasemapSheet
 import com.landpoint.app.ui.components.CoachMarkOverlay
 import com.landpoint.app.ui.components.LandMap
@@ -44,8 +48,10 @@ import com.landpoint.app.ui.components.rememberCoachMark
 import com.landpoint.app.ui.components.rememberLandMapController
 import com.landpoint.app.ui.components.rememberLocationPermission
 import com.landpoint.app.ui.components.rememberMapPrefs
+import com.landpoint.app.ui.rememberWindowInfo
 import com.landpoint.app.ui.theme.Spacing
 import com.landpoint.app.util.GeoPoint
+import kotlin.math.roundToInt
 
 /** Where a single record sits comfortably on screen with its surroundings. */
 private const val SINGLE_LAND_ZOOM = 16.0
@@ -87,6 +93,33 @@ fun MapScreen(
     // through — nothing behind it is blocked (docs/IMPLEMENTATION_PLAN.md, Phase 4).
     val toolbarCoach = rememberCoachMark(SettingsRepository.CoachMark.MAP_TOOLBAR)
 
+    // The fold, read from the window this screen is drawn into (WindowInfo.kt).
+    // On a phone — and on every emulator the e2e flows run on — there is no
+    // separating hinge, so the lift computed below is 0.dp and the layout stays
+    // exactly the one this screen has always drawn. On a device stood half-opened
+    // on its hinge, the bottom chrome would otherwise sit on or past the hinge,
+    // on the band or the half lying face-down; WindowLayout moves it above.
+    val fold = rememberWindowInfo()
+
+    // The bottom chrome rests on this screen's Box bottom edge with 6dp of air, so
+    // that edge is its natural resting line. Measured off the Box rather than read
+    // from the window's height, because the Box's bottom is the bar's top edge
+    // when the bar is showing — the position the chrome actually rests above, in
+    // the window pixels the fold's bounds arrive in. The Box itself does not move
+    // when the chrome is lifted, so the measurement never chases the padding it
+    // feeds.
+    var bottomEdgeY by remember { mutableStateOf(0) }
+
+    // 0.dp unless a separating hinge runs across the window above the chrome's
+    // resting edge. Both bottom-anchored pieces — the telemetry and scale-bar
+    // column, and the attribution — ride the same lift, so the bottom chrome
+    // moves as one piece rather than splitting at the hinge.
+    val density = LocalDensity.current
+    val chromeBottomY = bottomEdgeY - with(density) { 6.dp.roundToPx() }
+    val foldLift = with(density) {
+        (chromeBottomY - WindowLayout.toolbarAboveHinge(chromeBottomY, fold)).toDp()
+    }
+
     // Everything worth having on screen: boundary corners where a land has them,
     // its pin where it does not, and failing both, wherever the phone is. Measured
     // over corners rather than pins because a pin is the plot's centroid, so
@@ -126,7 +159,13 @@ fun MapScreen(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { coordinates ->
+                bottomEdgeY = (coordinates.positionInWindow().y + coordinates.size.height).roundToInt()
+            }
+    ) {
         LandMap(
             style = prefs.style,
             controller = controller,
@@ -179,6 +218,7 @@ fun MapScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
+                .padding(bottom = foldLift)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -202,6 +242,7 @@ fun MapScreen(
             prefs.mode,
             Modifier
                 .align(Alignment.BottomEnd)
+                .padding(bottom = foldLift)
                 .padding(horizontal = 8.dp, vertical = 6.dp)
         )
 

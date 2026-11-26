@@ -51,6 +51,7 @@ import com.landpoint.app.ui.navigation.Routes
 import com.landpoint.app.ui.offline.OfflineMapsScreen
 import com.landpoint.app.ui.owners.OwnerDetailScreen
 import com.landpoint.app.ui.owners.OwnerFormScreen
+import com.landpoint.app.ui.owners.OwnerListDetailPane
 import com.landpoint.app.ui.owners.OwnerListScreen
 import com.landpoint.app.ui.preview.LandPreviewScreen
 import com.landpoint.app.ui.reports.ReportsScreen
@@ -249,11 +250,26 @@ private fun LandPointGraph(navController: NavHostController, listBesideDetail: B
         // Demoted from a tab by ADR-002; reached from the Tools grid and the
         // Parcels header's owners stat. Pushed, so it gets a way back.
         composable(Routes.OWNERS) {
-            OwnerListScreen(
-                onOpenOwner = { id -> navController.navigate(Routes.ownerDetail(id)) },
-                onNewOwner = { navController.navigate(Routes.OWNER_NEW) },
-                onBack = { navController.popBackStack() }
-            )
+            // Same list either way; on a wide window it keeps the chosen owner
+            // beside it instead of handing the screen over to it — the pattern
+            // the Parcels route above established. The list's own way back
+            // (pushed screen, not a tab) still leaves the whole screen; the
+            // record's back closes within the pane. Adding, editing and a land
+            // opened from an owner are work with an end: full-screen either way.
+            if (listBesideDetail) {
+                OwnerListDetailPane(
+                    onNewOwner = { navController.navigate(Routes.OWNER_NEW) },
+                    onBack = { navController.popBackStack() },
+                    onEdit = { id -> navController.navigate(Routes.ownerEdit(id)) },
+                    onOpenLand = { id -> navController.navigate(Routes.detail(id)) }
+                )
+            } else {
+                OwnerListScreen(
+                    onOpenOwner = { id -> navController.navigate(Routes.ownerDetail(id)) },
+                    onNewOwner = { navController.navigate(Routes.OWNER_NEW) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         // Demoted from a tab by ADR-002; the Tools grid's Export and Reports

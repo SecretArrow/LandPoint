@@ -68,6 +68,9 @@
     <!-- The empty half of a wide window, before a record has been chosen -->
     <string name="pane_nothing_chosen_title">No land chosen</string>
     <string name="pane_nothing_chosen_body">Pick a land from the list and it opens here, beside it.</string>
+    <!-- The owner pane's empty half, before an owner has been chosen -->
+    <string name="pane_nothing_chosen_owner_title">No owner chosen</string>
+    <string name="pane_nothing_chosen_owner_body">Pick an owner from the list and their record opens here, beside it.</string>
     <!-- Summary above the list: how many lands are shown, then their total area -->
     <plurals name="list_summary">
         <item quantity="one">%1$d land</item>

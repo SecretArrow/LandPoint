@@ -18,22 +18,48 @@ tags:
     commands:
       - tapOn: '^Wait$'
 
-- extendedWaitUntil:
-    visible: 'Kebun Percobaan'
-    timeout: 20000
+# The Parcels tab carries the old Home dashboard as its scrolling header
+# (ADR-002), and its recent-activity rows grow as the flows before this one
+# create and delete parcels — on a cold start the first card can sit below
+# the fold. Scroll the list until the card shows instead of asserting from
+# wherever the launch landed.
+- scrollUntilVisible:
+    element:
+      text: 'Kebun Percobaan'
+    direction: DOWN
+    timeout: 30000
 
-# Selection mode lives on the Lands tab; a long-press on the dashboard's
-# "Recent parcels" row opens the detail screen instead.
-- tapOn: '^(Lands|Tanah)$'
-- extendedWaitUntil:
-    visible: 'Kebun Percobaan'
-    timeout: 15000
+# Selection mode lives on the Parcels tab. The tab also carries the old Home
+# dashboard as its scrolling header (ADR-002); the long-press below targets
+# the parcel card, which is the only "Kebun Percobaan" node long enough to
+# scroll into place — the header's stat cards are numbers, not names.
+- tapOn: '^(Parcels|Bidang)$'
+- scrollUntilVisible:
+    element:
+      text: 'Kebun Percobaan'
+    direction: DOWN
+    timeout: 30000
 
-# Long-press a card to enter selection mode. With a single land the ticked
-# card already IS "all shown", so the select-all button stays hidden by
-# design — the selection bar is the thing to assert, then export straight
-# away. ("1 selected" / "1 dipilih".)
-- longPressOn: 'Kebun Percobaan'
+# Long-press a card to enter selection mode. The Parcels tab's header carries
+# the old Home dashboard, whose recent-activity rows repeat parcel names
+# inside their headlines ("Created: \"Kebun Percobaan\"") — so the card is
+# matched by its FULL node text, which only the card's name node reads, and
+# the scroll makes sure the card itself is composed before the press. With a
+# single land the ticked card already IS "all shown", so the select-all
+# button stays hidden by design — the selection bar is the thing to assert,
+# then export straight away. ("1 selected" / "1 dipilih".)
+- scrollUntilVisible:
+    element:
+      text: '^Kebun Percobaan$'
+    direction: DOWN
+    timeout: 30000
+# With a single parcel the card rests at the bottom of the list, right under
+# the central Add dial that floats above the bottom bar — a long-press there
+# opens the dial instead of starting the selection. One upward swipe lifts
+# the card clear of the dial before the press.
+- swipe:
+    direction: UP
+- longPressOn: '^Kebun Percobaan$'
 - extendedWaitUntil:
     visible: '^(1 selected|1 dipilih)$'
     timeout: 10000
@@ -54,6 +80,10 @@ tags:
 # Back in the app the snackbar confirms the export, but it lives about
 # four seconds and a slow emulator routinely misses it — assert the
 # settled list instead; the navigation path above is the real coverage.
-- extendedWaitUntil:
-    visible: 'Kebun Percobaan'
+# The sheet closing leaves the list wherever it was scrolled to, with the
+# dashboard header pushing the card below the fold again — scroll to it.
+- scrollUntilVisible:
+    element:
+      text: 'Kebun Percobaan'
+    direction: DOWN
     timeout: 20000

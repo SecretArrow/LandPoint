@@ -23,10 +23,37 @@
     <string name="action_more">More</string>
     <string name="action_undo">Undo</string>
 
-    <!-- Bottom navigation -->
-    <string name="nav_lands">Lands</string>
+    <!-- Bottom navigation — four tabs, ADR-002 (Home and Reports stopped being
+         tabs in Phase 5; the labels they served live on as non-tab screens) -->
     <string name="nav_map">Map</string>
+    <string name="nav_parcels">Parcels</string>
+    <string name="nav_tools">Tools</string>
     <string name="nav_settings">Settings</string>
+
+    <!-- Central Add speed-dial (ADR-002, DESIGN_SYSTEM.md §6.1). The four
+         entries name the ways a parcel starts; all of them land in the same
+         editor, whose own corner picker owns the source choice from there. -->
+    <string name="dial_add">Add parcel</string>
+    <string name="dial_gps_point">GPS point</string>
+    <string name="dial_walk_boundary">Walk boundary</string>
+    <string name="dial_type_coordinates">Type coordinates</string>
+    <string name="dial_tap_map">Tap map</string>
+
+    <!-- Tools tab card grid (docs/IMPLEMENTATION_PLAN.md Phase 5, item 2).
+         One-line summaries on purpose: the card is a door, not a dashboard. -->
+    <string name="tools_export_title">Export</string>
+    <string name="tools_export_summary">CSV, GPX, KML — and a PDF per parcel</string>
+    <string name="tools_backup_title">Backup</string>
+    <string name="tools_backup_summary">One file with every record and photo, passcode-locked if you like</string>
+    <string name="tools_restore_title">Restore</string>
+    <string name="tools_restore_summary">Bring records back from a backup archive or JSON</string>
+    <string name="tools_reports_summary">What this phone holds, and one tidy page per parcel</string>
+    <string name="tools_offline_title">Offline maps</string>
+    <string name="tools_offline_summary">Areas you downloaded keep drawing with no signal</string>
+    <string name="tools_help_title">Help</string>
+    <string name="tools_about_title">About</string>
+    <string name="tools_about_summary">Version, privacy and licences</string>
+    <string name="tools_owners_summary">Who owns each saved parcel</string>
 
     <!-- Land list -->
     <string name="list_search_placeholder">Search name, notes, address</string>
@@ -751,7 +778,6 @@
     <!-- ================================================================ -->
 
     <!-- Navigation -->
-    <string name="nav_home">Home</string>
     <string name="nav_owners">Owners</string>
     <string name="nav_reports">Reports</string>
 

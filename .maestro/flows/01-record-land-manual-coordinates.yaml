@@ -41,11 +41,19 @@ tags:
     commands:
       - tapOn: '^(Skip|Lewati)$'
 
-# The list screen's big FAB.
+# The central Add speed-dial above the bottom bar is now the one Add entry in
+# the app (ADR-002, replacing the screens' own FABs). Open it, then pick
+# "Type coordinates": every dial entry opens the same editor, and this flow's
+# scenario is the typed-survey-letter path, so the entry name is the honest
+# label even though the destination is the editor for all four.
 - extendedWaitUntil:
-    visible: '^(Save land|Simpan tanah)$'
+    visible: '^(Add parcel|Tambah bidang)$'
     timeout: 15000
-- tapOn: '^(Save land|Simpan tanah)$'
+- tapOn: '^(Add parcel|Tambah bidang)$'
+- extendedWaitUntil:
+    visible: '^(Type coordinates|Ketik koordinat)$'
+    timeout: 10000
+- tapOn: '^(Type coordinates|Ketik koordinat)$'
 
 - extendedWaitUntil:
     visible: '^(Land details|Rincian tanah)$'

@@ -4,8 +4,9 @@ name: 02-search-filter
 tags:
 - core
 ---
-# A stop/launch pair gives a cold start, which lands on the list tab no
-# matter which screen the previous flow ended on.
+# A stop/launch pair gives a cold start, which lands on the Parcels tab no
+# matter which screen the previous flow ended on (the Parcels tab absorbed the
+# old Home dashboard as its header, ADR-002).
 - stopApp
 - launchApp
 
@@ -17,13 +18,19 @@ tags:
     commands:
       - tapOn: '^Wait$'
 
-- extendedWaitUntil:
-    visible: 'Kebun Percobaan'
-    timeout: 20000
+# The Parcels tab carries the old Home dashboard as its scrolling header
+# (ADR-002), and its recent-activity rows grow as the flows before this one
+# create and delete parcels — on a cold start the first card can sit below
+# the fold. Scroll the list until the card shows instead of asserting from
+# wherever the launch landed.
+- scrollUntilVisible:
+    element:
+      text: 'Kebun Percobaan'
+    direction: DOWN
+    timeout: 30000
 
-# The app cold-starts on the Home dashboard; the search bar lives on the
-# Lands tab's top bar.
-- tapOn: '^(Lands|Tanah)$'
+# The search field lives behind the Parcels tab's top-bar icon.
+- tapOn: '^(Parcels|Bidang)$'
 - extendedWaitUntil:
     visible: 'Kebun Percobaan'
     timeout: 15000
@@ -42,9 +49,14 @@ tags:
     visible: '^(No matches|Tidak ditemukan)$'
     timeout: 10000
 
-# Leave the list clean for the flows that follow.
+# Leave the list clean for the flows that follow. Clearing the query brings
+# the Parcels dashboard header back (the header only renders on a blank
+# query), which pushes the card below the fold on the 320x640 CI screen —
+# scroll to it rather than asserting from wherever the list came to rest.
 - tapOn: '^(Clear search|Bersihkan pencarian)$'
-- extendedWaitUntil:
-    visible: 'Kebun Percobaan'
-    timeout: 10000
 - hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: 'Kebun Percobaan'
+    direction: DOWN
+    timeout: 15000

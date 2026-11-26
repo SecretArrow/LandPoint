@@ -1,15 +1,22 @@
 package com.landpoint.app.ui.navigation
 
 object Routes {
-    // The five tabs, in the order they appear in the bar.
-    const val HOME = "home"
+    // The four tabs, in the order they appear in the bar (ADR-002). The list
+    // route keeps its "lands" path from the five-tab days — a route string is
+    // persisted state, and renaming it would strand a restoring back stack —
+    // only the tab's label moved, to nav_parcels.
     const val MAP = "map"
     const val LIST = "lands"
+    const val TOOLS = "tools"
+    const val SETTINGS = "settings"
+
+    // Former tabs, demoted by ADR-002 to full-screen destinations. Owners is
+    // reached from the Tools grid and the Parcels header's owners stat;
+    // Reports is the Tools grid's Export and Reports cards' destination.
     const val OWNERS = "owners"
     const val REPORTS = "reports"
 
-    // Full-screen destinations reached from a tab.
-    const val SETTINGS = "settings"
+    // Full-screen destinations reached from a tab or a card.
     const val OFFLINE = "offline_maps"
 
     // Reached from settings: the recently-deleted bin, where a delete rests

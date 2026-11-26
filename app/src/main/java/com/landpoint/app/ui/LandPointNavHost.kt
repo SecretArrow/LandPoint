@@ -1,17 +1,19 @@
 package com.landpoint.app.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.outlined.Assessment
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Landscape
-import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -35,11 +37,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.landpoint.app.R
 import com.landpoint.app.ui.compass.CompassScreen
+import com.landpoint.app.ui.components.AddSpeedDial
 import com.landpoint.app.ui.detail.LandDetailScreen
 import com.landpoint.app.ui.edit.LandEditScreen
 import com.landpoint.app.ui.gallery.ComponentGalleryScreen
 import com.landpoint.app.ui.help.HelpCenterScreen
-import com.landpoint.app.ui.home.HomeScreen
+import com.landpoint.app.ui.home.ParcelsHeader
 import com.landpoint.app.ui.lands.LandListDetailPane
 import com.landpoint.app.ui.lands.LandListScreen
 import com.landpoint.app.ui.map.MapScreen
@@ -54,21 +57,23 @@ import com.landpoint.app.ui.reports.ReportsScreen
 import com.landpoint.app.ui.settings.RecentlyDeletedScreen
 import com.landpoint.app.ui.settings.SettingsScreen
 import com.landpoint.app.ui.shape.LandShapeScreen
+import com.landpoint.app.ui.theme.Spacing
+import com.landpoint.app.ui.tools.ToolsScreen
 
 /** SavedStateHandle key: preview asked the editor to save its draft. */
 private const val PREVIEW_SAVE_KEY = "preview_save"
 
 /**
- * The five places a user comes back to. Everything else — a land's detail, the
- * editor, the compass, the corner picker — is work with an end, so it takes the
- * whole screen and the bar steps out of the way.
+ * The four places a user comes back to (ADR-002: Map / Parcels / Tools /
+ * Settings). Everything else — a land's detail, the editor, the owners book,
+ * the reports desk — is work with an end, so it takes the whole screen and the
+ * bar steps out of the way.
  */
 private enum class Tab(val route: String, val icon: ImageVector, @StringRes val labelRes: Int) {
-    HOME(Routes.HOME, Icons.Outlined.Home, R.string.nav_home),
     MAP(Routes.MAP, Icons.Default.Map, R.string.nav_map),
-    LANDS(Routes.LIST, Icons.Outlined.Landscape, R.string.nav_lands),
-    OWNERS(Routes.OWNERS, Icons.Outlined.People, R.string.nav_owners),
-    REPORTS(Routes.REPORTS, Icons.Outlined.Assessment, R.string.nav_reports)
+    PARCELS(Routes.LIST, Icons.Outlined.Landscape, R.string.nav_parcels),
+    TOOLS(Routes.TOOLS, Icons.Outlined.Build, R.string.nav_tools),
+    SETTINGS(Routes.SETTINGS, Icons.Outlined.Settings, R.string.nav_settings)
 }
 
 @Composable
@@ -88,6 +93,16 @@ fun LandPointNavHost() {
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        // The central Add speed-dial is the one Add entry in the app (ADR-002,
+        // DESIGN_SYSTEM.md §6.1): one tap from any tab, where the old screens
+        // each carried their own FAB. Centre, because it belongs to the whole
+        // app rather than to the list; the tabs sit either side of it.
+        floatingActionButtonPosition = FabPosition.Center,
+        floatingActionButton = {
+            if (barAtBottom) {
+                AddSpeedDial(onAdd = { navController.navigate(Routes.NEW) })
+            }
+        },
         bottomBar = {
             if (barAtBottom) {
                 NavigationBar {
@@ -97,7 +112,8 @@ fun LandPointNavHost() {
                             onClick = { navController.switchTab(tab.route) },
                             icon = { Icon(tab.icon, contentDescription = null) },
                             // Labelled, not icon-only: words do not have to be
-                            // guessed at, and five labels still fit the bar.
+                            // guessed at, and four labels leave the centre slot
+                            // for the speed-dial above.
                             label = { Text(stringResource(tab.labelRes)) }
                         )
                     }
@@ -114,22 +130,36 @@ fun LandPointNavHost() {
                 .padding(bottom = if (barAtBottom) padding.calculateBottomPadding() else 0.dp)
         ) {
             // Sideways there is room to spare and downwards there is not, which
-            // is what a phone on its side is. The five destinations move into
+            // is what a phone on its side is. The four destinations move into
             // the margin and give the screen its height back. The rail carries
             // its own inset on the side it sits, the same way the bar did.
             if (rail) {
-                // Told to fill the height rather than trusting it to: this Row
-                // aligns its children to the top, and a rail the height of its
-                // five items would leave the rest of that column bare.
-                NavigationRail(modifier = Modifier.fillMaxHeight()) {
-                    Tab.entries.forEach { tab ->
-                        NavigationRailItem(
-                            selected = tab.route == currentRoute,
-                            onClick = { navController.switchTab(tab.route) },
-                            icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(stringResource(tab.labelRes)) }
-                        )
+                // Told to fill the height rather than trusting it to: this
+                // Column aligns its children to the top, and a rail the height
+                // of its four items would leave the rest of that column bare.
+                Column(modifier = Modifier.fillMaxHeight()) {
+                    NavigationRail(modifier = Modifier.weight(1f)) {
+                        Tab.entries.forEach { tab ->
+                            NavigationRailItem(
+                                selected = tab.route == currentRoute,
+                                onClick = { navController.switchTab(tab.route) },
+                                icon = { Icon(tab.icon, contentDescription = null) },
+                                label = { Text(stringResource(tab.labelRes)) }
+                            )
+                        }
                     }
+                    // ADR-002: "the Add speed-dial docks at the bottom of the
+                    // rail" — the same entry, same behaviour, just parked where
+                    // a tablet's thumb is not. Icon-only entries here: labelled
+                    // pills would widen the whole side column and squeeze the
+                    // content beside it (AddSpeedDial explains the trade).
+                    AddSpeedDial(
+                        onAdd = { navController.navigate(Routes.NEW) },
+                        iconOnly = true,
+                        modifier = Modifier
+                            .padding(bottom = Spacing.fab)
+                            .navigationBarsPadding()
+                    )
                 }
             }
 
@@ -164,24 +194,20 @@ private fun LandPointGraph(navController: NavHostController, listBesideDetail: B
 
     NavHost(
         navController = navController,
-        startDestination = Routes.HOME,
+        // The Parcels tab opens the app: it absorbed the old Home dashboard as
+        // its header (ADR-002), so what a user lands on is what Home used to
+        // say — what this phone holds — with the full list right beneath it.
+        startDestination = Routes.LIST,
         modifier = modifier
     ) {
-        composable(Routes.HOME) {
-            HomeScreen(
-                onOpenLand = { id -> navController.navigate(Routes.detail(id)) },
-                onNewLand = { navController.navigate(Routes.NEW) },
-                onOpenOwners = { navController.switchTab(Routes.OWNERS) },
-                onOpenReports = { navController.switchTab(Routes.REPORTS) },
-                onOpenSettings = { navController.navigate(Routes.SETTINGS) }
-            )
-        }
-
         composable(Routes.LIST) {
             // Same list either way; on a wide window it keeps the chosen record
             // beside it instead of handing the screen over to it. A record opened
             // from the map tab still takes the whole window: the map is a screen
-            // in its own right, not a second index of the same list.
+            // in its own right, not a second index of the same list. The header
+            // (the old Home content) rides only the phone-shaped list: in the
+            // two-pane layout the list column is already narrow, and the pane's
+            // own summary row carries the counts.
             if (listBesideDetail) {
                 LandListDetailPane(
                     onNewLand = { navController.navigate(Routes.NEW) },
@@ -192,7 +218,13 @@ private fun LandPointGraph(navController: NavHostController, listBesideDetail: B
             } else {
                 LandListScreen(
                     onOpenLand = { id -> navController.navigate(Routes.detail(id)) },
-                    onNewLand = { navController.navigate(Routes.NEW) }
+                    onNewLand = { navController.navigate(Routes.NEW) },
+                    headerContent = {
+                        ParcelsHeader(
+                            onOpenOwners = { navController.navigate(Routes.OWNERS) },
+                            onOpenReports = { navController.navigate(Routes.REPORTS) }
+                        )
+                    }
                 )
             }
         }
@@ -204,16 +236,32 @@ private fun LandPointGraph(navController: NavHostController, listBesideDetail: B
             )
         }
 
-        composable(Routes.OWNERS) {
-            OwnerListScreen(
-                onOpenOwner = { id -> navController.navigate(Routes.ownerDetail(id)) },
-                onNewOwner = { navController.navigate(Routes.OWNER_NEW) }
+        composable(Routes.TOOLS) {
+            ToolsScreen(
+                onOpenReports = { navController.navigate(Routes.REPORTS) },
+                onOpenSettings = { navController.switchTab(Routes.SETTINGS) },
+                onOpenOfflineMaps = { navController.navigate(Routes.OFFLINE) },
+                onOpenHelp = { navController.navigate(Routes.HELP) },
+                onOpenOwners = { navController.navigate(Routes.OWNERS) }
             )
         }
 
+        // Demoted from a tab by ADR-002; reached from the Tools grid and the
+        // Parcels header's owners stat. Pushed, so it gets a way back.
+        composable(Routes.OWNERS) {
+            OwnerListScreen(
+                onOpenOwner = { id -> navController.navigate(Routes.ownerDetail(id)) },
+                onNewOwner = { navController.navigate(Routes.OWNER_NEW) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // Demoted from a tab by ADR-002; the Tools grid's Export and Reports
+        // cards land here. Pushed, so it gets a way back.
         composable(Routes.REPORTS) {
             ReportsScreen(
-                onOpenSettings = { navController.navigate(Routes.SETTINGS) }
+                onOpenSettings = { navController.switchTab(Routes.SETTINGS) },
+                onBack = { navController.popBackStack() }
             )
         }
 

@@ -23,10 +23,38 @@
     <string name="action_more">Lainnya</string>
     <string name="action_undo">Urungkan</string>
 
-    <!-- Navigasi bawah -->
-    <string name="nav_lands">Tanah</string>
+    <!-- Navigasi bawah — empat tab, ADR-002 (Beranda dan Laporan berhenti
+         menjadi tab di Fase 5; labelnya hidup sebagai layar non-tab) -->
     <string name="nav_map">Peta</string>
+    <string name="nav_parcels">Bidang</string>
+    <string name="nav_tools">Alat</string>
     <string name="nav_settings">Pengaturan</string>
+
+    <!-- Speed-dial Tambah di tengah (ADR-002, DESIGN_SYSTEM.md §6.1). Empat
+         pilihan menamai cara sebuah bidang dimulai; semuanya mendarat di
+         editor yang sama, dan pemilih sudut di editorlah yang menentukan
+         sumber penandaannya dari sana. -->
+    <string name="dial_add">Tambah bidang</string>
+    <string name="dial_gps_point">Titik GPS</string>
+    <string name="dial_walk_boundary">Ukur sambil berjalan</string>
+    <string name="dial_type_coordinates">Ketik koordinat</string>
+    <string name="dial_tap_map">Ketuk peta</string>
+
+    <!-- Kisi kartu tab Alat (docs/IMPLEMENTATION_PLAN.md Fase 5, butir 2).
+         Ringkasan satu baris memang sengaja: kartunya pintu, bukan dasbor. -->
+    <string name="tools_export_title">Ekspor</string>
+    <string name="tools_export_summary">CSV, GPX, KML — dan PDF per bidang</string>
+    <string name="tools_backup_title">Cadangan</string>
+    <string name="tools_backup_summary">Satu berkas berisi seluruh catatan dan foto, bisa dikunci sandi</string>
+    <string name="tools_restore_title">Pulihkan</string>
+    <string name="tools_restore_summary">Kembalikan catatan dari arsip cadangan atau JSON</string>
+    <string name="tools_reports_summary">Isi ponsel ini, satu halaman rapi per bidang</string>
+    <string name="tools_offline_title">Peta luring</string>
+    <string name="tools_offline_summary">Wilayah yang Anda unduh tetap tampil tanpa sinyal</string>
+    <string name="tools_help_title">Bantuan</string>
+    <string name="tools_about_title">Tentang</string>
+    <string name="tools_about_summary">Versi, privasi, dan lisensi</string>
+    <string name="tools_owners_summary">Siapa pemilik tiap bidang tersimpan</string>
 
     <!-- Daftar tanah -->
     <string name="list_search_placeholder">Cari nama, catatan, alamat</string>
@@ -730,7 +758,6 @@
     <!-- ================================================================ -->
 
     <!-- Navigasi -->
-    <string name="nav_home">Beranda</string>
     <string name="nav_owners">Pemilik</string>
     <string name="nav_reports">Laporan</string>
 

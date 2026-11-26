@@ -18,9 +18,16 @@ tags:
     commands:
       - tapOn: '^Wait$'
 
-- extendedWaitUntil:
-    visible: 'Kebun Percobaan'
-    timeout: 20000
+# The Parcels tab carries the old Home dashboard as its scrolling header
+# (ADR-002), and its recent-activity rows grow as the flows before this one
+# create and delete parcels — on a cold start the first card can sit below
+# the fold. Scroll the list until the card shows instead of asserting from
+# wherever the launch landed.
+- scrollUntilVisible:
+    element:
+      text: 'Kebun Percobaan'
+    direction: DOWN
+    timeout: 30000
 
 # --- Make an encrypted backup -------------------------------------------
 - tapOn: '^(Settings|Pengaturan)$'
@@ -65,24 +72,27 @@ tags:
     timeout: 20000
 
 # --- Wipe every record ---------------------------------------------------
-# Settings is a full-screen page without the bottom bar, and it has NO up
-# arrow to leave by: the NavHost composes SettingsScreen without onBack, the
-# parameter defaults to null, and the arrow is only drawn when onBack != null
-# (LandPointNavHost, composable(Routes.SETTINGS) — SettingsScreen draws the
-# ArrowBack IconButton only inside `if (onBack != null)`). The failing-step
-# hierarchy from run 44078833057 confirms it: the screen shows the Settings
-# title and every card, but carries no "Back"/"Kembali" node at all. No
-# BackHandler intercepts the system back here either, so a back key press is
-# the only way out. The recorded "back press that did not leave this screen"
-# was the save sheet still swallowing the press, and the wait for the
-# Settings title above now rules that race out.
-- pressKey: BACK
-- tapOn: '^(Lands|Tanah)$'
+# Settings is a tab in the four-tab structure (ADR-002), so the bottom bar is
+# right there — no back press, no gear hunt. Cross to Parcels and long-press
+# the parcel card. The card match is anchored to its full node text (see flow
+# 03): the header's recent-activity rows also read the parcel's name inside
+# "Created: ..." headlines, and the long-press must land on the card.
+- tapOn: '^(Parcels|Bidang)$'
+- scrollUntilVisible:
+    element:
+      text: '^Kebun Percobaan$'
+    direction: DOWN
+    timeout: 30000
 - extendedWaitUntil:
-    visible: 'Kebun Percobaan'
+    visible: '^Kebun Percobaan$'
     timeout: 15000
 
-- longPressOn: 'Kebun Percobaan'
+# Same dial hazard as flow 03: with one parcel the card rests under the
+# central Add dial, and a long-press there opens the dial instead of the
+# selection. Lift the card clear first.
+- swipe:
+    direction: UP
+- longPressOn: '^Kebun Percobaan$'
 - extendedWaitUntil:
     visible: '^(1 selected|1 dipilih)$'
     timeout: 10000
@@ -98,12 +108,7 @@ tags:
     timeout: 15000
 
 # --- Restore the backup --------------------------------------------------
-# Settings lives behind the gear on the Home dashboard; the Lands tab has
-# no settings entry of its own.
-- tapOn: '^(Home|Beranda)$'
-- extendedWaitUntil:
-    visible: '^(Settings|Pengaturan)$'
-    timeout: 15000
+# Settings is its own tab now (ADR-002); the old gear-on-Home detour is gone.
 - tapOn: '^(Settings|Pengaturan)$'
 - scrollUntilVisible:
     element:
@@ -139,13 +144,16 @@ tags:
     visible: '^(Imported.*|.*diimpor)$'
     timeout: 20000
 
-# The "Imported 1" snackbar leaves us on Settings — a full-screen page with
-# no bottom bar and no up arrow (see the wipe section above), so the Lands
-# tab cannot be tapped from here and there is no "Back" element to tap
-# either. Leave with the system back key, then cross to Lands on Home's
-# bottom bar.
-- pressKey: BACK
-- tapOn: '^(Lands|Tanah)$'
+# The "Imported 1" snackbar leaves us on the Settings tab, whose bottom bar is
+# one tap from Parcels — the old full-screen detour through the back key is
+# gone with the five-tab structure. The restored record is matched by its full
+# name node, not by the header's "Created: ..." audit row repeating it.
+- tapOn: '^(Parcels|Bidang)$'
+- scrollUntilVisible:
+    element:
+      text: '^Kebun Percobaan$'
+    direction: DOWN
+    timeout: 30000
 - extendedWaitUntil:
-    visible: 'Kebun Percobaan'
+    visible: '^Kebun Percobaan$'
     timeout: 15000

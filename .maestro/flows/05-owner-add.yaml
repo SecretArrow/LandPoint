@@ -20,9 +20,16 @@ tags:
     commands:
       - tapOn: '^Wait$'
 
-- extendedWaitUntil:
-    visible: 'Kebun Percobaan'
-    timeout: 20000
+# The Parcels tab carries the old Home dashboard as its scrolling header
+# (ADR-002), and its recent-activity rows grow as the flows before this one
+# create and delete parcels — flow 04's delete + restore added two more. On
+# a cold start the first card can sit below the fold, so scroll the list
+# until the card shows instead of asserting from wherever the launch landed.
+- scrollUntilVisible:
+    element:
+      text: 'Kebun Percobaan'
+    direction: DOWN
+    timeout: 30000
 
 # The Owners tab stopped being a tab in the four-tab restructure (ADR-002);
 # the list now lives one card away on the Tools tab. Scroll to the card so a

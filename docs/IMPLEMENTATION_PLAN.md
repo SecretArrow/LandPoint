@@ -206,6 +206,8 @@ Settings redesign and Tools screen:
 
 ## Phase 6 — v1.3.0
 
+**Status (this round):** the owners two-pane extension has landed — `OwnerListDetailPane.kt` mirrors the land pane (list share, pane-internal NavHost, nothing-chosen placeholder) behind the same 840dp `WindowLayout.listBesideDetail` gate at `Routes.OWNERS`, with owner pane strings in both locales; the insets audit found each screen's own `Scaffold`/`TopAppBar` already applies the status-bar inset exactly once per pane, so no inset change was needed. Foldable support (item 3) is still outstanding.
+
 ### Scope
 
 Tablet and foldable support:

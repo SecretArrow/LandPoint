@@ -80,6 +80,10 @@ tags:
 # Back in the app the snackbar confirms the export, but it lives about
 # four seconds and a slow emulator routinely misses it — assert the
 # settled list instead; the navigation path above is the real coverage.
-- extendedWaitUntil:
-    visible: 'Kebun Percobaan'
+# The sheet closing leaves the list wherever it was scrolled to, with the
+# dashboard header pushing the card below the fold again — scroll to it.
+- scrollUntilVisible:
+    element:
+      text: 'Kebun Percobaan'
+    direction: DOWN
     timeout: 20000

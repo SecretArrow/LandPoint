@@ -50,11 +50,13 @@ tags:
     timeout: 10000
 
 # Leave the list clean for the flows that follow. Clearing the query brings
-# the Parcels dashboard header back, which pushes the card down behind the
-# still-open keyboard — the card is on screen but under the IME, so close
-# the keyboard before asserting on it.
+# the Parcels dashboard header back (the header only renders on a blank
+# query), which pushes the card below the fold on the 320x640 CI screen —
+# scroll to it rather than asserting from wherever the list came to rest.
 - tapOn: '^(Clear search|Bersihkan pencarian)$'
 - hideKeyboard
-- extendedWaitUntil:
-    visible: 'Kebun Percobaan'
-    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: 'Kebun Percobaan'
+    direction: DOWN
+    timeout: 15000
